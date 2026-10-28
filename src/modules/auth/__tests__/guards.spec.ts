@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { beforeEach, test } from 'node:test'
 import { registerHooks } from 'node:module'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { safeRedirect } from '../utils/index.ts'
@@ -16,6 +16,7 @@ Object.assign(globalThis, {
   guardTestRedirect: safeRedirect,
   guardTestMessages: messages,
 })
+const srcUrl = new URL('../../../', import.meta.url).href
 const hooks = registerHooks({
   resolve(specifier, context, nextResolve) {
     if (context.parentURL?.endsWith('/app/router/guards.ts')) {
@@ -50,6 +51,17 @@ const hooks = registerHooks({
     }
     return nextResolve(specifier, context)
   },
+  // Modules reached through the routes (axios plugin, Firebase config) read Vite's env.
+  load(url, context, nextLoad) {
+    if (url.startsWith(srcUrl) && url.endsWith('.ts')) {
+      return {
+        format: 'module-typescript',
+        shortCircuit: true,
+        source: readFileSync(new URL(url), 'utf8').replaceAll('import.meta.env', '({ DEV: true })'),
+      }
+    }
+    return nextLoad(url, context)
+  },
 })
 const { installAuthGuard } = await import('../../../app/router/guards.ts')
 const { routes } = await import('../../../app/router/routes.ts')
@@ -77,6 +89,8 @@ test('every registered private route redirects anonymous visitors before loading
     'ResetCode',
     'ResetPassword',
     'InvitationAccept',
+    'PrivacyPolicy',
+    'TermsOfService',
   ]
   const resolvedPublicNames: string[] = []
   for (const record of router.getRoutes()) {
@@ -213,7 +227,8 @@ test('external destinations and auth-page loops fall back to home', async () => 
   ]) {
     const router = routerForTest()
     await router.push({ name: 'Login', query: { redirect } })
-    assert.equal(router.currentRoute.value.name, 'Home')
+    // Home redirects to the user's home view.
+    assert.equal(router.currentRoute.value.name, 'UserHome')
   }
 })
 
