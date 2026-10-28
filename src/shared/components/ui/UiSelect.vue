@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ChevronDown } from '@lucide/vue'
-import { useId } from 'vue'
+import { computed, useAttrs, useId } from 'vue'
 import UiField from './UiField.vue'
 import UiIcon from './UiIcon.vue'
 import { controlClasses } from './controlClasses'
@@ -20,16 +20,29 @@ const props = defineProps<{
 }>()
 const fallbackId = useId()
 const inputId = props.id ?? fallbackId
+// class/style vão para o bloco do campo (layout); o resto (placeholder, autocomplete...) para o controle
+const attrs = useAttrs()
+const controlAttrs = computed(() =>
+  Object.fromEntries(Object.entries(attrs).filter(([key]) => key !== 'class' && key !== 'style')),
+)
 </script>
 
 <template>
-  <UiField :id="inputId" :label="label" :hint="hint" :error="error" :required="required">
+  <UiField
+    :id="inputId"
+    :class="$attrs.class"
+    :style="$attrs.style"
+    :label="label"
+    :hint="hint"
+    :error="error"
+    :required="required"
+  >
     <template #default="{ describedby, invalid }">
       <div class="relative">
         <select
           :id="inputId"
           v-model="model"
-          v-bind="$attrs"
+          v-bind="controlAttrs"
           :required="required"
           :disabled="disabled"
           :aria-describedby="describedby"

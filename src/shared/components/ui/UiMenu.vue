@@ -4,6 +4,9 @@ import { nextTick, ref, useId, useTemplateRef, type Component } from 'vue'
 import { useFloating, type Placement } from '@/shared/composables/floating'
 import UiIcon from './UiIcon.vue'
 
+// raiz dupla (gatilho + Teleport): atributos vão para o gatilho
+defineOptions({ inheritAttrs: false })
+
 export interface MenuItem {
   label: string
   icon?: Component
@@ -103,7 +106,7 @@ const triggerProps = {
 </script>
 
 <template>
-  <span ref="anchor" class="inline-flex">
+  <span ref="anchor" v-bind="$attrs" class="inline-flex">
     <slot name="trigger" :props="{ ...triggerProps, 'aria-expanded': open }" :open="open" />
   </span>
   <Teleport to="body">

@@ -44,7 +44,7 @@ function onKeydown(event: KeyboardEvent) {
 </script>
 
 <template>
-  <div>
+  <div class="min-w-0">
     <div
       ref="list"
       role="tablist"

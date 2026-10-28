@@ -1,50 +1,68 @@
 <script setup lang="ts">
+import { Bell, ChevronRight, LogOut, Moon, Receipt, Search, Settings, Sun } from '@lucide/vue'
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useTheme } from '@/app/composables/useTheme'
 import { useShell } from '../../composables/shell'
-import ThemeSwitcher from './themeSwitcher.vue'
+import UiAvatar from '../ui/UiAvatar.vue'
+import UiIcon from '../ui/UiIcon.vue'
+import UiIconButton from '../ui/UiIconButton.vue'
+import UiMenu, { type MenuItem } from '../ui/UiMenu.vue'
 
 /* COMO USAR:
   <TopbarComp :crumbs="['Conta', 'Planos']" />
-  A organização atual é colocada na frente do caminho pelo layout; o sino mostra as não lidas.
+  Cabeçalho das telas: caminho (a organização atual vem na frente), busca global
+  (Ctrl/Cmd+K), tema, notificações e menu do usuário. `showSearch` adiciona um
+  filtro local da tela, ligado a v-model:search.
 */
 
 const props = withDefaults(
   defineProps<{ crumbs: string[]; showSearch?: boolean; searchPlaceholder?: string }>(),
   {
     showSearch: false,
-    searchPlaceholder: 'Buscar tarefas, pessoas, arquivos',
+    searchPlaceholder: 'Filtrar nesta tela',
   },
 )
 
 const search = defineModel<string>('search', { default: '' })
 const shell = useShell()
+const router = useRouter()
+const { isDark, toggleTheme } = useTheme()
 const path = computed(() =>
   shell.organization.value ? [shell.organization.value, ...props.crumbs] : props.crumbs,
 )
+const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
+
+const userMenu = computed<MenuItem[]>(() => [
+  { label: 'Configurações', icon: Settings, onSelect: () => void router.push('/configuracoes') },
+  { label: 'Faturamento', icon: Receipt, onSelect: () => void router.push('/faturamento') },
+  {
+    label: 'Sair da conta',
+    icon: LogOut,
+    separatorBefore: true,
+    onSelect: () => void shell.signOut(),
+  },
+])
 </script>
 
 <template>
-  <div
-    class="relative flex items-center gap-[12px] border-b border-(--border-default) bg-(--surface) px-[20px] py-[14px] after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-10 after:rounded-full after:bg-(--bg-orange)/75 sm:px-[36px] xl:px-[44px] dark:border-(--border-inverse) dark:bg-(--surface-inverse)"
+  <header
+    class="sticky top-0 z-30 flex h-12 items-center gap-2 border-b border-border bg-bg px-4 sm:px-6"
   >
     <nav aria-label="Navegação estrutural" class="min-w-0 flex-1">
-      <ol class="flex items-center gap-[6px] text-[13px] leading-normal text-(--text-muted)">
-        <li v-for="(crumb, index) in path" :key="crumb" class="flex min-w-0 items-center gap-[6px]">
-          <span v-if="index > 0" class="material-symbols-outlined text-[15px]!" aria-hidden="true"
-            >chevron_right</span
-          >
+      <ol class="flex items-center gap-1.5 text-13 text-fg-muted">
+        <li
+          v-for="(crumb, index) in path"
+          :key="`${index}-${crumb}`"
+          :class="[
+            'flex min-w-0 items-center gap-1.5',
+            // no mobile só o último nível cabe
+            index < path.length - 1 ? 'max-sm:hidden' : '',
+          ]"
+        >
+          <UiIcon v-if="index > 0" :icon="ChevronRight" :size="14" class="max-sm:hidden" />
           <span
-            v-if="index === path.length - 1"
-            class="size-1.5 shrink-0 rounded-full bg-(--bg-orange)"
-            aria-hidden="true"
-          ></span>
-          <span
-            :class="[
-              'truncate',
-              index === path.length - 1
-                ? 'font-semibold text-(--text-primary) dark:text-(--text-inverse)'
-                : '',
-            ]"
+            :class="['truncate', index === path.length - 1 ? 'font-medium text-fg' : '']"
             :aria-current="index === path.length - 1 ? 'page' : undefined"
           >
             {{ crumb }}
@@ -53,43 +71,80 @@ const path = computed(() =>
       </ol>
     </nav>
 
-    <label
-      v-if="showSearch"
-      class="hidden w-[300px] items-center gap-[8px] rounded-[10px] border border-(--border-default) bg-(--bg-subtle) px-[10px] py-[9px] focus-within:border-(--bg-orange) focus-within:ring-2 focus-within:ring-(--bg-orange)/15 md:flex dark:border-(--border-inverse) dark:bg-black/30"
-    >
-      <span class="material-symbols-outlined text-[17px]! text-(--text-muted)" aria-hidden="true"
-        >search</span
-      >
-      <span class="sr-only">Buscar</span>
+    <label v-if="showSearch" class="relative hidden md:block">
+      <span class="sr-only">{{ searchPlaceholder }}</span>
+      <UiIcon
+        :icon="Search"
+        :size="14"
+        class="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-fg-muted"
+      />
       <input
         v-model="search"
         type="search"
         :placeholder="searchPlaceholder"
-        class="min-w-0 flex-1 bg-transparent text-[13px] leading-normal outline-none placeholder:text-(--text-muted)"
+        class="h-8 w-56 rounded-control border border-border bg-surface-2 pr-2 pl-8 text-13 text-fg placeholder:text-fg-muted focus-visible:border-accent focus-visible:outline-none"
       />
-      <kbd
-        class="rounded-[5px] border border-(--border-default) px-[5px] font-mono text-[10px] leading-[16px] text-(--text-muted) dark:border-(--border-inverse)"
-        >⌘K</kbd
-      >
     </label>
 
-    <ThemeSwitcher
-      class="[&_.material-symbols-outlined]:text-[18px]! [&_.material-symbols-outlined]:lg:scale-100!"
+    <button
+      data-ui="palette-trigger"
+      type="button"
+      class="hidden h-8 cursor-pointer items-center gap-2 rounded-control border border-border bg-surface-2 pr-1.5 pl-2.5 text-13 text-fg-muted transition-colors duration-(--dur-fast) ease-out hover:border-border-strong hover:text-fg sm:flex"
+      aria-keyshortcuts="Control+K Meta+K"
+      @click="shell.openPalette()"
+    >
+      <UiIcon :icon="Search" :size="14" />
+      <span class="hidden lg:inline">Buscar ou ir para…</span>
+      <kbd class="rounded-[4px] border border-border px-1 font-mono text-12">
+        {{ isMac ? '⌘K' : 'Ctrl K' }}
+      </kbd>
+    </button>
+    <UiIconButton
+      :icon="Search"
+      label="Buscar ou ir para"
+      class="sm:hidden"
+      @click="shell.openPalette()"
+    />
+
+    <UiIconButton
+      :icon="isDark ? Sun : Moon"
+      :label="isDark ? 'Usar tema claro' : 'Usar tema escuro'"
+      @click="toggleTheme"
     />
 
     <RouterLink
       to="/notificacoes"
-      class="relative grid size-[38px] shrink-0 cursor-pointer place-items-center rounded-[10px] border border-(--border-default) bg-(--surface) transition-all duration-300 hover:-translate-y-0.5 hover:border-(--bg-orange)/40 hover:bg-(--bg-orange)/5 hover:text-(--bg-orange) active:translate-y-0 active:scale-[0.98] dark:border-(--border-inverse) dark:bg-transparent"
+      class="relative inline-grid size-8 place-items-center rounded-control text-fg-muted transition-colors duration-(--dur-fast) ease-out hover:bg-surface-2 hover:text-fg"
       :aria-label="
         shell.unread.value ? `Notificações: ${shell.unread.value} não lidas` : 'Notificações'
       "
     >
-      <span class="material-symbols-outlined text-[18px]!" aria-hidden="true">notifications</span>
+      <UiIcon :icon="Bell" />
       <span
         v-if="shell.unread.value"
-        class="absolute top-[7px] right-[8px] size-[7px] rounded-full bg-(--bg-orange) ring-2 ring-(--surface) dark:ring-(--surface-inverse)"
+        class="absolute top-1 right-1 grid min-w-3.5 place-items-center rounded-full bg-accent px-0.5 font-mono text-[10px] leading-3.5 text-accent-fg"
         aria-hidden="true"
-      ></span>
+      >
+        {{ shell.unread.value > 9 ? '9+' : shell.unread.value }}
+      </span>
     </RouterLink>
-  </div>
+
+    <UiMenu v-if="shell.user.value" :items="userMenu" label="Conta" placement="bottom-end">
+      <template #trigger="{ props: trigger }">
+        <button
+          v-bind="trigger"
+          data-ui="user-menu"
+          type="button"
+          class="ml-1 cursor-pointer rounded-full"
+          :aria-label="`Conta de ${shell.user.value.name || shell.user.value.email}`"
+        >
+          <UiAvatar
+            :name="shell.user.value.name || shell.user.value.email"
+            :src="shell.user.value.avatarUrl"
+            size="sm"
+          />
+        </button>
+      </template>
+    </UiMenu>
+  </header>
 </template>

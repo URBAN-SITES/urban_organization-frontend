@@ -4,6 +4,9 @@ import { nextTick, useId, useTemplateRef } from 'vue'
 import { useFloating, type Placement } from '@/shared/composables/floating'
 import { focusableIn } from '@/shared/composables/focusTrap'
 
+// raiz dupla (gatilho + Teleport): atributos vão para o gatilho
+defineOptions({ inheritAttrs: false })
+
 /**
  * Conteúdo flutuante não modal (filtros, seletores). Abre pelo gatilho do slot
  * `trigger`; fecha com Esc (devolvendo o foco), clique fora ou `close()` do slot.
@@ -40,7 +43,7 @@ useEventListener(document, 'keydown', (event: KeyboardEvent) => {
 </script>
 
 <template>
-  <span ref="anchor" class="inline-flex">
+  <span ref="anchor" v-bind="$attrs" class="inline-flex">
     <slot
       name="trigger"
       :props="{

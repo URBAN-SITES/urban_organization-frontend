@@ -6,7 +6,8 @@
  * Constantes equivalentes para JS ficam em src/shared/motion.
  */
 
-:root {
+:root,
+.light {
   --ds-bg: #fafaf9;
   --ds-surface-1: #ffffff;
   --ds-surface-2: #f4f4f3;
