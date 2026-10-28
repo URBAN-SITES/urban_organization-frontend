@@ -1,0 +1,153 @@
+/*
+ * Transições dos componentes do sistema (<Transition name="ui-...">).
+ * Só transform e opacity. Entradas com --ease-out, saídas mais rápidas com --ease-in.
+ */
+
+/* fade simples: overlays, estados que trocam no lugar */
+.ui-fade-enter-active {
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+.ui-fade-leave-active {
+  transition: opacity var(--dur-base-exit) var(--ease-in);
+}
+.ui-fade-enter-from,
+.ui-fade-leave-to {
+  opacity: 0;
+}
+
+/* menus, popovers: crescem a partir do gatilho (transform-origin vem do useFloating) */
+.ui-pop-enter-active {
+  transition:
+    opacity var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+}
+.ui-pop-leave-active {
+  transition:
+    opacity var(--dur-base-exit) var(--ease-in),
+    transform var(--dur-base-exit) var(--ease-in);
+}
+.ui-pop-enter-from,
+.ui-pop-leave-to {
+  opacity: 0;
+  transform: scale(calc(1 - (1 - var(--motion-scale)) * 2));
+}
+
+/* tooltip: mais rápido */
+.ui-tip-enter-active {
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+.ui-tip-leave-active {
+  transition: opacity var(--dur-fast-exit) var(--ease-in);
+}
+.ui-tip-enter-from,
+.ui-tip-leave-to {
+  opacity: 0;
+  transform: scale(var(--motion-scale));
+}
+
+/* modal e command palette: scale 0.98 -> 1 + fade */
+.ui-modal-enter-active {
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out);
+}
+.ui-modal-leave-active {
+  transition:
+    opacity var(--dur-slow-exit) var(--ease-in),
+    transform var(--dur-slow-exit) var(--ease-in);
+}
+.ui-modal-enter-from,
+.ui-modal-leave-to {
+  opacity: 0;
+  transform: translateY(calc(var(--motion-distance) / 2)) scale(var(--motion-scale));
+}
+
+/* drawers */
+.ui-drawer-right-enter-active,
+.ui-drawer-left-enter-active,
+.ui-drawer-bottom-enter-active {
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out);
+}
+.ui-drawer-right-leave-active,
+.ui-drawer-left-leave-active,
+.ui-drawer-bottom-leave-active {
+  transition:
+    opacity var(--dur-slow-exit) var(--ease-in),
+    transform var(--dur-slow-exit) var(--ease-in);
+}
+.ui-drawer-right-enter-from,
+.ui-drawer-right-leave-to {
+  opacity: 0;
+  transform: translateX(calc(100% * var(--motion-on)));
+}
+.ui-drawer-left-enter-from,
+.ui-drawer-left-leave-to {
+  opacity: 0;
+  transform: translateX(calc(-100% * var(--motion-on)));
+}
+.ui-drawer-bottom-enter-from,
+.ui-drawer-bottom-leave-to {
+  opacity: 0;
+  transform: translateY(calc(100% * var(--motion-on)));
+}
+
+/* listas (<TransitionGroup name="ui-list">): entrada, saída e reordenação (FLIP) */
+.ui-list-enter-active {
+  transition:
+    opacity var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+}
+.ui-list-leave-active {
+  transition:
+    opacity var(--dur-base-exit) var(--ease-in),
+    transform var(--dur-base-exit) var(--ease-in);
+}
+.ui-list-enter-from {
+  opacity: 0;
+  transform: translateY(var(--motion-distance));
+}
+.ui-list-leave-to {
+  opacity: 0;
+  transform: scale(var(--motion-scale));
+}
+.ui-list-move {
+  transition: transform var(--dur-base) var(--ease-in-out);
+}
+
+/* altura sem animar height: grid-template-rows 0fr -> 1fr */
+.ui-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--dur-base) var(--ease-in-out);
+}
+.ui-collapse[data-open='true'] {
+  grid-template-rows: 1fr;
+}
+.ui-collapse > * {
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* toasts (vue-sonner) seguem os tokens */
+[data-sonner-toast] {
+  transition-duration: var(--dur-base) !important;
+  transition-timing-function: var(--ease-out) !important;
+}
+
+.ui-toaster {
+  --normal-bg: var(--ds-surface-1);
+  --normal-border: var(--ds-border);
+  --normal-text: var(--ds-fg);
+  --success-bg: var(--ds-surface-1);
+  --success-border: var(--ds-border);
+  --success-text: var(--ds-fg);
+  --error-bg: var(--ds-surface-1);
+  --error-border: var(--ds-danger);
+  --error-text: var(--ds-fg);
+  --border-radius: var(--radius-card);
+  font-family: var(--font-sans);
+}

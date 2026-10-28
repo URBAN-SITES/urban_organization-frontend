@@ -44,6 +44,8 @@
   /* deslocamento das entradas; zera com prefers-reduced-motion */
   --motion-distance: 6px;
   --motion-scale: 0.98;
+  /* 1 com movimento, 0 com prefers-reduced-motion (ex.: drawer entra só com fade) */
+  --motion-on: 1;
 
   color-scheme: light;
 }
@@ -78,6 +80,7 @@
   :root {
     --motion-distance: 0px;
     --motion-scale: 1;
+    --motion-on: 0;
     --dur-base: 150ms;
     --dur-slow: 150ms;
     --dur-base-exit: 150ms;

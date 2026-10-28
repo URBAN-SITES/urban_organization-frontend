@@ -9,6 +9,7 @@ const { isDark } = useTheme()
 import { AuthTransitionOverlay, useAuthStore } from '@/modules/auth'
 import { finishGoogleConnect } from '@/modules/calendar_sync'
 import { useNotificationSession } from '@/modules/notifications'
+import { UiConfirmHost } from '@/shared/components'
 
 const auth = useAuthStore()
 const route = useRoute()
@@ -46,7 +47,15 @@ finishGoogleConnect()
       <component :is="Component" :key="route.meta.transitionGroup ?? route.path" />
     </Transition>
   </RouterView>
-  <Toaster :theme="isDark ? 'dark' : 'light'" />
+  <!-- até 3 toasts visíveis; os seguintes esperam na fila do vue-sonner -->
+  <Toaster
+    :theme="isDark ? 'dark' : 'light'"
+    position="bottom-right"
+    :visible-toasts="3"
+    close-button
+    class="ui-toaster"
+  />
+  <UiConfirmHost />
   <AuthTransitionOverlay
     :visible="auth.isSigningOut"
     eyebrow="Sessão segura"
