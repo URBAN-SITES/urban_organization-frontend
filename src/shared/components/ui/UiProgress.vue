@@ -2,7 +2,12 @@
 import { computed } from 'vue'
 
 /** Barra de progresso. Sem `value` ela fica indeterminada. */
-const { value, max = 100, label } = defineProps<{ value?: number; max?: number; label: string }>()
+const {
+  value,
+  max = 100,
+  label,
+  tone = 'accent',
+} = defineProps<{ value?: number; max?: number; label: string; tone?: 'accent' | 'neutral' }>()
 const ratio = computed(() =>
   value === undefined ? undefined : Math.min(Math.max(value / max, 0), 1),
 )
@@ -19,7 +24,11 @@ const ratio = computed(() =>
   >
     <div
       v-if="ratio !== undefined"
-      class="h-full origin-left rounded-full bg-accent transition-transform duration-(--dur-slow) ease-out"
+      :class="[
+        'h-full origin-left rounded-full transition-transform',
+        tone === 'neutral' ? 'bg-fg' : 'bg-accent',
+      ]"
+      class="duration-(--dur-slow) ease-out"
       :style="{ transform: `scaleX(${ratio})` }"
     />
     <div
