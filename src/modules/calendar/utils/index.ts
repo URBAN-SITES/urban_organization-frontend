@@ -5,7 +5,6 @@ const DAY_MS = 86_400_000
 
 // Datas ISO (YYYY-MM-DD) passam por UTC para o fuso do navegador não deslocar o dia.
 const toIso = (time: number): ISODate => new Date(time).toISOString().slice(0, 10)
-const fromIso = (date: ISODate): number => Date.parse(`${date}T00:00:00Z`)
 
 export function todayIso(now = new Date()): ISODate {
   return toIso(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()))

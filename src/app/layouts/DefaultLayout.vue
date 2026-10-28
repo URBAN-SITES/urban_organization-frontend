@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, provide, watch } from 'vue'
-import { SidebarComp, FooterComp } from '@/shared/components'
+import { SidebarComp } from '@/shared/components'
 import MobileNav from './components/MobileNav.vue'
 import { ShellKey } from '@/shared/composables/shell'
 import { useChatAlerts } from '@/modules/chat'
@@ -38,6 +38,5 @@ provide(ShellKey, {
       <slot><RouterView /></slot>
     </div>
   </main>
-  <!-- <FooterComp /> -->
   <MobileNav />
 </template>
