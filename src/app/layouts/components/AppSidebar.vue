@@ -202,7 +202,7 @@ const linkClass = (active: boolean) => [
 
       <template v-if="auth.user && visibleSectors.length">
         <h2 v-if="!collapsed" class="ui-label-in mt-5 mb-1 px-2 text-12 font-medium text-fg-muted">
-          Setores
+          Projetos
         </h2>
         <div v-else class="mx-2 my-3 h-px bg-border" role="separator" />
         <ul class="grid gap-0.5">

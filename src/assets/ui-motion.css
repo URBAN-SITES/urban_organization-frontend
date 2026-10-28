@@ -151,3 +151,32 @@
   --border-radius: var(--radius-card);
   font-family: var(--font-sans);
 }
+
+/* entrada de itens de dashboard: sobem um pouco e aparecem (stagger via animation-delay) */
+@keyframes ui-rise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--motion-distance));
+  }
+}
+.ui-rise {
+  animation: ui-rise var(--dur-slow) var(--ease-out) both;
+}
+
+/* barras de gráfico crescem a partir da base */
+@keyframes ui-grow {
+  from {
+    transform: scaleY(0);
+  }
+}
+@keyframes ui-grow-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+.ui-grow {
+  animation: ui-grow var(--dur-slow) var(--ease-out) both;
+}
+.ui-grow-x {
+  animation: ui-grow-x var(--dur-slow) var(--ease-out) both;
+}

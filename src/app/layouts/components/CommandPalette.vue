@@ -11,7 +11,7 @@ import { accountNav, workspaceNav } from '../navigation'
 
 interface Command {
   id: string
-  group: 'Navegar' | 'Setores' | 'Ações'
+  group: 'Navegar' | 'Projetos' | 'Ações'
   label: string
   icon: Component
   keywords?: string
@@ -45,7 +45,7 @@ const commands = computed<Command[]>(() => [
   })),
   ...sectors.sectors.map((sector) => ({
     id: `sector:${sector.id}`,
-    group: 'Setores' as const,
+    group: 'Projetos' as const,
     label: sector.name,
     icon: SquareKanban,
     keywords: 'setor projeto quadro kanban',
@@ -164,12 +164,12 @@ useEventListener(document, 'keydown', (event: KeyboardEvent) => {
               v-model="query"
               type="text"
               role="combobox"
-              aria-label="Buscar telas, setores e ações"
+              aria-label="Buscar telas, projetos e ações"
               aria-autocomplete="list"
               :aria-expanded="true"
               :aria-controls="listId"
               :aria-activedescendant="results.length ? `${listId}-${activeIndex}` : undefined"
-              placeholder="Buscar telas, setores e ações…"
+              placeholder="Buscar telas, projetos e ações…"
               class="h-12 flex-1 bg-transparent text-14 text-fg outline-none placeholder:text-fg-muted"
               @keydown="onKeydown"
             />
