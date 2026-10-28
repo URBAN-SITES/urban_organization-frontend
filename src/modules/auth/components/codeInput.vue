@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
 
-const props = withDefaults(defineProps<{ length?: number; disabled?: boolean }>(), {
-  length: 6,
-  disabled: false,
-})
+const props = withDefaults(
+  defineProps<{ length?: number; disabled?: boolean; invalid?: boolean }>(),
+  {
+    length: 6,
+    disabled: false,
+  },
+)
 
 const model = defineModel<string>({ default: '' })
 const cells = ref<string[]>(Array.from({ length: props.length }, () => ''))
@@ -71,7 +74,7 @@ onMounted(() => focusCell(cells.value.findIndex((cell) => !cell)))
 </script>
 
 <template>
-  <div class="flex justify-between gap-2.5" role="group" aria-label="Código de verificação">
+  <div class="flex justify-between gap-2" role="group" aria-label="Código de verificação">
     <input
       v-for="(cell, index) in cells"
       :key="index"
@@ -82,7 +85,13 @@ onMounted(() => focusCell(cells.value.findIndex((cell) => !cell)))
       :autocomplete="index === 0 ? 'one-time-code' : 'off'"
       :aria-label="`Dígito ${index + 1}`"
       :disabled="disabled"
-      class="h-15 w-full max-w-13 rounded-lg border border-(--border-default) bg-(--surface) text-center text-[24px] font-semibold text-(--text-primary) outline-none transition-colors focus:border-2 focus:border-(--border-strong) disabled:opacity-60 dark:border-(--border-inverse) dark:bg-black/30 dark:text-(--text-inverse) dark:focus:border-(--text-inverse)"
+      :class="[
+        'h-13 w-full max-w-12 rounded-control border border-border bg-surface-2 text-center font-mono text-24 text-fg',
+        'transition-[border-color] duration-(--dur-fast) ease-out hover:border-border-strong',
+        'focus-visible:border-accent focus-visible:outline-2 focus-visible:outline-accent/40',
+        'disabled:opacity-50 aria-invalid:border-danger',
+      ]"
+      :aria-invalid="invalid || undefined"
       @input="handleInput(index, $event)"
       @keydown="handleKeydown(index, $event)"
       @focus="($event.target as HTMLInputElement).select()"

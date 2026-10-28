@@ -16,6 +16,8 @@ const label = computed(() =>
 )
 const isLoading = ref(true)
 const setupMessage = ref('')
+// sem client id configurado o botão nem aparece (nada de opção que não funciona)
+const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
 const abortController = new AbortController()
 
 function handleCredential(credential: string) {
@@ -23,12 +25,7 @@ function handleCredential(credential: string) {
 }
 
 onMounted(async () => {
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
-  if (!clientId) {
-    setupMessage.value = 'Configure VITE_GOOGLE_CLIENT_ID para habilitar esta opção.'
-    isLoading.value = false
-    return
-  }
+  if (!clientId) return
 
   try {
     if (buttonContainer.value) {
@@ -54,19 +51,19 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="w-full">
+  <div v-if="clientId" class="w-full">
     <!-- Visual próprio, igual aos outros botões; o botão oficial do Google fica
          invisível por cima, ampliado para cobrir a área toda, e recebe o clique. -->
     <div
       :class="[
-        'google-button group relative flex h-13.5 w-full items-center justify-center gap-3 overflow-hidden rounded-lg border border-(--border-default) bg-(--surface) text-[16px] font-medium text-(--text-primary) transition-all duration-300 ease-out dark:border-(--border-inverse) dark:bg-(--surface-inverse) dark:text-(--text-inverse)',
+        'group relative flex h-11 w-full items-center justify-center gap-2.5 overflow-hidden rounded-control border border-border bg-surface-1 text-14 font-medium text-fg',
+        'transition-[background-color,border-color] duration-(--dur-fast) ease-out',
         setupMessage || isLoading
           ? 'opacity-60'
-          : 'hover:-translate-y-0.5 hover:border-(--border-strong) focus-within:border-(--border-strong) active:translate-y-0 active:scale-[0.98] dark:hover:border-(--text-inverse-muted)',
-        isLoading ? 'animate-pulse' : '',
+          : 'hover:border-border-strong hover:bg-surface-2 focus-within:outline-2 focus-within:outline-accent',
       ]"
     >
-      <svg class="size-5 shrink-0" viewBox="0 0 48 48" aria-hidden="true">
+      <svg class="size-4 shrink-0" viewBox="0 0 48 48" aria-hidden="true">
         <path
           fill="#FFC107"
           d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"
@@ -93,7 +90,7 @@ onBeforeUnmount(() => {
       ></div>
     </div>
 
-    <p v-if="setupMessage" class="mt-2 text-center text-[12px] leading-4.5 text-(--text-muted)">
+    <p v-if="setupMessage" class="mt-2 text-center text-12 text-danger" role="alert">
       {{ setupMessage }}
     </p>
   </div>

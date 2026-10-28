@@ -1,54 +1,37 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { Lock } from '@lucide/vue'
+import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
+import { UiButton, UiInput } from '@/shared/components'
+import { AuthHeading, PasswordStrength } from '../components'
 import { useAuthNavigation } from '../composables'
-import { BaseButton } from '@/shared/components'
-import { AuthCardLayout, AuthField } from '../components'
 import { confirmPasswordReset } from '../services'
 import { useAuthFlowStore, useAuthStore } from '../stores'
-
-const STRENGTH_LABELS = [
-  'Senha muito fraca',
-  'Senha fraca',
-  'Senha média',
-  'Senha forte',
-  'Senha muito forte',
-]
+import { passwordProblem } from '../utils'
 
 const router = useRouter()
 const navigation = useAuthNavigation()
 const authFlow = useAuthFlowStore()
+const auth = useAuthStore()
 const password = ref('')
 const confirmation = ref('')
+const errors = reactive({ password: '', confirmation: '' })
+const formError = ref('')
 const isSubmitting = ref(false)
-const errorMessage = ref('')
 
-if (!authFlow.email || !authFlow.resetCode) {
-  router.replace(navigation.to('ForgotPassword'))
+if (!authFlow.email || !authFlow.resetCode) router.replace(navigation.to('ForgotPassword'))
+
+function validate() {
+  errors.password = passwordProblem(password.value)
+  errors.confirmation = password.value === confirmation.value ? '' : 'As senhas não coincidem.'
+  return !errors.password && !errors.confirmation
 }
 
-const strength = computed(() => {
-  const value = password.value
-  if (!value) return 0
-  return [
-    value.length >= 9,
-    /[a-zA-Z]/.test(value) && /\d/.test(value),
-    /[^a-zA-Z\d]/.test(value),
-    value.length >= 12,
-  ].filter(Boolean).length
-})
-
 async function handleSubmit() {
-  errorMessage.value = ''
-
-  if (password.value !== confirmation.value) {
-    errorMessage.value = 'As senhas não coincidem.'
-    return
-  }
-
+  formError.value = ''
+  if (!validate()) return
   isSubmitting.value = true
-
   try {
     await confirmPasswordReset({
       email: authFlow.email,
@@ -56,13 +39,12 @@ async function handleSubmit() {
       new_password: password.value,
     })
     authFlow.clear()
-    useAuthStore().user = null
-    useAuthStore().sessions = []
-    toast.success('Senha redefinida! Entre com a nova senha.')
+    auth.user = null
+    auth.sessions = []
+    toast.success('Senha redefinida. Entre com a nova senha.')
     await router.push(navigation.to('Login'))
   } catch (error) {
-    errorMessage.value =
-      error instanceof Error ? error.message : 'Não foi possível redefinir a senha.'
+    formError.value = error instanceof Error ? error.message : 'Não foi possível redefinir a senha.'
   } finally {
     isSubmitting.value = false
   }
@@ -71,67 +53,58 @@ async function handleSubmit() {
 
 <template>
   <section>
-    <AuthCardLayout icon="shield" title="Defina uma nova senha">
-      <template #description>
-        Use pelo menos 9 caracteres, combinando letras, números e símbolos.
-      </template>
+    <AuthHeading
+      title="Defina uma nova senha"
+      description="Use pelo menos 9 caracteres, combinando letras, números e símbolos."
+    />
 
-      <form class="flex flex-col gap-5" @submit.prevent="handleSubmit">
-        <AuthField
+    <form class="flex flex-col gap-4" novalidate @submit.prevent="handleSubmit">
+      <div class="flex flex-col gap-2">
+        <UiInput
           id="reset-password"
           v-model="password"
           label="Nova senha"
-          icon="lock"
           type="password"
+          size="lg"
+          :icon="Lock"
+          :error="errors.password"
           name="new-password"
           autocomplete="new-password"
-          placeholder="••••••••"
-          minlength="9"
-          required
-        >
-          <template #after>
-            <div class="mt-4 grid grid-cols-4 gap-1.5" aria-hidden="true">
-              <span
-                v-for="bar in 4"
-                :key="bar"
-                :class="[
-                  'h-1 rounded-full transition-colors',
-                  bar <= strength
-                    ? 'bg-(--surface-inverse) dark:bg-(--text-inverse)'
-                    : 'bg-(--bg-muted) dark:bg-(--border-inverse)',
-                ]"
-              ></span>
-            </div>
-            <p
-              class="mt-2 text-[12px] leading-4 text-(--text-secondary) dark:text-(--text-inverse-muted)"
-              aria-live="polite"
-            >
-              {{ password ? STRENGTH_LABELS[strength] : 'Força da senha' }}
-            </p>
-          </template>
-        </AuthField>
-
-        <AuthField
-          id="reset-password-confirmation"
-          v-model="confirmation"
-          label="Confirmar nova senha"
-          icon="lock"
-          type="password"
-          name="new-password-confirmation"
-          autocomplete="new-password"
-          placeholder="••••••••"
-          required
+          placeholder="Nova senha"
         />
+        <PasswordStrength :password="password" />
+      </div>
+      <UiInput
+        id="reset-password-confirmation"
+        v-model="confirmation"
+        label="Confirmar nova senha"
+        type="password"
+        size="lg"
+        :icon="Lock"
+        :error="errors.confirmation"
+        name="new-password-confirmation"
+        autocomplete="new-password"
+        placeholder="Repita a senha"
+      />
 
-        <p v-if="errorMessage" role="alert" class="auth-error">{{ errorMessage }}</p>
+      <p
+        v-if="formError"
+        role="alert"
+        class="rounded-control bg-danger-soft px-3 py-2.5 text-13 text-danger"
+      >
+        {{ formError }}
+      </p>
 
-        <BaseButton
-          type="submit"
-          label="Redefinir senha"
-          :loading="isSubmitting"
-          class="auth-submit"
-        />
-      </form>
-    </AuthCardLayout>
+      <UiButton
+        type="submit"
+        variant="primary"
+        size="xl"
+        block
+        :loading="isSubmitting"
+        class="mt-2"
+      >
+        Redefinir senha
+      </UiButton>
+    </form>
   </section>
 </template>

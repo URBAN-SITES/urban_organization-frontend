@@ -40,12 +40,12 @@ const inputId = props.id ?? fallbackId
         class="pointer-events-none absolute text-accent-fg opacity-0 peer-indeterminate:opacity-100"
       />
     </span>
-    <span v-if="label || description" class="flex flex-col">
+    <span v-if="label || description || $slots.label" class="flex flex-col">
       <label
         :for="inputId"
         :class="['text-14 text-fg', disabled ? 'opacity-50' : 'cursor-pointer']"
       >
-        {{ label }}
+        <slot name="label">{{ label }}</slot>
       </label>
       <span v-if="description" :id="`${inputId}-desc`" class="text-13 text-fg-muted">
         {{ description }}

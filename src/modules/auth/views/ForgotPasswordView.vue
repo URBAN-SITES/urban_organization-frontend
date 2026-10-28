@@ -1,31 +1,34 @@
 <script setup lang="ts">
+import { ArrowLeft, Mail } from '@lucide/vue'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { UiButton, UiInput } from '@/shared/components'
+import { AuthHeading } from '../components'
 import { useAuthNavigation } from '../composables'
-import { BaseButton } from '@/shared/components'
-import { AuthAside, AuthField, AuthSplitLayout } from '../components'
 import { requestPasswordReset } from '../services'
 import { useAuthFlowStore, useAuthStore } from '../stores'
+import { emailProblem } from '../utils'
 
 const router = useRouter()
 const navigation = useAuthNavigation()
 const authFlow = useAuthFlowStore()
 const email = ref(useAuthStore().user?.email || authFlow.email)
+const emailError = ref('')
+const formError = ref('')
 const isSubmitting = ref(false)
-const errorMessage = ref('')
 
 async function handleSubmit() {
-  errorMessage.value = ''
+  formError.value = ''
+  emailError.value = emailProblem(email.value)
+  if (emailError.value) return
   isSubmitting.value = true
-
   try {
     const normalizedEmail = email.value.trim()
     await requestPasswordReset({ email: normalizedEmail })
     authFlow.startPasswordReset(normalizedEmail)
     await router.push(navigation.to('ResetCode'))
   } catch (error) {
-    errorMessage.value =
-      error instanceof Error ? error.message : 'Não foi possível enviar o código.'
+    formError.value = error instanceof Error ? error.message : 'Não foi possível enviar o código.'
   } finally {
     isSubmitting.value = false
   }
@@ -33,41 +36,52 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <section class="grid lg:grid-cols-[minmax(0,1fr)_36vw]">
-    <AuthSplitLayout>
-      <h1 class="text-[38px]! leading-11.5! tracking-[-0.03em]!">Esqueceu sua senha?</h1>
-      <p class="mt-2 text-[16px] text-(--text-secondary) dark:text-(--text-inverse-muted)">
-        Sem problemas. Informe seu e-mail e enviaremos um código para você criar uma nova senha.
+  <section>
+    <AuthHeading
+      title="Esqueceu sua senha?"
+      description="Informe seu e-mail e enviaremos um código para você criar uma nova senha."
+    />
+
+    <form class="flex flex-col gap-4" novalidate @submit.prevent="handleSubmit">
+      <UiInput
+        id="forgot-email"
+        v-model="email"
+        label="E-mail"
+        type="email"
+        size="lg"
+        :icon="Mail"
+        :error="emailError"
+        name="email"
+        autocomplete="email"
+        placeholder="voce@email.com"
+      />
+
+      <p
+        v-if="formError"
+        role="alert"
+        class="rounded-control bg-danger-soft px-3 py-2.5 text-13 text-danger"
+      >
+        {{ formError }}
       </p>
 
-      <form class="mt-8 flex flex-col gap-5" @submit.prevent="handleSubmit">
-        <AuthField
-          id="forgot-email"
-          v-model="email"
-          label="E-mail"
-          icon="mail"
-          type="email"
-          name="email"
-          autocomplete="email"
-          placeholder="voce@email.com"
-          required
-        />
+      <UiButton
+        type="submit"
+        variant="primary"
+        size="xl"
+        block
+        :loading="isSubmitting"
+        class="mt-2"
+      >
+        Enviar código
+      </UiButton>
+    </form>
 
-        <p v-if="errorMessage" role="alert" class="auth-error">{{ errorMessage }}</p>
-
-        <BaseButton
-          type="submit"
-          label="Enviar código"
-          :loading="isSubmitting"
-          class="auth-submit"
-        />
-      </form>
-
-      <p class="mt-8 text-[15px] text-(--text-secondary) dark:text-(--text-inverse-muted)">
-        Lembrou sua senha?
-        <RouterLink :to="navigation.to('Login')" class="auth-link">Voltar para o login</RouterLink>
-      </p>
-    </AuthSplitLayout>
-    <AuthAside />
+    <RouterLink
+      :to="navigation.to('Login')"
+      class="mt-8 inline-flex items-center gap-1.5 rounded-[4px] text-14 text-fg-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-accent"
+    >
+      <ArrowLeft :size="16" aria-hidden="true" />
+      Voltar para o login
+    </RouterLink>
   </section>
 </template>
