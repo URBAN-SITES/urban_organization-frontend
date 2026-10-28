@@ -1,9 +1,18 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { ArrowRight, Building2, FolderPlus, ImageUp, Mail, Plus, X } from '@lucide/vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getErrorMessage } from '@/app/plugins/axios'
-import { BaseButton } from '@/shared/components'
-import { AuthField } from '@/modules/auth'
+import {
+  UiBadge,
+  UiButton,
+  UiCheckbox,
+  UiChip,
+  UiErrorState,
+  UiInput,
+  UiSelect,
+  UiSkeleton,
+} from '@/shared/components'
 import { createInvitation, type InviteRole } from '@/modules/invitations'
 import OnboardingLayout from '../components/onboardingLayout.vue'
 import OrganizationLocationPicker from '../components/organizationLocationPicker.vue'
@@ -44,6 +53,15 @@ const role = ref<InviteRole>('member')
 const loading = ref(false)
 const saving = ref(false)
 const error = ref('')
+const fieldErrors = reactive({ name: '', slug: '', teamSize: '' })
+const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
+const TEAM_SIZES = [
+  { value: '1', label: 'Só eu' },
+  { value: '2-10', label: '2 a 10 pessoas' },
+  { value: '11-50', label: '11 a 50 pessoas' },
+  { value: '51-200', label: '51 a 200 pessoas' },
+  { value: '201+', label: 'Mais de 200 pessoas' },
+]
 const failures = ref<{ email: string; message: string }[]>([])
 const organizationId = computed(() =>
   typeof route.params.organizationId === 'string' ? route.params.organizationId : '',
@@ -73,8 +91,20 @@ function chooseLogo(event: Event) {
   }
   logo.value = file
 }
+function validateOrganization() {
+  fieldErrors.name = name.value.trim() ? '' : 'Dê um nome para a organização.'
+  fieldErrors.slug =
+    !slug.value && !name.value.trim()
+      ? ''
+      : SLUG_PATTERN.test(slug.value)
+        ? ''
+        : 'Use letras minúsculas, números e hífens, como norte-studio.'
+  fieldErrors.teamSize = teamSize.value ? '' : 'Escolha o tamanho da equipe.'
+  return !fieldErrors.name && !fieldErrors.slug && !fieldErrors.teamSize
+}
 async function create() {
-  if (saving.value || !name.value.trim() || !locationReady.value) return
+  if (saving.value || !locationReady.value) return
+  if (!createdId.value && !validateOrganization()) return
   saving.value = true
   error.value = ''
   try {
@@ -138,7 +168,7 @@ async function saveSectors() {
   } catch (cause) {
     error.value = getErrorMessage(
       cause,
-      'Não foi possível criar os setores. Os setores já criados foram mantidos.',
+      'Não foi possível criar os projetos. Os que já foram criados continuam salvos.',
     )
   } finally {
     saving.value = false
@@ -147,7 +177,7 @@ async function saveSectors() {
 function addEmails(): boolean {
   const additions = parseInvitationEmails(draftEmail.value)
   if (additions.some((email) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) {
-    error.value = 'Confira os e-mails antes de continuar.'
+    error.value = 'Algum e-mail está incorreto. Confira antes de continuar.'
     return false
   }
   emails.value = parseInvitationEmails([...emails.value, ...additions].join(','))
@@ -158,7 +188,7 @@ function addEmails(): boolean {
 async function sendInvitations() {
   if (saving.value || !organization.value || !addEmails()) return
   if (!remaining.value.length) {
-    error.value = 'Adicione um e-mail ou escolha pular por agora.'
+    error.value = 'Adicione pelo menos um e-mail ou pule esta etapa.'
     return
   }
   saving.value = true
@@ -231,240 +261,309 @@ watch(name, (value) => {
 <template>
   <OnboardingLayout
     :step="step"
-    :steps="['Organização', 'Setores', 'Equipe']"
+    :steps="['Organização', 'Projetos', 'Equipe']"
     :title="
       step === 1
         ? 'Sobre sua organização'
         : step === 2
-          ? 'Organize seus setores'
+          ? 'Crie seus primeiros projetos'
           : 'Convide sua equipe'
     "
     :description="
       step === 1
         ? 'Essas informações aparecem para todos os membros.'
         : step === 2
-          ? 'Agrupe os boards por área. Você pode criar outros setores depois.'
-          : 'Cada pessoa recebe um e-mail com o convite. Você pode mudar os papéis depois.'
+          ? 'Cada projeto tem o próprio quadro de tarefas. Você pode criar outros depois.'
+          : 'Cada pessoa recebe um convite por e-mail. Os papéis podem mudar depois.'
     "
   >
-    <form v-if="step === 1" class="onboarding-form" @submit.prevent="create">
-      <AuthField
+    <form v-if="step === 1" class="flex flex-col gap-5" novalidate @submit.prevent="create">
+      <UiInput
         id="organization-name"
         v-model="name"
         label="Nome da organização"
-        icon="domain"
+        size="lg"
+        :icon="Building2"
+        :error="fieldErrors.name"
         name="organization-name"
         maxlength="255"
-        required
         placeholder="Norte Studio"
         :disabled="saving || !!createdId"
       />
-      <label class="onboarding-field"
-        >Endereço do workspace<span class="onboarding-address"
-          ><span>{{ workspacePrefix }}</span
-          ><input
-            v-model="slug"
-            name="organization-slug"
-            required
-            maxlength="63"
-            pattern="[a-z0-9]+(-[a-z0-9]+)*"
-            :disabled="saving || !!createdId"
-            placeholder="norte-studio"
-            @input="slugEdited = true" /></span
-      ></label>
-      <label class="onboarding-field"
-        >Tamanho da equipe<span class="onboarding-select"
-          ><select v-model="teamSize" required :disabled="saving || !!createdId">
-            <option value="" disabled>Selecione o tamanho</option>
-            <option value="1">Só eu</option>
-            <option value="2-10">2 a 10 pessoas</option>
-            <option value="11-50">11 a 50 pessoas</option>
-            <option value="51-200">51 a 200 pessoas</option>
-            <option value="201+">Mais de 200 pessoas</option></select
-          ><img src="/figma/onboarding-select.svg" alt="" width="15" height="15" /></span
-      ></label>
-      <label class="onboarding-field"
-        ><span>Logo <span class="onboarding-optional">(opcional)</span></span
-        ><span class="onboarding-upload"
-          ><img src="/figma/onboarding-upload.svg" alt="" width="20" height="20" /><span>{{
-            logo?.name || 'PNG ou SVG, até 2 MB'
-          }}</span
-          ><input
+      <UiInput
+        id="organization-slug"
+        v-model="slug"
+        label="Endereço do workspace"
+        size="lg"
+        :hint="`${workspacePrefix}${slug || 'norte-studio'}`"
+        :error="fieldErrors.slug"
+        name="organization-slug"
+        maxlength="63"
+        placeholder="norte-studio"
+        :disabled="saving || !!createdId"
+        @input="slugEdited = true"
+      />
+      <UiSelect
+        id="organization-team-size"
+        v-model="teamSize"
+        label="Tamanho da equipe"
+        size="lg"
+        placeholder="Selecione o tamanho"
+        :options="TEAM_SIZES"
+        :error="fieldErrors.teamSize"
+        :disabled="saving || !!createdId"
+      />
+
+      <div class="flex flex-col gap-1.5">
+        <span class="text-13 font-medium text-fg">
+          Logo <span class="font-normal text-fg-muted">(opcional)</span>
+        </span>
+        <label
+          :class="[
+            'flex h-11 cursor-pointer items-center gap-2.5 rounded-control border border-dashed border-border-strong px-3.5 text-14 text-fg-muted',
+            'transition-colors duration-(--dur-fast) ease-out hover:bg-surface-2 hover:text-fg',
+            'focus-within:outline-2 focus-within:outline-accent',
+            saving || createdId ? 'pointer-events-none opacity-50' : '',
+          ]"
+        >
+          <ImageUp :size="16" aria-hidden="true" />
+          <span class="truncate">{{ logo?.name || 'Escolher PNG ou SVG, até 2 MB' }}</span>
+          <input
             type="file"
             name="organization-logo"
             accept="image/png,image/svg+xml"
+            class="sr-only"
             :disabled="saving || !!createdId"
-            @change="chooseLogo" /></span
-      ></label>
+            @change="chooseLogo"
+          />
+        </label>
+      </div>
+
       <OrganizationLocationPicker
         v-model="location"
         :disabled="saving || !!createdId"
         @ready="locationReady = $event"
       />
-      <p v-if="error" class="onboarding-error" role="alert">{{ error }}</p>
-      <BaseButton
+
+      <p
+        v-if="error"
+        role="alert"
+        class="rounded-control bg-danger-soft px-3 py-2.5 text-13 text-danger"
+      >
+        {{ error }}
+      </p>
+      <UiButton
         type="submit"
-        :label="saving ? 'Criando organização…' : 'Continuar'"
-        :disabled="saving || !name.trim() || !locationReady"
-        class="onboarding-submit"
-        ><template #after
-          ><img
-            src="/figma/onboarding-arrow.svg"
-            width="18"
-            height="18"
-            alt=""
-            class="onboarding-mobile-icon" /></template
-      ></BaseButton>
+        variant="primary"
+        size="xl"
+        block
+        :icon-right="ArrowRight"
+        :loading="saving"
+        :disabled="!locationReady"
+        class="mt-2"
+      >
+        Continuar
+      </UiButton>
     </form>
-    <p v-else-if="loading" role="status">Carregando organização…</p>
+
+    <div v-else-if="loading" class="flex flex-col gap-3" role="status" aria-label="Carregando">
+      <UiSkeleton class="h-8 w-2/3" />
+      <UiSkeleton class="h-11" />
+      <UiSkeleton class="h-11" />
+    </div>
+
     <form
       v-else-if="organization && step === 2"
-      class="onboarding-form"
+      class="flex flex-col gap-5"
       @submit.prevent="saveSectors"
     >
-      <fieldset class="onboarding-sector-picker">
-        <legend>Setores</legend>
-        <button
-          v-for="choice in sectorChoices"
-          :key="choice"
-          type="button"
-          :aria-pressed="sectorNames.includes(choice)"
-          :disabled="saving"
-          @click="toggleSector(choice)"
-        >
-          <img
-            v-if="sectorNames.includes(choice)"
-            src="/figma/onboarding-check.svg"
-            alt=""
-            width="13"
-            height="13"
-          />{{ choice }}
-        </button>
+      <fieldset>
+        <legend class="mb-2 text-13 font-medium text-fg">Sugestões</legend>
+        <div class="flex flex-wrap gap-2">
+          <UiChip
+            v-for="choice in sectorChoices"
+            :key="choice"
+            :pressed="sectorNames.includes(choice)"
+            :disabled="saving"
+            @click="toggleSector(choice)"
+          >
+            {{ choice }}
+          </UiChip>
+        </div>
       </fieldset>
-      <AuthField
-        id="new-sector"
-        v-model="newSector"
-        label="Novo setor"
-        icon="workspaces"
-        name="new-sector"
-        maxlength="255"
-        placeholder="Ex.: Atendimento"
-        :disabled="saving"
-        @keydown.enter.prevent="addSector"
-      />
-      <button
-        type="button"
-        class="onboarding-skip"
-        :disabled="saving || !newSector.trim()"
-        @click="addSector"
+      <div class="flex items-end gap-2">
+        <UiInput
+          id="new-sector"
+          v-model="newSector"
+          label="Outro projeto"
+          size="lg"
+          :icon="FolderPlus"
+          name="new-sector"
+          maxlength="255"
+          placeholder="Ex.: Atendimento"
+          :disabled="saving"
+          class="flex-1"
+          @keydown.enter.prevent="addSector"
+        />
+        <UiButton size="xl" :icon="Plus" :disabled="saving || !newSector.trim()" @click="addSector">
+          Adicionar
+        </UiButton>
+      </div>
+      <p class="text-13 text-fg-muted">
+        {{
+          sectorNames.length
+            ? `${sectorNames.length} projeto${sectorNames.length === 1 ? '' : 's'} selecionado${sectorNames.length === 1 ? '' : 's'}.`
+            : 'Nenhum projeto selecionado. Você pode pular e criar depois.'
+        }}
+      </p>
+
+      <p
+        v-if="error"
+        role="alert"
+        class="rounded-control bg-danger-soft px-3 py-2.5 text-13 text-danger"
       >
-        + Adicionar setor
-      </button>
-      <p v-if="error" class="onboarding-error" role="alert">{{ error }}</p>
-      <BaseButton
+        {{ error }}
+      </p>
+      <UiButton
         type="submit"
-        :label="saving ? 'Criando setores…' : 'Continuar'"
-        :disabled="saving"
-        class="onboarding-submit"
-        ><template #after
-          ><img
-            src="/figma/onboarding-arrow.svg"
-            width="18"
-            height="18"
-            alt=""
-            class="onboarding-mobile-icon" /></template
-      ></BaseButton>
+        variant="primary"
+        size="xl"
+        block
+        :icon-right="ArrowRight"
+        :loading="saving"
+        class="mt-2"
+      >
+        Continuar
+      </UiButton>
       <RouterLink
         v-if="!saving"
         :to="{ name: 'OrganizationOnboardingTeam', params: { organizationId } }"
-        class="onboarding-skip"
-        >Pular por agora</RouterLink
+        class="self-center rounded-[4px] text-14 text-fg-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-accent"
       >
+        Pular por agora
+      </RouterLink>
     </form>
-    <form v-else-if="organization" class="onboarding-form" @submit.prevent="sendInvitations">
-      <label class="onboarding-field"
-        >E-mails<span class="onboarding-email-tags"
-          ><img
-            v-if="!emails.length"
-            src="/figma/onboarding-mail.svg"
-            width="18"
-            height="18"
-            alt=""
-            class="onboarding-mobile-icon" /><span
+
+    <form
+      v-else-if="organization"
+      class="flex flex-col gap-5"
+      novalidate
+      @submit.prevent="sendInvitations"
+    >
+      <div class="flex flex-col gap-1.5">
+        <label for="invitation-emails" class="text-13 font-medium text-fg">E-mails</label>
+        <div
+          class="flex min-h-11 flex-wrap items-center gap-1.5 rounded-control border border-border bg-surface-2 px-2.5 py-1.5 transition-colors duration-(--dur-fast) ease-out focus-within:border-accent hover:border-border-strong"
+        >
+          <Mail v-if="!emails.length" :size="16" class="ml-1 text-fg-muted" aria-hidden="true" />
+          <UiBadge
             v-for="email in emails"
             :key="email"
-            class="onboarding-email-tag"
-            >{{ email
-            }}<button
+            :tone="wasSent(email) ? 'success' : 'neutral'"
+          >
+            {{ email }}
+            <button
               v-if="!wasSent(email)"
               type="button"
               :aria-label="`Remover ${email}`"
               :disabled="saving"
+              class="-mr-0.5 grid size-4 cursor-pointer place-items-center rounded-[3px] hover:bg-surface-3"
               @click="emails = emails.filter((value) => value !== email)"
             >
-              ×
-            </button></span
-          ><input
+              <X :size="12" aria-hidden="true" />
+            </button>
+          </UiBadge>
+          <input
+            id="invitation-emails"
             v-model="draftEmail"
             name="invitation-emails"
-            placeholder="Digite e-mails separados por vírgula"
+            aria-describedby="invitation-emails-hint"
+            placeholder="nome@empresa.com"
             :disabled="saving"
+            class="h-7 min-w-40 flex-1 bg-transparent px-1 text-14 text-fg outline-none placeholder:text-fg-muted"
             @keydown.enter.prevent="addEmails"
-            @blur="addEmails" /></span
-      ></label>
-      <label class="onboarding-field"
-        >Papel inicial<span class="onboarding-select"
-          ><select v-model="role" :disabled="saving">
-            <option value="member">Membro</option>
-            <option value="viewer">Leitor</option>
-            <option v-if="organization.current_role === 'owner'" value="admin">
-              Administrador
-            </option></select
-          ><img src="/figma/onboarding-select.svg" alt="" width="15" height="15" /></span
-      ></label>
-      <fieldset v-if="sectors.length" class="onboarding-sector-picker">
-        <legend>Setores</legend>
-        <label v-for="sector in sectors" :key="sector.id"
-          ><input
-            v-model="selectedSectorIds"
-            type="checkbox"
-            :value="sector.id"
-            :disabled="saving"
-          />{{ sector.name }}</label
-        >
-      </fieldset>
-      <p v-for="email in sent" :key="email" class="onboarding-result">
-        {{ email }} · Convite enviado
-      </p>
-      <p v-if="error" class="onboarding-error" role="alert">{{ error }}</p>
-      <p v-for="failure in failures" :key="failure.email" class="onboarding-error" role="alert">
-        {{ failure.email }}: {{ failure.message }}
-      </p>
-      <div class="onboarding-actions">
-        <BaseButton
-          type="submit"
-          :label="
-            saving
-              ? 'Enviando convites…'
-              : `Enviar ${remaining.length || ''} convite${remaining.length === 1 ? '' : 's'} e concluir`
-          "
-          :disabled="saving"
-          class="onboarding-submit"
-          ><template #after
-            ><img
-              src="/figma/onboarding-arrow.svg"
-              width="18"
-              height="18"
-              alt=""
-              class="onboarding-mobile-icon" /></template></BaseButton
-        ><RouterLink v-if="!saving" :to="membersTarget">{{
-          sent.length ? 'Abrir organização' : 'Pular por agora'
-        }}</RouterLink>
+            @blur="draftEmail && addEmails()"
+          />
+        </div>
+        <p id="invitation-emails-hint" class="text-12 text-fg-muted">
+          Separe por vírgula ou pressione Enter.
+        </p>
       </div>
+
+      <UiSelect
+        id="invitation-role"
+        v-model="role"
+        label="Papel inicial"
+        size="lg"
+        :options="[
+          { value: 'member', label: 'Membro: cria e edita tarefas' },
+          { value: 'viewer', label: 'Leitor: só visualiza' },
+          ...(organization.current_role === 'owner'
+            ? [{ value: 'admin', label: 'Administrador: gerencia a organização' }]
+            : []),
+        ]"
+        :disabled="saving"
+      />
+
+      <fieldset v-if="sectors.length">
+        <legend class="mb-2 text-13 font-medium text-fg">Acesso aos projetos</legend>
+        <div class="grid gap-2 sm:grid-cols-2">
+          <UiCheckbox
+            v-for="sector in sectors"
+            :key="sector.id"
+            :model-value="selectedSectorIds.includes(sector.id)"
+            :label="sector.name"
+            :disabled="saving"
+            @update:model-value="
+              selectedSectorIds = $event
+                ? [...selectedSectorIds, sector.id]
+                : selectedSectorIds.filter((id) => id !== sector.id)
+            "
+          />
+        </div>
+      </fieldset>
+
+      <p
+        v-if="error"
+        role="alert"
+        class="rounded-control bg-danger-soft px-3 py-2.5 text-13 text-danger"
+      >
+        {{ error }}
+      </p>
+      <ul v-if="failures.length" class="flex flex-col gap-1.5" role="alert">
+        <li
+          v-for="failure in failures"
+          :key="failure.email"
+          class="rounded-control bg-danger-soft px-3 py-2 text-13 text-danger"
+        >
+          {{ failure.email }}: {{ failure.message }}
+        </li>
+      </ul>
+
+      <UiButton
+        type="submit"
+        variant="primary"
+        size="xl"
+        block
+        :icon-right="ArrowRight"
+        :loading="saving"
+        class="mt-2"
+      >
+        {{
+          remaining.length
+            ? `Enviar ${remaining.length} convite${remaining.length === 1 ? '' : 's'} e concluir`
+            : 'Enviar convites e concluir'
+        }}
+      </UiButton>
+      <RouterLink
+        v-if="!saving"
+        :to="membersTarget"
+        class="self-center rounded-[4px] text-14 text-fg-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-accent"
+      >
+        {{ sent.length ? 'Abrir organização' : 'Pular por agora' }}
+      </RouterLink>
     </form>
-    <div v-else>
-      <p class="onboarding-error" role="alert">{{ error }}</p>
-      <button type="button" @click="loadOrganization">Tentar novamente</button>
-    </div>
+
+    <UiErrorState v-else :description="error" @retry="loadOrganization" />
   </OnboardingLayout>
 </template>

@@ -25,19 +25,19 @@ const inputId = props.id ?? fallbackId
         :disabled="disabled"
         :indeterminate="indeterminate"
         :aria-describedby="description ? `${inputId}-desc` : undefined"
-        class="peer size-4 cursor-pointer appearance-none rounded-[4px] border border-border-strong bg-surface-1 transition-colors duration-(--dur-fast) ease-out checked:border-accent checked:bg-accent indeterminate:border-accent indeterminate:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50"
+        class="peer size-4 cursor-pointer appearance-none rounded-[4px] border border-border-strong bg-surface-1 transition-colors duration-(--dur-fast) ease-out checked:border-fg checked:bg-fg indeterminate:border-fg indeterminate:bg-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50"
       />
       <Check
         :size="12"
         :stroke-width="3"
         aria-hidden="true"
-        class="pointer-events-none absolute scale-50 text-accent-fg opacity-0 transition-[opacity,scale] duration-(--dur-fast) ease-out peer-checked:scale-100 peer-checked:opacity-100 peer-indeterminate:opacity-0"
+        class="pointer-events-none absolute scale-50 text-bg opacity-0 transition-[opacity,scale] duration-(--dur-fast) ease-out peer-checked:scale-100 peer-checked:opacity-100 peer-indeterminate:opacity-0"
       />
       <Minus
         :size="12"
         :stroke-width="3"
         aria-hidden="true"
-        class="pointer-events-none absolute text-accent-fg opacity-0 peer-indeterminate:opacity-100"
+        class="pointer-events-none absolute text-bg opacity-0 peer-indeterminate:opacity-100"
       />
     </span>
     <span v-if="label || description || $slots.label" class="flex flex-col">
