@@ -103,7 +103,8 @@ test('paying sends the Pix data to the charge and an idempotency key', async () 
   const result = await store.pay(charge, body)
   assert.equal(calls[0]?.url, '/campaigns/charge-1/contributions/')
   assert.deepEqual(calls[0]?.body, body)
-  assert.ok((calls[0]?.config as { headers: Record<string, string> }).headers['Idempotency-Key'])
+  const config = calls[0]?.config as { headers: Record<string, string> } | undefined
+  assert.ok(config?.headers['Idempotency-Key'])
   assert.equal(result.contribution_id, 'c-1')
 })
 

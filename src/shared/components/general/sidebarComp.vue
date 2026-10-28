@@ -49,7 +49,7 @@ const organizationItems = computed<MenuItem[]>(() => [
     icon: 'groups',
     label: 'Equipe',
     // a gestão de membros é uma tela à parte, aberta pela própria Equipe
-    also: [...(current.value ? [`/organizacoes/${current.value.id}/membros`] : [])],
+    also: current.value ? [`/organizacoes/${current.value.id}/membros`] : [],
   },
   { link: '/arquivos', icon: 'folder', label: 'Arquivos' },
   { link: '/relatorios', icon: 'bar_chart', label: 'Relatórios' },
