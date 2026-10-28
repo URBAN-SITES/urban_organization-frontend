@@ -75,7 +75,7 @@ onMounted(async () => {
     const user = await auth.loadUser()
     if (!user) {
       await router.replace({ name: 'Login', query: { redirect: route.fullPath } })
-    } else if (!user.is_subscriber) {
+    } else if (!(user.has_assistant_access ?? user.is_subscriber)) {
       await router.replace({ name: 'Plans' })
     } else if (!organizations.organizations.length) {
       // Only context for the assistant; it still works (and asks) without it.

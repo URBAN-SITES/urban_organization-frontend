@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { beforeEach, test } from 'node:test'
 import { registerHooks } from 'node:module'
 
-type TestUser = { is_subscriber: boolean } | null
+type TestUser = { is_subscriber: boolean; has_assistant_access?: boolean } | null
 const auth = {
   user: null as TestUser,
   async loadUser(): Promise<TestUser> {
@@ -58,5 +58,10 @@ test('authenticated free users are redirected to plans', async () => {
 
 test('only authenticated subscribers enter the assistant', async () => {
   auth.user = { is_subscriber: true }
+  assert.equal(await guard(), true)
+})
+
+test('temporary access granted by the server enters without a subscription', async () => {
+  auth.user = { is_subscriber: false, has_assistant_access: true }
   assert.equal(await guard(), true)
 })
