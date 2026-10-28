@@ -17,7 +17,19 @@ import { teamsRoutes } from '@/modules/teams/router'
 
 import { uploadsRoutes } from '@/modules/uploads/router'
 
+// Galeria do sistema de design: não existe no build de produção.
+const devRoutes: RouteRecordRaw[] = import.meta.env.DEV
+  ? [
+      {
+        path: '/_design',
+        name: 'DesignSystem',
+        component: () => import('@/app/design/DesignView.vue'),
+      },
+    ]
+  : []
+
 export const routes: RouteRecordRaw[] = [
+  ...devRoutes,
   ...authRoutes,
   ...calendarRoutes,
   ...chatRoutes,

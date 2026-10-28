@@ -4,7 +4,7 @@ import { Toaster, toast } from 'vue-sonner'
 import { useRoute, useRouter } from 'vue-router'
 import { useTheme } from '@/app/composables/useTheme'
 
-// inicializa o tema salvo em todas as telas, não só onde existe o ThemeSwitcher
+// o tema do Toaster acompanha o tema da aplicação
 const { isDark } = useTheme()
 import { AuthTransitionOverlay, useAuthStore } from '@/modules/auth'
 import { finishGoogleConnect } from '@/modules/calendar_sync'

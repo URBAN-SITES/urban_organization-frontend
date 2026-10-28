@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { X } from '@lucide/vue'
 import { useId, useTemplateRef } from 'vue'
+import { focusableIn } from '@/shared/composables/focusTrap'
 import { useModalLayer } from '@/shared/composables/overlay'
 import UiIconButton from './UiIconButton.vue'
 
@@ -19,6 +20,7 @@ const { size = 'md', dismissible = true } = defineProps<{
 const emit = defineEmits<{ close: [] }>()
 
 const panel = useTemplateRef<HTMLElement>('panel')
+const body = useTemplateRef<HTMLElement>('body')
 const titleId = useId()
 const descriptionId = useId()
 
@@ -28,7 +30,10 @@ function close() {
   emit('close')
 }
 
-useModalLayer(open, panel, close)
+// foco inicial no primeiro campo do conteúdo; o X do cabeçalho fica por último
+useModalLayer(open, panel, close, {
+  initialFocus: () => (body.value ? focusableIn(body.value)[0] : undefined),
+})
 </script>
 
 <template>
@@ -66,7 +71,7 @@ useModalLayer(open, panel, close)
               @click="close"
             />
           </header>
-          <div class="min-h-0 flex-1 overflow-y-auto px-5 pb-5 text-14 text-fg">
+          <div ref="body" class="min-h-0 flex-1 overflow-y-auto px-5 pb-5 text-14 text-fg">
             <slot />
           </div>
           <footer

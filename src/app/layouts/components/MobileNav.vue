@@ -1,39 +1,19 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { LogOut, Menu } from '@lucide/vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/modules/auth'
 import { useChatStore } from '@/modules/chat'
 import { useNotificationsStore } from '@/modules/notifications'
 import { useOrganizationsStore } from '@/modules/organizations'
+import { UiButton, UiDrawer, UiIcon, UiSelect } from '@/shared/components'
+import { accountNav, isNavActive, workspaceNav, type NavItem } from '../navigation'
 
-interface Item {
-  to: string
-  label: string
-  icon: string
-  also?: string[]
-}
+const emit = defineEmits<{ signOut: [] }>()
 
 // As quatro telas do dia a dia ficam na barra; o resto abre em "Mais".
-const tabs: Item[] = [
-  { to: '/', label: 'Início', icon: 'home' },
-  { to: '/calendario', label: 'Calendário', icon: 'calendar_month' },
-  { to: '/chat', label: 'Mensagens', icon: 'chat' },
-  { to: '/equipe', label: 'Equipe', icon: 'groups', also: ['/setores', '/organizacoes'] },
-]
-const more: Item[] = [
-  { to: '/arquivos', label: 'Arquivos', icon: 'folder' },
-  { to: '/relatorios', label: 'Relatórios', icon: 'bar_chart' },
-  { to: '/assistente', label: 'Inceptum AI', icon: 'auto_awesome' },
-  { to: '/mapbox', label: 'Mapa', icon: 'map' },
-  { to: '/notificacoes', label: 'Notificações', icon: 'notifications' },
-  {
-    to: '/faturamento',
-    label: 'Faturamento',
-    icon: 'receipt_long',
-    also: ['/planos', '/pagamentos'],
-  },
-  { to: '/configuracoes', label: 'Configurações', icon: 'settings' },
-]
+const tabs = workspaceNav.slice(0, 4)
+const more: NavItem[] = [...workspaceNav.slice(4), ...accountNav]
 
 const route = useRoute()
 const router = useRouter()
@@ -48,27 +28,25 @@ watch(
   () => (open.value = false),
 )
 
-const startsWith = (path: string, base: string) => path === base || path.startsWith(`${base}/`)
-const isActive = (item: Item) =>
-  [item.to, ...(item.also ?? [])].some((base) => startsWith(route.path, base))
-const moreActive = () => more.some(isActive)
-
-function chooseOrganization(id: string) {
-  organizations.select(id)
-  void router.push('/')
-}
-
-async function signOut() {
-  open.value = false
-  await auth.signOut()
-  await router.push('/entrar')
-}
+const moreActive = computed(() => more.some((item) => isNavActive(item, route.path)))
+const organizationId = computed({
+  get: () => organizations.current?.id ?? '',
+  set: (id: string) => {
+    organizations.select(id)
+    void router.push('/')
+  },
+})
+const organizationOptions = computed(() =>
+  organizations.organizations.map((organization) => ({
+    value: organization.id,
+    label: organization.is_personal ? `${organization.name} (pessoal)` : organization.name,
+  })),
+)
 
 const tabClass = (active: boolean) => [
-  'relative flex flex-1 flex-col items-center gap-[2px] py-[8px] text-[11px] leading-none',
-  active
-    ? 'font-semibold text-(--text-primary) dark:text-(--text-inverse) after:absolute after:bottom-[2px] after:left-1/2 after:h-[3px] after:w-6 after:-translate-x-1/2 after:rounded-full after:bg-(--bg-orange)'
-    : 'text-(--text-muted)',
+  'relative flex flex-1 flex-col items-center justify-center gap-0.5 text-12 outline-none',
+  'transition-colors duration-(--dur-fast) ease-out focus-visible:bg-surface-2',
+  active ? 'font-medium text-fg' : 'text-fg-muted',
 ]
 </script>
 
@@ -76,137 +54,80 @@ const tabClass = (active: boolean) => [
   <nav
     v-if="auth.user"
     aria-label="Navegação principal"
-    class="fixed inset-x-0 bottom-0 z-30 flex border-t border-(--border-default) bg-(--surface) pb-[env(safe-area-inset-bottom)] md:hidden dark:border-(--border-inverse) dark:bg-(--surface-inverse)"
+    class="fixed inset-x-0 bottom-0 z-40 flex h-[calc(3.5rem+env(safe-area-inset-bottom))] border-t border-border bg-surface-1 pb-[env(safe-area-inset-bottom)] md:hidden"
   >
     <RouterLink
       v-for="item in tabs"
       :key="item.to"
       :to="item.to"
-      :class="tabClass(isActive(item))"
-      :aria-current="isActive(item) ? 'page' : undefined"
+      :aria-current="isNavActive(item, route.path) ? 'page' : undefined"
+      :class="tabClass(isNavActive(item, route.path))"
     >
-      <span
-        :class="[
-          'material-symbols-outlined text-[22px]!',
-          isActive(item) ? 'text-(--bg-orange)' : '',
-        ]"
-        aria-hidden="true"
-        >{{ item.icon }}</span
-      >
+      <UiIcon
+        :icon="item.icon"
+        :size="20"
+        :class="isNavActive(item, route.path) ? 'text-accent' : ''"
+      />
       {{ item.label }}
       <span
         v-if="item.to === '/chat' && chat.unreadTotal"
-        class="absolute top-[4px] right-[calc(50%-20px)] grid min-w-[16px] place-items-center rounded-full bg-(--bg-orange) px-1 text-[10px] leading-4 font-semibold text-white"
+        class="absolute top-1.5 left-1/2 ml-2 rounded-full bg-accent px-1 font-mono text-[10px] text-accent-fg"
         :aria-label="`${chat.unreadTotal} mensagens não lidas`"
-        >{{ chat.unreadTotal > 99 ? '99+' : chat.unreadTotal }}</span
       >
+        {{ chat.unreadTotal > 99 ? '99+' : chat.unreadTotal }}
+      </span>
     </RouterLink>
     <button
+      data-ui="mobile-more"
       type="button"
-      :class="[...tabClass(moreActive() || open), 'relative cursor-pointer']"
       :aria-expanded="open"
       aria-haspopup="dialog"
-      @click="open = !open"
+      :class="[tabClass(moreActive || open), 'cursor-pointer']"
+      @click="open = true"
     >
-      <span
-        :class="[
-          'material-symbols-outlined text-[22px]!',
-          moreActive() || open ? 'text-(--bg-orange)' : '',
-        ]"
-        aria-hidden="true"
-        >menu</span
-      >
+      <UiIcon :icon="Menu" :size="20" :class="moreActive ? 'text-accent' : ''" />
       Mais
       <span
         v-if="notifications.unreadCount"
-        class="absolute top-[6px] right-[calc(50%-18px)] size-[8px] rounded-full bg-(--bg-orange)"
+        class="absolute top-2 left-1/2 ml-2 size-1.5 rounded-full bg-accent"
         aria-hidden="true"
-      ></span>
+      />
     </button>
   </nav>
 
-  <Transition
-    enter-active-class="transition-opacity duration-200"
-    leave-active-class="transition-opacity duration-150"
-    enter-from-class="opacity-0"
-    leave-to-class="opacity-0"
-  >
-    <div
-      v-if="open"
-      class="fixed inset-0 z-40 bg-black/30 md:hidden"
-      aria-hidden="true"
-      @click="open = false"
+  <UiDrawer v-model:open="open" title="Mais opções" side="bottom">
+    <UiSelect
+      v-if="organizationOptions.length"
+      v-model="organizationId"
+      label="Organização"
+      :options="organizationOptions"
     />
-  </Transition>
-  <Transition
-    enter-active-class="transition-transform duration-200 ease-out"
-    leave-active-class="transition-transform duration-150 ease-in"
-    enter-from-class="translate-y-full"
-    leave-to-class="translate-y-full"
-  >
-    <div
-      v-if="open"
-      role="dialog"
-      aria-label="Mais opções"
-      class="fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] overflow-y-auto rounded-t-[20px] border-t border-(--border-default) bg-(--surface) px-[16px] pt-[16px] pb-[calc(16px+env(safe-area-inset-bottom))] text-(--text-primary) md:hidden dark:border-(--border-inverse) dark:bg-(--surface-inverse) dark:text-(--text-inverse)"
-      @keydown.esc="open = false"
-    >
-      <label class="grid gap-[6px] text-[12px] text-(--text-muted)">
-        Organização
-        <select
-          :value="organizations.current?.id"
-          class="rounded-[10px] border border-(--border-default) bg-transparent px-[12px] py-[10px] text-[14px] text-(--text-primary) dark:border-(--border-inverse) dark:text-(--text-inverse)"
-          @change="chooseOrganization(($event.target as HTMLSelectElement).value)"
+    <ul class="mt-3 grid gap-0.5">
+      <li v-for="item in more" :key="item.to">
+        <RouterLink
+          :to="item.to"
+          :aria-current="isNavActive(item, route.path) ? 'page' : undefined"
+          class="flex h-11 items-center gap-3 rounded-control px-2 text-14 text-fg hover:bg-surface-2 aria-[current=page]:bg-surface-2"
         >
-          <option
-            v-for="organization in organizations.organizations"
-            :key="organization.id"
-            :value="organization.id"
-          >
-            {{ organization.is_personal ? `${organization.name} (pessoal)` : organization.name }}
-          </option>
-        </select>
-      </label>
-
-      <ul class="mt-[8px] grid">
-        <li v-for="item in more" :key="item.to">
-          <RouterLink
-            :to="item.to"
-            class="flex items-center gap-[12px] rounded-[10px] px-[4px] py-[12px] text-[15px]"
-            :class="isActive(item) ? 'font-semibold' : ''"
-          >
-            <span class="material-symbols-outlined text-[22px]!" aria-hidden="true">{{
-              item.icon
-            }}</span>
-            <span class="flex-1">{{ item.label }}</span>
-            <span
-              v-if="item.to === '/notificacoes' && notifications.unreadCount"
-              class="rounded-full bg-(--bg-orange) px-[8px] text-[12px] font-semibold text-white"
-              >{{ notifications.unreadCount }}</span
-            >
-          </RouterLink>
-        </li>
-      </ul>
-
-      <div
-        class="mt-[8px] flex items-center justify-between gap-[12px] border-t border-(--border-default) pt-[12px] dark:border-(--border-inverse)"
-      >
-        <span class="min-w-0 text-[13px] leading-normal text-(--text-muted)">
+          <UiIcon :icon="item.icon" :size="20" class="text-fg-muted" />
+          <span class="flex-1">{{ item.label }}</span>
           <span
-            class="block truncate font-medium text-(--text-primary) dark:text-(--text-inverse)"
-            >{{ auth.user?.name }}</span
+            v-if="item.to === '/notificacoes' && notifications.unreadCount"
+            class="font-mono text-12 text-fg-muted"
           >
+            {{ notifications.unreadCount }}
+          </span>
+        </RouterLink>
+      </li>
+    </ul>
+    <template #footer>
+      <div class="flex w-full items-center gap-3">
+        <span class="min-w-0 flex-1 text-13 text-fg-muted">
+          <span class="block truncate font-medium text-fg">{{ auth.user?.name }}</span>
           <span class="block truncate">{{ auth.user?.email }}</span>
         </span>
-        <button
-          type="button"
-          class="flex shrink-0 cursor-pointer items-center gap-[6px] rounded-[10px] border border-(--border-default) px-[12px] py-[8px] text-[14px] dark:border-(--border-inverse)"
-          @click="signOut"
-        >
-          <span class="material-symbols-outlined text-[18px]!" aria-hidden="true">logout</span>
-          Sair
-        </button>
+        <UiButton :icon="LogOut" variant="ghost" @click="emit('signOut')">Sair</UiButton>
       </div>
-    </div>
-  </Transition>
+    </template>
+  </UiDrawer>
 </template>

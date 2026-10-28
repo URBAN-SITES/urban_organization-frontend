@@ -1,7 +1,8 @@
 import { useEventListener } from '@vueuse/core'
 import { nextTick, ref, watch, type Ref } from 'vue'
 
-export type Placement = 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' | 'top' | 'bottom'
+export type Placement =
+  'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' | 'top' | 'bottom' | 'right'
 
 const GAP = 6
 const MARGIN = 8
@@ -29,6 +30,20 @@ export function useFloating(
     const height = panel.offsetHeight
     const viewportW = document.documentElement.clientWidth
     const viewportH = document.documentElement.clientHeight
+
+    if (placement === 'right') {
+      const top = Math.min(
+        Math.max(a.top + a.height / 2 - height / 2, MARGIN),
+        viewportH - height - MARGIN,
+      )
+      style.value = {
+        position: 'fixed',
+        top: `${Math.round(top)}px`,
+        left: `${Math.round(a.right + GAP)}px`,
+        transformOrigin: 'left center',
+      }
+      return
+    }
 
     let vertical: 'top' | 'bottom' = placement.startsWith('top') ? 'top' : 'bottom'
     if (vertical === 'bottom' && a.bottom + GAP + height > viewportH - MARGIN && a.top > height)

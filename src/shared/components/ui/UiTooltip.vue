@@ -2,6 +2,9 @@
 import { onBeforeUnmount, ref, useId, useTemplateRef } from 'vue'
 import { useFloating, type Placement } from '@/shared/composables/floating'
 
+// raiz dupla (gatilho + Teleport): atributos vão para o gatilho
+defineOptions({ inheritAttrs: false })
+
 /**
  * Dica curta ao passar o mouse ou focar pelo teclado. Esc fecha.
  * Só para informação complementar: nunca coloque ações dentro.
@@ -10,10 +13,13 @@ const {
   text,
   placement = 'top',
   delay = 400,
+  disabled = false,
 } = defineProps<{
   text: string
   placement?: Placement
   delay?: number
+  /** desliga a dica (ex.: quando o rótulo já está visível) */
+  disabled?: boolean
 }>()
 
 const open = ref(false)
@@ -25,6 +31,7 @@ let timer: number | undefined
 
 function show(immediate = false) {
   window.clearTimeout(timer)
+  if (disabled) return
   if (immediate) open.value = true
   else timer = window.setTimeout(() => (open.value = true), delay)
 }
@@ -44,6 +51,7 @@ onBeforeUnmount(() => window.clearTimeout(timer))
 <template>
   <span
     ref="anchor"
+    v-bind="$attrs"
     class="inline-flex"
     :aria-describedby="open ? tipId : undefined"
     @pointerenter="show()"
