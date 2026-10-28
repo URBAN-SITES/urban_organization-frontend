@@ -1,45 +1,44 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ArrowRight, Lock, Mail } from '@lucide/vue'
+import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { toast } from 'vue-sonner'
+import { UiButton, UiInput } from '@/shared/components'
+import { AuthDivider, AuthHeading, GoogleButton } from '../components'
 import { useAuthNavigation } from '../composables'
-import { BaseButton } from '@/shared/components'
-import {
-  AuthAside,
-  AuthField,
-  AuthSplitLayout,
-  AuthTransitionOverlay,
-  GoogleButton,
-} from '../components'
-import { useAuthSwap } from '../composables'
 import { useAuthFlowStore, useAuthStore } from '../stores'
+import { emailProblem } from '../utils'
 
 const router = useRouter()
 const route = useRoute()
 const navigation = useAuthNavigation()
 const auth = useAuthStore()
 const authFlow = useAuthFlowStore()
-const { swapTo } = useAuthSwap()
+const hasGoogle = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID)
+
 // vindo de um convite, o e-mail convidado já vem preenchido
 const email = ref(typeof route.query.email === 'string' ? route.query.email : '')
 const password = ref('')
+const errors = reactive({ email: '', password: '' })
+const formError = ref('')
 const isSubmitting = ref(false)
-const rememberMe = ref(false)
-const errorMessage = ref('')
 const isGoogleSubmitting = ref(false)
-const googleErrorMessage = ref('')
+
+function validate() {
+  errors.email = emailProblem(email.value)
+  errors.password = password.value ? '' : 'Informe sua senha.'
+  return !errors.email && !errors.password
+}
 
 async function handleSubmit() {
-  errorMessage.value = ''
+  formError.value = ''
+  if (!validate()) return
   isSubmitting.value = true
-
   try {
     await auth.signIn({ email: email.value.trim(), password: password.value })
     authFlow.clear()
-    toast.success('Que bom ter você de volta!')
     await router.push(navigation.afterLogin.value)
   } catch (error) {
-    errorMessage.value =
+    formError.value =
       error instanceof Error ? error.message : 'Não foi possível entrar. Tente novamente.'
   } finally {
     isSubmitting.value = false
@@ -48,18 +47,14 @@ async function handleSubmit() {
 
 async function handleGoogleCredential(credential: string) {
   if (isGoogleSubmitting.value) return
-
-  googleErrorMessage.value = ''
+  formError.value = ''
   isGoogleSubmitting.value = true
-
   try {
     await auth.signInWithGoogle(credential)
     authFlow.clear()
-    toast.success('Você entrou com sua conta Google.')
     await router.push(navigation.afterLogin.value)
   } catch (error) {
-    googleErrorMessage.value =
-      error instanceof Error ? error.message : 'Não foi possível entrar com Google.'
+    formError.value = error instanceof Error ? error.message : 'Não foi possível entrar com Google.'
   } finally {
     isGoogleSubmitting.value = false
   }
@@ -67,107 +62,82 @@ async function handleGoogleCredential(credential: string) {
 </script>
 
 <template>
-  <section class="grid lg:grid-cols-[minmax(0,1fr)_36vw]">
-    <AuthSplitLayout>
-      <h1 class="text-[38px]! leading-11.5! tracking-[-0.03em]!">
-        Bem-vindo <span class="text-(--accent-orange)">de volta</span>
-      </h1>
-      <p class="mt-2 text-[16px] text-(--text-secondary) dark:text-(--text-inverse-muted)">
-        Entre para continuar seus projetos com o time.
-      </p>
+  <section>
+    <AuthHeading
+      title="Bem-vindo de volta"
+      description="Acesse sua conta e continue construindo com o Inceptum."
+    />
 
-      <form class="mt-8 flex flex-col gap-5" @submit.prevent="handleSubmit">
-        <AuthField
-          id="login-email"
-          v-model="email"
-          label="E-mail"
-          icon="mail"
-          type="email"
-          name="email"
-          autocomplete="username"
-          placeholder="voce@email.com"
-          required
-        />
+    <template v-if="hasGoogle">
+      <GoogleButton @credential="handleGoogleCredential" />
+      <AuthDivider />
+    </template>
 
-        <AuthField
+    <form class="flex flex-col gap-4" novalidate @submit.prevent="handleSubmit">
+      <UiInput
+        id="login-email"
+        v-model="email"
+        label="E-mail"
+        type="email"
+        size="lg"
+        :icon="Mail"
+        :error="errors.email"
+        name="email"
+        autocomplete="username"
+        placeholder="voce@email.com"
+        @blur="email && (errors.email = emailProblem(email))"
+      />
+      <div class="flex flex-col gap-2">
+        <UiInput
           id="login-password"
           v-model="password"
           label="Senha"
-          icon="lock"
           type="password"
+          size="lg"
+          :icon="Lock"
+          :error="errors.password"
           name="password"
           autocomplete="current-password"
-          placeholder="••••••••"
-          required
-        >
-          <template #after>
-            <div class="mt-3 flex items-center justify-between gap-3 leading-5">
-              <label
-                for="login-remember"
-                class="flex cursor-pointer items-center gap-2 text-[13px]"
-              >
-                <input
-                  id="login-remember"
-                  v-model="rememberMe"
-                  type="checkbox"
-                  class="size-3.5 cursor-pointer accent-(--accent-orange) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--accent-orange)"
-                />
-                <span class="text-(--text-secondary) dark:text-(--text-inverse-muted)">
-                  Lembrar de mim
-                </span>
-              </label>
-              <RouterLink
-                :to="navigation.to('ForgotPassword')"
-                class="auth-link auth-link--accent text-[14px]"
-              >
-                Esqueceu sua senha?
-              </RouterLink>
-            </div>
-          </template>
-        </AuthField>
-
-        <p v-if="errorMessage" role="alert" class="auth-error">{{ errorMessage }}</p>
-
-        <BaseButton
-          type="submit"
-          label="Entrar"
-          :loading="isSubmitting"
-          :disabled="isGoogleSubmitting"
-          class="auth-submit auth-primary-submit"
+          placeholder="Sua senha"
         />
-      </form>
-
-      <div class="my-6 flex items-center gap-4 text-[13px] text-(--text-muted)">
-        <span class="h-px flex-1 bg-(--border-default) dark:bg-(--border-inverse)"></span>
-        <span>ou</span>
-        <span class="h-px flex-1 bg-(--border-default) dark:bg-(--border-inverse)"></span>
+        <RouterLink
+          :to="navigation.to('ForgotPassword')"
+          class="self-end rounded-[4px] text-13 text-fg-muted underline-offset-4 hover:text-fg hover:underline focus-visible:outline-2 focus-visible:outline-accent"
+        >
+          Esqueceu a senha?
+        </RouterLink>
       </div>
 
-      <GoogleButton @credential="handleGoogleCredential" />
-      <p v-if="googleErrorMessage" role="alert" class="auth-error mt-3">
-        {{ googleErrorMessage }}
-      </p>
-
       <p
-        class="mt-8 text-center text-[15px] text-(--text-secondary) dark:text-(--text-inverse-muted)"
+        v-if="formError"
+        role="alert"
+        class="rounded-control bg-danger-soft px-3 py-2.5 text-13 text-danger"
       >
-        Não tem uma conta?
-        <a
-          :href="router.resolve(navigation.to('Register')).href"
-          class="auth-link auth-link--accent"
-          @click.prevent="swapTo(navigation.to('Register'))"
-          >Criar conta</a
-        >
+        {{ formError }}
       </p>
-    </AuthSplitLayout>
-    <AuthAside side="right" />
-  </section>
 
-  <AuthTransitionOverlay
-    :visible="isSubmitting || isGoogleSubmitting"
-    eyebrow="Acesso seguro"
-    title="Preparando seu"
-    highlight="espaço"
-    description="Estamos confirmando seu acesso e carregando seu ambiente de trabalho."
-  />
+      <UiButton
+        type="submit"
+        variant="primary"
+        size="xl"
+        block
+        :icon-right="ArrowRight"
+        :loading="isSubmitting"
+        :disabled="isGoogleSubmitting"
+        class="mt-2"
+      >
+        Entrar
+      </UiButton>
+    </form>
+
+    <p class="mt-8 text-center text-14 text-fg-muted">
+      Ainda não tem uma conta?
+      <RouterLink
+        :to="navigation.to('Register')"
+        class="font-medium text-fg underline underline-offset-4 hover:text-accent"
+      >
+        Criar conta
+      </RouterLink>
+    </p>
+  </section>
 </template>

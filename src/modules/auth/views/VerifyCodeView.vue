@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import { ArrowLeft } from '@lucide/vue'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
+import { UiButton } from '@/shared/components'
+import { AuthHeading, CodeInput } from '../components'
 import { useAuthNavigation } from '../composables'
-import { BaseButton } from '@/shared/components'
-import { AuthAside, AuthSplitLayout, CodeInput } from '../components'
 import {
   confirmRegistration,
   requestPasswordReset,
@@ -28,11 +29,12 @@ const secondsLeft = ref(RESEND_SECONDS)
 let timer: ReturnType<typeof setInterval> | undefined
 
 const isComplete = computed(() => /^\d{6}$/.test(code.value))
-const countdown = computed(() => `00:${String(secondsLeft.value).padStart(2, '0')}`)
+const countdown = computed(() => `0:${String(secondsLeft.value).padStart(2, '0')}`)
+const backTo = computed(() =>
+  navigation.to(props.flow === 'register' ? 'Register' : 'ForgotPassword'),
+)
 
-if (!authFlow.email) {
-  router.replace(navigation.to(props.flow === 'register' ? 'Register' : 'ForgotPassword'))
-}
+if (!authFlow.email) router.replace(backTo.value)
 
 function startTimer() {
   secondsLeft.value = RESEND_SECONDS
@@ -50,7 +52,6 @@ async function handleSubmit() {
   }
   errorMessage.value = ''
   isSubmitting.value = true
-
   try {
     if (props.flow === 'register') {
       await confirmRegistration({
@@ -60,11 +61,10 @@ async function handleSubmit() {
         password: authFlow.password,
       })
       authFlow.clear()
-      toast.success('Conta criada! Agora você já pode entrar.')
+      toast.success('Conta criada. Agora é só entrar.')
       await router.push(navigation.to('Login'))
       return
     }
-
     await verifyPasswordReset({ email: authFlow.email, code: code.value })
     authFlow.resetCode = code.value
     await router.push(navigation.to('ResetPassword'))
@@ -79,7 +79,6 @@ async function handleSubmit() {
 async function resendCode() {
   errorMessage.value = ''
   isResending.value = true
-
   try {
     const payload = { email: authFlow.email }
     await (props.flow === 'register'
@@ -101,94 +100,57 @@ onBeforeUnmount(() => clearInterval(timer))
 </script>
 
 <template>
-  <section class="grid lg:grid-cols-[minmax(0,1fr)_36vw]">
-    <AuthSplitLayout>
-      <div
-        v-if="props.flow === 'register'"
-        class="mb-6 flex items-center gap-3 text-[13px] font-medium"
-        aria-label="Etapa 2 de 2"
-      >
-        <span class="inline-flex items-center gap-2 text-(--text-muted)">
-          <span
-            class="grid size-6 place-items-center rounded-full bg-(--bg-subtle) text-[12px] dark:bg-black/30"
-            >1</span
-          >
-          Dados
-        </span>
-        <span class="h-px w-6 bg-(--border-default) dark:bg-(--border-inverse)"></span>
-        <span class="inline-flex items-center gap-2" aria-current="step">
-          <span
-            class="grid size-6 place-items-center rounded-full bg-(--surface-inverse) text-[12px] text-(--text-inverse) dark:bg-(--text-inverse) dark:text-(--text-primary)"
-            >2</span
-          >
-          Validação
-        </span>
-      </div>
+  <section>
+    <p v-if="props.flow === 'register'" class="mb-3 text-12 font-medium text-fg-muted">
+      Etapa 2 de 2
+    </p>
+    <AuthHeading :title="props.flow === 'register' ? 'Confirme seu e-mail' : 'Digite o código'">
+      Enviamos um código de 6 dígitos para
+      <span class="font-medium text-fg">{{ authFlow.email }}</span
+      >.
+    </AuthHeading>
 
-      <h1 class="text-[38px]! leading-11.5! tracking-[-0.03em]!">
-        {{ props.flow === 'register' ? 'Validação em duas etapas' : 'Confirme seu e-mail' }}
-      </h1>
-      <p
-        class="mt-2 text-[16px] leading-6.5 text-(--text-secondary) dark:text-(--text-inverse-muted)"
-      >
-        {{
-          props.flow === 'register'
-            ? 'Para concluir seu cadastro, digite o código de 6 dígitos enviado para'
-            : 'Digite o código de 6 dígitos enviado para'
-        }}
-        <span class="font-semibold text-(--text-primary) dark:text-(--text-inverse)">{{
-          authFlow.email
-        }}</span
-        >.
-      </p>
-
-      <form class="mt-8 flex flex-col gap-5" @submit.prevent="handleSubmit">
-        <CodeInput v-model="code" :disabled="isSubmitting" />
-
-        <p v-if="errorMessage" role="alert" class="auth-error">{{ errorMessage }}</p>
-
-        <BaseButton
-          type="submit"
-          :label="props.flow === 'register' ? 'Validar e criar conta' : 'Verificar código'"
-          :loading="isSubmitting"
-          class="auth-submit"
-        />
-      </form>
+    <form class="flex flex-col gap-4" novalidate @submit.prevent="handleSubmit">
+      <CodeInput v-model="code" :disabled="isSubmitting" :invalid="Boolean(errorMessage)" />
 
       <p
-        class="mt-6 text-center text-[14px] leading-5 text-(--text-secondary) dark:text-(--text-inverse-muted)"
-        aria-live="polite"
+        v-if="errorMessage"
+        role="alert"
+        class="rounded-control bg-danger-soft px-3 py-2.5 text-13 text-danger"
       >
-        <template v-if="secondsLeft > 0">
-          Reenviar código em
-          <span
-            class="font-semibold text-(--text-primary) tabular-nums dark:text-(--text-inverse)"
-            >{{ countdown }}</span
-          >
-        </template>
-        <template v-else>
-          Não recebeu?
-          <button
-            type="button"
-            class="auth-link cursor-pointer disabled:cursor-wait disabled:opacity-60"
-            :disabled="isResending"
-            @click="resendCode"
-          >
-            Reenviar código
-          </button>
-        </template>
+        {{ errorMessage }}
       </p>
 
-      <p class="mt-6 text-[14px] text-(--text-secondary) dark:text-(--text-inverse-muted)">
-        E-mail incorreto?
-        <RouterLink
-          :to="navigation.to(props.flow === 'register' ? 'Register' : 'ForgotPassword')"
-          class="auth-link"
-        >
-          Corrigir e-mail
-        </RouterLink>
-      </p>
-    </AuthSplitLayout>
-    <AuthAside />
+      <UiButton
+        type="submit"
+        variant="primary"
+        size="xl"
+        block
+        :loading="isSubmitting"
+        class="mt-2"
+      >
+        {{ props.flow === 'register' ? 'Confirmar e criar conta' : 'Verificar código' }}
+      </UiButton>
+    </form>
+
+    <p class="mt-6 text-center text-14 text-fg-muted" aria-live="polite">
+      <template v-if="secondsLeft > 0">
+        Reenviar código em <span class="font-mono text-fg">{{ countdown }}</span>
+      </template>
+      <template v-else>
+        Não recebeu?
+        <UiButton variant="ghost" size="sm" :loading="isResending" @click="resendCode">
+          Reenviar código
+        </UiButton>
+      </template>
+    </p>
+
+    <RouterLink
+      :to="backTo"
+      class="mt-8 inline-flex items-center gap-1.5 rounded-[4px] text-14 text-fg-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-accent"
+    >
+      <ArrowLeft :size="16" aria-hidden="true" />
+      Corrigir e-mail
+    </RouterLink>
   </section>
 </template>

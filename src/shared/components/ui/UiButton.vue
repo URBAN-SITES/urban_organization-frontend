@@ -16,7 +16,7 @@ const {
   block = false,
 } = defineProps<{
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg' | 'xl'
   type?: 'button' | 'submit' | 'reset'
   icon?: Component
   iconRight?: Component
@@ -37,6 +37,7 @@ const SIZES = {
   sm: 'h-7 gap-1.5 px-2.5 text-13',
   md: 'h-8 gap-2 px-3 text-13',
   lg: 'h-10 gap-2 px-4 text-14',
+  xl: 'h-11 gap-2 px-5 text-14',
 } as const
 </script>
 
