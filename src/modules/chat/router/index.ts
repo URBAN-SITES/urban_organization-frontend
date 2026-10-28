@@ -6,7 +6,7 @@ async function requireAssistantAccess() {
   try {
     const user = await useAuthStore().loadUser()
     if (!user) return { name: 'Login', query: { redirect: '/assistente' } }
-    if (!user.is_subscriber) return { name: 'Plans' }
+    if (!(user.has_assistant_access ?? user.is_subscriber)) return { name: 'Plans' }
     return true
   } catch {
     toast.error('Não foi possível verificar seu acesso à IA. Tente novamente.')
