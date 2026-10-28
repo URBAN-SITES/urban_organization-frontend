@@ -6,9 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="Hackathon" />
+    <meta name="apple-mobile-web-app-title" content="Inceptum" />
     <link rel="apple-touch-icon" href="/icons/hackathon-192.png" />
     <title>Inceptum</title>
+    <!-- Aplica o tema salvo antes da primeira pintura (sem flash). Mesma regra de useTheme. -->
+    <script>
+      try {
+        var t = localStorage.getItem('theme')
+        var dark =
+          t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)
+        document.documentElement.classList.toggle('dark', dark)
+      } catch (e) {}
+    </script>
     <link
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"

@@ -1,42 +1,60 @@
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 
 type Theme = 'light' | 'dark' | 'system'
-const theme = ref<Theme>('system')
-const systemDark = ref(false)
-let initialized = false
+const STORAGE_KEY = 'theme'
+
+function readSaved(): Theme {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved === 'light' || saved === 'dark' || saved === 'system') return saved
+  } catch {
+    // armazenamento bloqueado: segue o sistema
+  }
+  return 'system'
+}
+
+const media =
+  typeof window === 'undefined' ? null : window.matchMedia('(prefers-color-scheme: dark)')
+// index.html já aplicou a classe antes da pintura; aqui só sincronizamos o estado.
+const theme = ref<Theme>(typeof window === 'undefined' ? 'system' : readSaved())
+const systemDark = ref(media?.matches ?? false)
+const isDarkValue = computed(
+  () => theme.value === 'dark' || (theme.value === 'system' && systemDark.value),
+)
 
 function applyTheme(): void {
-  document.documentElement.classList.toggle(
-    'dark',
-    theme.value === 'dark' || (theme.value === 'system' && systemDark.value),
-  )
+  document.documentElement.classList.toggle('dark', isDarkValue.value)
+}
+
+media?.addEventListener('change', (event) => {
+  systemDark.value = event.matches
+  applyTheme()
+})
+
+type ViewTransitionDocument = Document & {
+  startViewTransition?: (update: () => void) => unknown
 }
 
 function setTheme(value: Theme): void {
   theme.value = value
-  localStorage.setItem('theme', value)
-  applyTheme()
+  try {
+    localStorage.setItem(STORAGE_KEY, value)
+  } catch {
+    // sem persistência; o tema vale para esta aba
+  }
+  const doc = document as ViewTransitionDocument
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  // Cross-fade nativo quando o navegador suporta; senão troca direto (o fallback simples).
+  if (doc.startViewTransition && !reduced) doc.startViewTransition(applyTheme)
+  else applyTheme()
 }
 
 const isDark = computed({
-  get: () => theme.value === 'dark' || (theme.value === 'system' && systemDark.value),
+  get: () => isDarkValue.value,
   set: (value: boolean) => setTheme(value ? 'dark' : 'light'),
 })
 
 export function useTheme() {
-  onMounted(() => {
-    if (initialized) return
-    initialized = true
-    const media = window.matchMedia('(prefers-color-scheme: dark)')
-    systemDark.value = media.matches
-    const saved = localStorage.getItem('theme')
-    if (saved === 'light' || saved === 'dark' || saved === 'system') theme.value = saved
-    media.addEventListener('change', (event) => {
-      systemDark.value = event.matches
-      applyTheme()
-    })
-    applyTheme()
-  })
   return {
     isDark,
     theme,

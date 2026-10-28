@@ -1,0 +1,148 @@
+/*
+ * Design tokens do Inceptum (Fase 1).
+ * Cores semânticas trocam com o tema (.dark); o resto é fixo.
+ * Use as utilidades geradas pelo Tailwind: bg-surface-1, text-fg-muted, border-border,
+ * rounded-control, text-13, shadow-float, duration-(--dur-fast), ease-out...
+ * Constantes equivalentes para JS ficam em src/shared/motion.
+ */
+
+:root {
+  --ds-bg: #fafaf9;
+  --ds-surface-1: #ffffff;
+  --ds-surface-2: #f4f4f3;
+  --ds-surface-3: #ebebe9;
+  --ds-border: #e5e5e3;
+  --ds-border-strong: #d4d4d1;
+  --ds-fg: #18181b;
+  --ds-fg-muted: #6b6b73;
+  /* #e85a0c não atinge AA com texto branco (3,6:1); #c2410c atinge 5,2:1 */
+  --ds-accent: #c2410c;
+  --ds-accent-hover: #ad3a0b;
+  --ds-accent-fg: #ffffff;
+  --ds-accent-soft: rgb(194 65 12 / 0.1);
+  --ds-danger: #c42b2b;
+  --ds-danger-soft: rgb(196 43 43 / 0.1);
+  --ds-success: #1f7a4d;
+  --ds-success-soft: rgb(31 122 77 / 0.1);
+  --ds-warning: #8a5a00;
+  --ds-warning-soft: rgb(176 115 0 / 0.12);
+  --ds-overlay: rgb(24 24 27 / 0.4);
+  --ds-shadow-color: 24 24 27;
+
+  /* motion */
+  --dur-instant: 80ms;
+  --dur-fast: 140ms;
+  --dur-base: 220ms;
+  --dur-slow: 320ms;
+  /* saídas ~30% mais rápidas que as entradas */
+  --dur-fast-exit: 100ms;
+  --dur-base-exit: 150ms;
+  --dur-slow-exit: 220ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  /* deslocamento das entradas; zera com prefers-reduced-motion */
+  --motion-distance: 6px;
+  --motion-scale: 0.98;
+
+  color-scheme: light;
+}
+
+.dark {
+  --ds-bg: #0b0b0c;
+  --ds-surface-1: #121214;
+  --ds-surface-2: #18181b;
+  --ds-surface-3: #202024;
+  --ds-border: #26262b;
+  --ds-border-strong: #34343a;
+  --ds-fg: #ededef;
+  --ds-fg-muted: #8b8b93;
+  --ds-accent: #ff6b1a;
+  --ds-accent-hover: #ff8340;
+  /* texto escuro sobre o laranja: 6,9:1 */
+  --ds-accent-fg: #0b0b0c;
+  --ds-accent-soft: rgb(255 107 26 / 0.14);
+  --ds-danger: #f26b6b;
+  --ds-danger-soft: rgb(242 107 107 / 0.14);
+  --ds-success: #4cc38a;
+  --ds-success-soft: rgb(76 195 138 / 0.14);
+  --ds-warning: #e5a83b;
+  --ds-warning-soft: rgb(229 168 59 / 0.14);
+  --ds-overlay: rgb(0 0 0 / 0.6);
+  --ds-shadow-color: 0 0 0;
+
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-distance: 0px;
+    --motion-scale: 1;
+    --dur-base: 150ms;
+    --dur-slow: 150ms;
+    --dur-base-exit: 150ms;
+    --dur-slow-exit: 150ms;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--ds-bg);
+  --color-surface-1: var(--ds-surface-1);
+  --color-surface-2: var(--ds-surface-2);
+  --color-surface-3: var(--ds-surface-3);
+  --color-border: var(--ds-border);
+  --color-border-strong: var(--ds-border-strong);
+  --color-fg: var(--ds-fg);
+  --color-fg-muted: var(--ds-fg-muted);
+  --color-accent: var(--ds-accent);
+  --color-accent-hover: var(--ds-accent-hover);
+  --color-accent-fg: var(--ds-accent-fg);
+  --color-accent-soft: var(--ds-accent-soft);
+  --color-danger: var(--ds-danger);
+  --color-danger-soft: var(--ds-danger-soft);
+  --color-success: var(--ds-success);
+  --color-success-soft: var(--ds-success-soft);
+  --color-warning: var(--ds-warning);
+  --color-warning-soft: var(--ds-warning-soft);
+  --color-overlay: var(--ds-overlay);
+
+  --shadow-float:
+    0 1px 2px rgb(var(--ds-shadow-color) / 0.08), 0 8px 24px rgb(var(--ds-shadow-color) / 0.16);
+  --shadow-modal:
+    0 2px 4px rgb(var(--ds-shadow-color) / 0.1), 0 24px 48px rgb(var(--ds-shadow-color) / 0.24);
+}
+
+@theme {
+  --font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+  /* escala fixa: 12 / 13 / 14 / 16 / 20 / 24 / 32 / 48 */
+  --text-12: 12px;
+  --text-12--line-height: 16px;
+  --text-13: 13px;
+  --text-13--line-height: 18px;
+  --text-14: 14px;
+  --text-14--line-height: 20px;
+  --text-16: 16px;
+  --text-16--line-height: 24px;
+  --text-20: 20px;
+  --text-20--line-height: 28px;
+  --text-20--letter-spacing: -0.01em;
+  --text-24: 24px;
+  --text-24--line-height: 32px;
+  --text-24--letter-spacing: -0.015em;
+  --text-32: 32px;
+  --text-32--line-height: 40px;
+  --text-32--letter-spacing: -0.02em;
+  --text-48: 48px;
+  --text-48--line-height: 56px;
+  --text-48--letter-spacing: -0.03em;
+
+  --radius-control: 6px;
+  --radius-card: 10px;
+  --radius-modal: 14px;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+}
