@@ -17,6 +17,7 @@ const props = defineProps<{
   required?: boolean
   disabled?: boolean
   id?: string
+  size?: 'md' | 'lg'
 }>()
 const fallbackId = useId()
 const inputId = props.id ?? fallbackId
@@ -47,7 +48,11 @@ const controlAttrs = computed(() =>
           :disabled="disabled"
           :aria-describedby="describedby"
           :aria-invalid="invalid"
-          :class="[controlClasses, 'h-9 cursor-pointer appearance-none pr-8 pl-3']"
+          :class="[
+            controlClasses,
+            'cursor-pointer appearance-none pr-8',
+            size === 'lg' ? 'h-11 pl-3.5' : 'h-9 pl-3',
+          ]"
         >
           <option v-if="placeholder" value="" disabled>{{ placeholder }}</option>
           <option

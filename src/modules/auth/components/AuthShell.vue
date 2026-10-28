@@ -3,7 +3,7 @@ import { ChartNoAxesColumn, Moon, Sun, Users, Zap } from '@lucide/vue'
 import { useTheme } from '@/app/composables/useTheme'
 import { UiIcon, UiIconButton } from '@/shared/components'
 
-/** Moldura das telas de acesso: painel de imagem fixo à esquerda e o formulário à direita. */
+/** Moldura das telas de acesso e do onboarding: painel de imagem fixo à esquerda, conteúdo à direita. */
 const { isDark, toggleTheme } = useTheme()
 const image = `${import.meta.env.BASE_URL}aside-direita.png`
 
@@ -73,11 +73,14 @@ const FEATURES = [
 
       <div class="flex flex-1 items-center justify-center py-10">
         <div class="w-full max-w-100">
-          <RouterView v-slot="{ Component, route }">
-            <Transition name="page" mode="out-in" appear>
-              <component :is="Component" :key="route.path" />
-            </Transition>
-          </RouterView>
+          <!-- telas de acesso usam as rotas filhas; o onboarding passa o próprio conteúdo -->
+          <slot>
+            <RouterView v-slot="{ Component, route }">
+              <Transition name="page" mode="out-in" appear>
+                <component :is="Component" :key="route.path" />
+              </Transition>
+            </RouterView>
+          </slot>
         </div>
       </div>
 

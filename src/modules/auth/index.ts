@@ -3,9 +3,9 @@ export { useAuthStore } from './stores'
 export { useUsersStore } from './stores/users'
 export { safeRedirect } from './utils'
 export {
-  AuthAside,
   AuthField,
-  AuthSplitLayout,
+  AuthHeading,
+  AuthShell,
   AuthCardLayout,
   CodeInput,
   AuthTransitionOverlay,
