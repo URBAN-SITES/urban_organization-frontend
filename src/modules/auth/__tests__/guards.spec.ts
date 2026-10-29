@@ -91,6 +91,8 @@ test('every registered private route redirects anonymous visitors before loading
     'InvitationAccept',
     'PrivacyPolicy',
     'TermsOfService',
+    // O login com GitHub volta para cá sem sessão.
+    'GitHubCallback',
   ]
   const resolvedPublicNames: string[] = []
   for (const record of router.getRoutes()) {

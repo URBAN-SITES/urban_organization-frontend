@@ -6,6 +6,7 @@ import UiSpinner from './UiSpinner.vue'
 /**
  * Botão do sistema. `primary` é a única ação laranja da tela.
  * Em loading o rótulo fica invisível (sem mudar a largura) e o spinner aparece por cima.
+ * Com `href` vira um link com a mesma aparência (ex.: abrir uma página externa).
  */
 const {
   variant = 'secondary',
@@ -23,6 +24,7 @@ const {
   loading?: boolean
   disabled?: boolean
   block?: boolean
+  href?: string
 }>()
 
 const VARIANTS = {
@@ -42,10 +44,12 @@ const SIZES = {
 </script>
 
 <template>
-  <button
+  <component
+    :is="href ? 'a' : 'button'"
     data-ui="button"
-    :type="type"
-    :disabled="disabled || loading"
+    :href="href"
+    :type="href ? undefined : type"
+    :disabled="href ? undefined : disabled || loading"
     :aria-busy="loading || undefined"
     :class="[
       'relative inline-flex shrink-0 items-center justify-center rounded-control font-medium whitespace-nowrap select-none',
@@ -67,5 +71,5 @@ const SIZES = {
     <span v-if="loading" class="absolute inset-0 grid place-items-center">
       <UiSpinner :size="size === 'lg' ? 16 : 14" />
     </span>
-  </button>
+  </component>
 </template>

@@ -2,6 +2,7 @@
 import { ArrowRight, Lock, Mail, User } from '@lucide/vue'
 import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { GitHubLoginButton } from '@/modules/github'
 import { UiButton, UiCheckbox, UiInput } from '@/shared/components'
 import { AuthDivider, AuthHeading, GoogleButton, PasswordStrength } from '../components'
 import { useAuthNavigation } from '../composables'
@@ -15,6 +16,7 @@ const navigation = useAuthNavigation()
 const auth = useAuthStore()
 const authFlow = useAuthFlowStore()
 const hasGoogle = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID)
+const hasGitHub = import.meta.env.VITE_GITHUB_LOGIN === 'true'
 
 const name = ref(authFlow.name)
 // vindo de um convite, o e-mail convidado já vem preenchido
@@ -81,8 +83,19 @@ async function handleGoogleCredential(credential: string) {
       description="Organize seus projetos e avance junto com seu time."
     />
 
-    <template v-if="hasGoogle">
-      <GoogleButton button-text="signup_with" @credential="handleGoogleCredential" />
+    <template v-if="hasGoogle || hasGitHub">
+      <div class="grid gap-2">
+        <GoogleButton
+          v-if="hasGoogle"
+          button-text="signup_with"
+          @credential="handleGoogleCredential"
+        />
+        <GitHubLoginButton
+          v-if="hasGitHub"
+          :return-to="navigation.destination.value"
+          @error="formError = $event"
+        />
+      </div>
       <AuthDivider />
     </template>
 

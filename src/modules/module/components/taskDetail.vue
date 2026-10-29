@@ -3,6 +3,7 @@ import { ArrowLeft, Check, Trash2 } from '@lucide/vue'
 import { computed, reactive, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { getErrorMessage } from '@/app/plugins/axios'
+import { TaskGitHubLinks } from '@/modules/github'
 import { TaskCharges } from '@/modules/payments'
 import { UiButton, UiDrawer, UiInput, UiSelect, UiSpinner, UiTextarea } from '@/shared/components'
 import { useConfirm } from '@/shared/composables/confirm'
@@ -331,6 +332,7 @@ const refresh = () => task.value && kanban.reload(task.value.id).catch(() => und
       />
       <TaskChecklist :task-id="task.id" :can-edit="canEdit" @changed="refresh" />
       <TaskAttachments :task-id="task.id" :due-date="task.due_date ?? ''" :can-edit="canEdit" />
+      <TaskGitHubLinks :task-id="task.id" :can-edit="canEdit" />
       <TaskCharges :task-id="task.id" :can-edit="canEdit" />
       <TaskConversation
         :task-id="task.id"
