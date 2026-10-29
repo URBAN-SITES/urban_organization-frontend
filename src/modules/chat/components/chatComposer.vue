@@ -40,7 +40,7 @@ function handleKeydown(event: KeyboardEvent) {
       <button
         type="submit"
         :class="[
-          'ml-auto flex h-[32px] cursor-pointer items-center gap-[6px] rounded-[8px] px-[12px] text-[13px] font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:brightness-105 hover:shadow-[0_4px_12px_rgba(255,103,0,0.24)] active:translate-y-0 active:scale-[0.98]',
+          'ml-auto flex h-[32px] cursor-pointer items-center gap-[6px] rounded-[8px] px-[12px] text-[13px] font-semibold text-accent-fg transition-all duration-200 hover:-translate-y-0.5 hover:brightness-105 hover:shadow-[0_4px_12px_rgba(255,103,0,0.24)] active:translate-y-0 active:scale-[0.98]',
           'bg-(--bg-orange)',
         ]"
       >

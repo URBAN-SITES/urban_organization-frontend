@@ -1,6 +1,6 @@
 import type { ISODateTime } from '@/shared/types'
 
-const AVATAR_COLORS = ['#1e9e5a', '#f0541e', '#2563eb', '#7c4dff', '#d97706', '#0e7490']
+const AVATAR_COLORS = ['#15803d', '#c2410c', '#2563eb', '#6d28d9', '#b45309', '#0e7490']
 
 export function initials(name: string): string {
   const parts = name.trim().split(/\s+/)
@@ -9,11 +9,11 @@ export function initials(name: string): string {
 
 // cores definidas no design para os membros de exemplo
 const KNOWN_COLORS: Record<string, string> = {
-  'Beatriz Costa': '#1e9e5a',
-  'Marina Souza': '#f0541e',
+  'Beatriz Costa': '#15803d',
+  'Marina Souza': '#c2410c',
   'Rafael Lima': '#2563eb',
-  'Gustavo Rocha': '#7c4dff',
-  'Camila Alves': '#d97706',
+  'Gustavo Rocha': '#6d28d9',
+  'Camila Alves': '#b45309',
 }
 
 // cor estável por nome, para o mesmo autor ter sempre a mesma cor

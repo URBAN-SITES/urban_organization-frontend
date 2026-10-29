@@ -28,7 +28,7 @@ withDefaults(defineProps<Props>(), {
         'text-(--outline) hover:bg-(--bg-orange)/5 hover:text-(--bg-orange) dark:hover:bg-(--bg-orange)/10 active:bg-(--bg-orange)/10':
           variant === 'default',
 
-        'bg-(--bg-orange) text-white shadow-md hover:brightness-105 dark:bg-(--bg-orange)':
+        'bg-(--bg-orange) text-accent-fg shadow-md hover:brightness-105 dark:bg-(--bg-orange)':
           variant === 'primary',
 
         'text-(--primary) hover:bg-(--bg-orange)/5 hover:text-(--bg-orange) dark:text-(--primary-dark) dark:hover:bg-(--bg-orange)/10':

@@ -124,7 +124,10 @@ async function toggleItem(item: ChecklistItem) {
 }
 
 async function removeItem(item: ChecklistItem) {
-  if ((await run(() => deleteChecklistItem(current.value.id, item.id))) === undefined && error.value)
+  if (
+    (await run(() => deleteChecklistItem(current.value.id, item.id))) === undefined &&
+    error.value
+  )
     return
   checklist.value = checklist.value.filter((i) => i.id !== item.id)
   syncChecklist()
@@ -177,7 +180,8 @@ const field =
         done ? 'text-(--chat-ai)' : 'text-(--text-muted)',
       ]"
       aria-hidden="true"
-      >{{ done ? 'task_alt' : 'radio_button_unchecked' }}</span>
+      >{{ done ? 'task_alt' : 'radio_button_unchecked' }}</span
+    >
     <div class="flex min-w-0 flex-1 flex-col gap-[8px] leading-normal">
       <p :class="['text-[13.5px] font-semibold', done ? 'line-through opacity-70' : '']">
         {{ current.title }}
@@ -191,7 +195,9 @@ const field =
         </span>
         <span aria-hidden="true">·</span>
         <span class="font-mono text-[11px]">{{ due }}</span>
-        <span :class="['flex items-center gap-[4px] font-medium', PRIORITY[current.priority].color]">
+        <span
+          :class="['flex items-center gap-[4px] font-medium', PRIORITY[current.priority].color]"
+        >
           <span class="flex items-end gap-px" aria-hidden="true">
             <span
               v-for="bar in 3"
@@ -243,7 +249,10 @@ const field =
         </button>
       </div>
 
-      <div v-if="panel" class="flex flex-col gap-[8px] rounded-[10px] bg-black/3 p-[10px] dark:bg-white/5">
+      <div
+        v-if="panel"
+        class="flex flex-col gap-[8px] rounded-[10px] bg-black/3 p-[10px] dark:bg-white/5"
+      >
         <template v-if="panel === 'edit'">
           <input v-model="draft.title" maxlength="255" aria-label="Título" :class="field" />
           <textarea
@@ -258,15 +267,29 @@ const field =
             type="button"
             :disabled="locked || !draft.title.trim()"
             :class="[chip, active, 'w-fit']"
-            @click="patch({ title: draft.title.trim(), description: draft.description }).then((ok) => ok && (panel = null))"
+            @click="
+              patch({ title: draft.title.trim(), description: draft.description }).then(
+                (ok) => ok && (panel = null),
+              )
+            "
           >
             Salvar
           </button>
         </template>
 
-        <div v-else-if="panel === 'priority'" class="flex gap-[6px]" role="radiogroup" aria-label="Prioridade">
+        <div
+          v-else-if="panel === 'priority'"
+          class="flex gap-[6px]"
+          role="radiogroup"
+          aria-label="Prioridade"
+        >
           <button
-            v-for="[value, text] in [['low', 'Baixa'], ['medium', 'Média'], ['high', 'Alta'], ['urgent', 'Urgente']] as const"
+            v-for="[value, text] in [
+              ['low', 'Baixa'],
+              ['medium', 'Média'],
+              ['high', 'Alta'],
+              ['urgent', 'Urgente'],
+            ] as const"
             :key="value"
             type="button"
             role="radio"
@@ -280,11 +303,27 @@ const field =
         </div>
 
         <div v-else-if="panel === 'due'" class="flex flex-wrap items-center gap-[6px]">
-          <input v-model="draft.due" type="date" aria-label="Prazo" :disabled="locked" :class="[field, 'flex-none']" />
-          <button type="button" :disabled="locked || !draft.due" :class="[chip, active]" @click="patch({ due_date: draft.due })">
+          <input
+            v-model="draft.due"
+            type="date"
+            aria-label="Prazo"
+            :disabled="locked"
+            :class="[field, 'flex-none']"
+          />
+          <button
+            type="button"
+            :disabled="locked || !draft.due"
+            :class="[chip, active]"
+            @click="patch({ due_date: draft.due })"
+          >
             Salvar prazo
           </button>
-          <button type="button" :disabled="locked || !current.due_date" :class="[chip, idle]" @click="patch({ due_date: null }).then(() => (draft.due = ''))">
+          <button
+            type="button"
+            :disabled="locked || !current.due_date"
+            :class="[chip, idle]"
+            @click="patch({ due_date: null }).then(() => (draft.due = ''))"
+          >
             Remover prazo
           </button>
         </div>
@@ -312,7 +351,12 @@ const field =
           </select>
         </div>
 
-        <div v-else-if="panel === 'status'" class="flex flex-wrap gap-[6px]" role="radiogroup" aria-label="Coluna">
+        <div
+          v-else-if="panel === 'status'"
+          class="flex flex-wrap gap-[6px]"
+          role="radiogroup"
+          aria-label="Coluna"
+        >
           <button
             v-for="status in statuses"
             :key="status.id"
@@ -328,30 +372,86 @@ const field =
         </div>
 
         <template v-else-if="panel === 'checklist'">
-          <label v-for="item in checklist" :key="item.id" class="flex items-center gap-[8px] text-[12.5px]">
-            <input type="checkbox" :checked="item.is_done" :disabled="locked" @change="toggleItem(item)" />
-            <span :class="['min-w-0 flex-1 break-words', item.is_done ? 'line-through opacity-60' : '']">{{ item.content }}</span>
-            <button type="button" :disabled="locked" :aria-label="`Remover ${item.content}`" class="cursor-pointer text-(--text-muted) hover:text-(--destructive)" @click.prevent="removeItem(item)">×</button>
+          <label
+            v-for="item in checklist"
+            :key="item.id"
+            class="flex items-center gap-[8px] text-[12.5px]"
+          >
+            <input
+              type="checkbox"
+              :checked="item.is_done"
+              :disabled="locked"
+              @change="toggleItem(item)"
+            />
+            <span
+              :class="['min-w-0 flex-1 break-words', item.is_done ? 'line-through opacity-60' : '']"
+              >{{ item.content }}</span
+            >
+            <button
+              type="button"
+              :disabled="locked"
+              :aria-label="`Remover ${item.content}`"
+              class="cursor-pointer text-(--text-muted) hover:text-(--destructive)"
+              @click.prevent="removeItem(item)"
+            >
+              ×
+            </button>
           </label>
           <p v-if="!checklist.length" class="text-[12px] text-(--text-muted)">Nenhum item ainda.</p>
           <form class="flex gap-[6px]" @submit.prevent="addItem">
-            <input v-model="draft.item" maxlength="255" placeholder="Novo item" aria-label="Novo item do checklist" :disabled="locked" :class="field" />
-            <button type="submit" :disabled="locked || !draft.item.trim()" :class="[chip, active]">Adicionar</button>
+            <input
+              v-model="draft.item"
+              maxlength="255"
+              placeholder="Novo item"
+              aria-label="Novo item do checklist"
+              :disabled="locked"
+              :class="field"
+            />
+            <button type="submit" :disabled="locked || !draft.item.trim()" :class="[chip, active]">
+              Adicionar
+            </button>
           </form>
         </template>
 
         <template v-else-if="panel === 'comments'">
-          <div v-for="comment in comments" :key="comment.id" class="flex flex-col gap-[2px] text-[12.5px]">
+          <div
+            v-for="comment in comments"
+            :key="comment.id"
+            class="flex flex-col gap-[2px] text-[12.5px]"
+          >
             <p class="text-[11.5px] text-(--text-muted)">
               {{ comment.author_name }} · {{ new Date(comment.created_at).toLocaleString('pt-BR') }}
-              <button v-if="comment.id === justPosted" type="button" :disabled="locked" class="ml-[6px] cursor-pointer text-(--chat-ai) underline" @click="undoComment(comment)">Desfazer</button>
+              <button
+                v-if="comment.id === justPosted"
+                type="button"
+                :disabled="locked"
+                class="ml-[6px] cursor-pointer text-(--chat-ai) underline"
+                @click="undoComment(comment)"
+              >
+                Desfazer
+              </button>
             </p>
             <p class="whitespace-pre-wrap break-words">{{ comment.content }}</p>
           </div>
-          <p v-if="!comments.length" class="text-[12px] text-(--text-muted)">Nenhum comentário ainda.</p>
+          <p v-if="!comments.length" class="text-[12px] text-(--text-muted)">
+            Nenhum comentário ainda.
+          </p>
           <form class="flex gap-[6px]" @submit.prevent="postComment">
-            <input v-model="draft.comment" maxlength="5000" placeholder="Escreva um comentário" aria-label="Novo comentário" :disabled="locked" :class="field" />
-            <button type="submit" :disabled="locked || !draft.comment.trim()" :class="[chip, active]">Publicar</button>
+            <input
+              v-model="draft.comment"
+              maxlength="5000"
+              placeholder="Escreva um comentário"
+              aria-label="Novo comentário"
+              :disabled="locked"
+              :class="field"
+            />
+            <button
+              type="submit"
+              :disabled="locked || !draft.comment.trim()"
+              :class="[chip, active]"
+            >
+              Publicar
+            </button>
           </form>
         </template>
       </div>

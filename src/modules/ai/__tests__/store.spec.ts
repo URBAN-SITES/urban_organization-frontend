@@ -317,8 +317,14 @@ test('a failed confirmation can be retried and a discarded draft stays discarded
   const ai = useAiStore()
   await ai.ask('Crie uma tarefa')
   const payload = {
-    request_id: 'req-2', sector_id: 's', title: 'Fix', description: '',
-    priority: 'low' as const, due_date: null, due_time: null, assignee_ids: [],
+    request_id: 'req-2',
+    sector_id: 's',
+    title: 'Fix',
+    description: '',
+    priority: 'low' as const,
+    due_date: null,
+    due_time: null,
+    assignee_ids: [],
   }
   assert.equal(await ai.confirmDraft('m:1', payload), false)
   assert.equal(ai.drafts['m:1']?.status, 'failed')

@@ -218,13 +218,16 @@ const label = 'text-[11.5px] font-medium text-(--text-muted)'
               {{ person.name }}
             </option>
           </select>
-          <span v-if="!selected.length && !addable.length && !loadingPeople" class="text-[12px] text-(--text-muted)">
+          <span
+            v-if="!selected.length && !addable.length && !loadingPeople"
+            class="text-[12px] text-(--text-muted)"
+          >
             {{ form.sector_id ? 'Ninguém disponível neste setor.' : 'Escolha o setor primeiro.' }}
           </span>
         </div>
         <p v-if="selected.length > 1" class="text-[11.5px] text-(--text-muted)">
-          A tarefa tem um único responsável ({{ selected[0]?.name }}); os demais ficam
-          registrados na descrição.
+          A tarefa tem um único responsável ({{ selected[0]?.name }}); os demais ficam registrados
+          na descrição.
         </p>
         <p v-if="peopleError" role="alert" class="text-[12px] text-(--destructive)">
           {{ peopleError }}

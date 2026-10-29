@@ -2,13 +2,7 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { UUID } from '@/shared/types'
 import { AiRequestError, analyzeAiFiles, askAi, createTaskFromDraft } from '../services'
-import type {
-  AiAskRequest,
-  AiConversation,
-  AiDraftState,
-  AiMessage,
-  AiTaskConfirm,
-} from '../types'
+import type { AiAskRequest, AiConversation, AiDraftState, AiMessage, AiTaskConfirm } from '../types'
 
 export const useAiStore = defineStore('ai', () => {
   const conversations = ref<AiConversation[]>([])

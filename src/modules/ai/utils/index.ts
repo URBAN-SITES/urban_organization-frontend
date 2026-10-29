@@ -60,8 +60,12 @@ export function aiActionTone(action: AiAction): 'ok' | 'pending' | 'error' {
 }
 
 function looksLikeTask(value: unknown): value is AiTask {
-  return isRecord(value) && typeof value.id === 'string' && typeof value.title === 'string'
-    && 'priority' in value
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    typeof value.title === 'string' &&
+    'priority' in value
+  )
 }
 
 /** Tasks in a successful receipt: a single result or a paginated `results` list. */

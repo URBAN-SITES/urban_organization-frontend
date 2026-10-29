@@ -27,7 +27,7 @@ const priority = computed(() => priorityOf(props.task.priority))
       <a
         href="#"
         :class="[
-          'rounded-[4px] outline-none after:absolute after:inset-0 after:content-[\'\'] focus-visible:outline-2 focus-visible:outline-accent',
+          'rounded-[4px] after:absolute after:inset-0 after:content-[\'\'] focus-visible:outline-2 focus-visible:outline-accent',
           task.completed_at ? 'text-fg-muted line-through' : '',
         ]"
         @click.prevent="$emit('open')"

@@ -1,4 +1,4 @@
-const COLORS = ['#f0541e', '#1e9e5a', '#2563eb', '#7c4dff', '#d97706', '#0e9488']
+const COLORS = ['#c2410c', '#15803d', '#2563eb', '#6d28d9', '#b45309', '#0f766e']
 
 /** Iniciais (primeiro e último nome) e uma cor estável para a pessoa. */
 export function avatar(name: string): { initials: string; color: string } {

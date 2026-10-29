@@ -50,7 +50,10 @@ export function useChatSocket(onEvent?: (event: ChatEvent) => void) {
     }
   }
 
+  let closed = false
   function close(): void {
+    if (closed) return
+    closed = true
     if (onEvent) listeners.delete(onEvent)
     users = Math.max(0, users - 1)
     if (active()) return

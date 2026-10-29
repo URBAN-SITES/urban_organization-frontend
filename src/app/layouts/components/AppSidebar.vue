@@ -99,7 +99,7 @@ watch(
 )
 
 const linkClass = (active: boolean) => [
-  'group relative flex h-8 items-center gap-2.5 rounded-control px-2 text-13 font-medium outline-none',
+  'group relative flex h-8 items-center gap-2.5 rounded-control px-2 text-13 font-medium',
   'transition-colors duration-(--dur-fast) ease-out focus-visible:outline-2 focus-visible:outline-accent',
   active ? 'bg-surface-2 text-fg' : 'text-fg-muted hover:bg-surface-2 hover:text-fg',
 ]
