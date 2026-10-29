@@ -1,13 +1,18 @@
-import type { Meeting, RecordingStatus } from '../types'
+import type { InsightStatus, Meeting, RecordingStatus, TranscriptSegment } from '../types'
 
 export type MeetingErrorCode =
-  'meetings_not_configured' | 'recordings_not_configured' | 'livekit_unavailable'
+  | 'meetings_not_configured'
+  | 'recordings_not_configured'
+  | 'livekit_unavailable'
+  | 'insights_not_configured'
 
 const MESSAGES: Record<MeetingErrorCode, string> = {
   meetings_not_configured:
     'As reuniões ainda não foram configuradas no servidor. Veja o docs/REUNIOES.md do backend.',
   recordings_not_configured: 'O armazenamento das gravações ainda não foi configurado no servidor.',
   livekit_unavailable: 'O servidor de vídeo não respondeu. Tente de novo em instantes.',
+  insights_not_configured:
+    'A transcrição e o resumo ainda não foram ligados no servidor. Veja o docs/IA-REUNIOES.md do backend.',
 }
 
 /** Lê o `code` estável do backend; sem ele, usa o `detail` ou o primeiro erro de campo. */
@@ -117,4 +122,52 @@ export function recordingError(error: string): string {
   if (error === 'limit_reached')
     return 'A gravação parou no limite de duração do servidor de vídeo. O trecho gravado foi salvo.'
   return `A gravação falhou: ${error}`
+}
+
+export const INSIGHT_STATUS: Record<
+  InsightStatus,
+  { label: string; tone: 'neutral' | 'success' | 'warning' | 'danger' }
+> = {
+  pending: { label: 'Na fila', tone: 'neutral' },
+  transcribing: { label: 'Transcrevendo', tone: 'warning' },
+  summarizing: { label: 'Resumindo', tone: 'warning' },
+  done: { label: 'Resumo pronto', tone: 'success' },
+  failed: { label: 'Falhou', tone: 'danger' },
+}
+
+/** 75 → "01:15"; 3725 → "1:02:05" (mesmo formato do Markdown exportado). */
+export function clock(seconds: number): string {
+  const total = Math.max(0, Math.floor(seconds))
+  const hours = Math.floor(total / 3600)
+  const minutes = Math.floor((total % 3600) / 60)
+  const secs = total % 60
+  const mm = String(minutes).padStart(2, '0')
+  const ss = String(secs).padStart(2, '0')
+  return hours ? `${hours}:${mm}:${ss}` : `${mm}:${ss}`
+}
+
+/** Busca sem diferenciar maiúsculas nem acentos. */
+export function normalizeSearch(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+}
+
+export function searchSegments(segments: TranscriptSegment[], query: string): TranscriptSegment[] {
+  const wanted = normalizeSearch(query)
+  if (!wanted) return segments
+  return segments.filter((segment) => normalizeSearch(segment.text).includes(wanted))
+}
+
+/** Explica o erro gravado pelo worker sem esconder o detalhe técnico. */
+export function insightError(error: string): string {
+  if (!error) return ''
+  if (error === 'no_speech') return 'Não encontramos fala nesta gravação.'
+  if (error.includes('limit')) return `A gravação passa do limite configurado. (${error})`
+  if (error.includes('Ollama')) return `O modelo de resumo não respondeu. (${error})`
+  if (error.includes('schema') || error.includes('JSON'))
+    return `O resumo veio em formato inválido e foi descartado. (${error})`
+  return `O processamento falhou. (${error})`
 }

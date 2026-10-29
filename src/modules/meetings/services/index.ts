@@ -1,7 +1,14 @@
 import axios from 'axios'
 import { api } from '@/app/plugins/axios'
 import type { UUID } from '@/shared/types'
-import type { JoinInfo, Meeting, MeetingInput, MeetingRecording } from '../types'
+import type {
+  ActionTaskInput,
+  JoinInfo,
+  Meeting,
+  MeetingInput,
+  MeetingInsight,
+  MeetingRecording,
+} from '../types'
 import { meetingProblem, type MeetingErrorCode } from '../utils'
 
 /** Erro com o `code` do backend, para a tela decidir o que mostrar. */
@@ -75,4 +82,35 @@ export const deleteRecording = (meetingId: UUID, recordingId: UUID) =>
   call(
     () => api.delete<void>(`/meetings/${meetingId}/recordings/${recordingId}/`),
     'Não foi possível apagar a gravação.',
+  )
+
+const insightUrl = (meetingId: UUID, recordingId: UUID) =>
+  `/meetings/${meetingId}/recordings/${recordingId}/insight/`
+
+export const getInsight = (meetingId: UUID, recordingId: UUID) =>
+  call(
+    () => api.get<MeetingInsight>(insightUrl(meetingId, recordingId)),
+    'Não foi possível carregar a transcrição.',
+  )
+
+export const processInsight = (meetingId: UUID, recordingId: UUID) =>
+  call(
+    () => api.post<MeetingInsight>(insightUrl(meetingId, recordingId)),
+    'Não foi possível iniciar a transcrição.',
+  )
+
+export const exportInsightMarkdown = (meetingId: UUID, recordingId: UUID) =>
+  call(
+    () => api.get<Blob>(`${insightUrl(meetingId, recordingId)}export/`, { responseType: 'blob' }),
+    'Não foi possível exportar o resumo.',
+  )
+
+export const createActionTasks = (meetingId: UUID, recordingId: UUID, items: ActionTaskInput[]) =>
+  call(
+    () =>
+      api.post<{ created: { index: number; task_id: UUID }[]; skipped: number[] }>(
+        `${insightUrl(meetingId, recordingId)}tasks/`,
+        { items },
+      ),
+    'Não foi possível criar as tarefas.',
   )

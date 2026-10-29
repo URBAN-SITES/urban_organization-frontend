@@ -1,17 +1,25 @@
 <script setup lang="ts">
-import { Download, RefreshCw, Trash2 } from '@lucide/vue'
+import { Download, RefreshCw, Sparkles, Trash2 } from '@lucide/vue'
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { UiBadge, UiButton, UiIconButton, UiSkeleton } from '@/shared/components'
 import { useConfirm } from '@/shared/composables/confirm'
 import type { UUID } from '@/shared/types'
 import { deleteRecording, listRecordings } from '../services'
 import type { MeetingRecording } from '../types'
-import { formatDuration, formatSize, RECORDING_STATUS, recordingError } from '../utils'
+import {
+  formatDuration,
+  formatSize,
+  INSIGHT_STATUS,
+  RECORDING_STATUS,
+  recordingError,
+} from '../utils'
 
 /** Gravações de uma reunião: player, baixar (autorizados) e apagar. */
 const props = defineProps<{ meetingId: UUID; canManage: boolean }>()
 const confirm = useConfirm()
+const router = useRouter()
 
 const recordings = ref<MeetingRecording[]>([])
 const loading = ref(true)
@@ -84,7 +92,27 @@ async function remove(recording: MeetingRecording) {
           <span v-if="recording.size_bytes" class="text-13 text-fg-muted">
             · {{ formatSize(recording.size_bytes) }}
           </span>
+          <UiBadge
+            v-if="recording.insight_status && recording.insight_status !== 'done'"
+            :tone="INSIGHT_STATUS[recording.insight_status].tone"
+          >
+            {{ INSIGHT_STATUS[recording.insight_status].label }}
+          </UiBadge>
           <span class="flex-1" />
+          <UiButton
+            v-if="recording.status === 'ready'"
+            size="sm"
+            variant="ghost"
+            :icon="Sparkles"
+            @click="
+              router.push({
+                name: 'MeetingInsight',
+                params: { meetingId: props.meetingId, recordingId: recording.id },
+              })
+            "
+          >
+            Resumo e transcrição
+          </UiButton>
           <UiButton
             v-if="recording.play_url && playing !== recording.id"
             size="sm"

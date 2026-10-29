@@ -8,4 +8,17 @@ export const meetingRoutes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
     component: () => import('../views/MeetingRoomView.vue'),
   },
+  {
+    path: '/reunioes/:meetingId/gravacoes/:recordingId',
+    meta: { requiresAuth: true, transitionGroup: 'default' },
+    component: () => import('@/app/layouts/DefaultLayout.vue'),
+    children: [
+      {
+        path: '',
+        name: 'MeetingInsight',
+        component: () => import('../views/MeetingInsightView.vue'),
+        props: true,
+      },
+    ],
+  },
 ]
