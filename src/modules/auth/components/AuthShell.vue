@@ -1,104 +1,53 @@
 <script setup lang="ts">
-import { ChartNoAxesColumn, Moon, Sun, Users, Zap } from '@lucide/vue'
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useTheme } from '@/app/composables/useTheme'
-import { BrandLogo, UiIcon, UiIconButton } from '@/shared/components'
+import { BrandLogo } from '@/shared/components'
+import AuthVisual from './AuthVisual.vue'
 
 /**
- * Moldura das telas de acesso e do onboarding: painel de imagem de um lado, conteúdo do outro.
- * No cadastro o painel troca de lado (desliza para a direita) e o formulário passa para a esquerda.
+ * Moldura das telas de acesso e do onboarding, sempre no tema escuro da marca:
+ * painel institucional (60%) com a foto do escritório e painel preto (40%) com o formulário.
+ * No cadastro a composição inverte: formulário à esquerda, foto à direita.
  */
-const { isDark, toggleTheme } = useTheme()
 const route = useRoute()
 
-// avançar no fluxo (entrar -> criar conta -> código) desliza para a esquerda; voltar, para a direita
-const direction = ref(1)
-watch(
-  () => route.meta.authStep,
-  (to, from) => (direction.value = (to ?? 0) >= (from ?? 0) ? 1 : -1),
-)
-
-const asideRight = computed(() => Boolean(route.meta.authAsideRight))
+const formLeft = computed(() => Boolean(route.meta.authAsideRight))
+const scene = computed(() => route.meta.authScene ?? 'executive')
 
 // entrar e criar conta ficam em cache: alternar entre elas não apaga o que já foi digitado
 const KEEP = ['LoginView', 'RegisterView']
-const image = `${import.meta.env.BASE_URL}images/office-executive.webp`
-
-const FEATURES = [
-  { icon: Users, title: 'Equipes', text: 'mais produtivas' },
-  { icon: Zap, title: 'Projetos', text: 'mais organizados' },
-  { icon: ChartNoAxesColumn, title: 'Resultados', text: 'mais consistentes' },
-]
 </script>
 
 <template>
   <div
-    :data-aside="asideRight ? 'right' : 'left'"
-    class="auth-shell grid min-h-dvh overflow-x-clip bg-bg text-fg lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]"
+    :data-form="formLeft ? 'left' : 'right'"
+    class="auth-shell dark relative flex min-h-dvh flex-col overflow-x-clip bg-black text-fg lg:grid lg:h-dvh lg:overflow-hidden"
   >
-    <!-- o painel é sempre escuro, independente do tema -->
-    <aside
-      class="auth-aside dark sticky top-0 hidden h-dvh flex-col justify-between overflow-hidden bg-black p-10 text-fg lg:flex xl:p-12"
+    <AuthVisual
+      class="auth-shell-visual lg:h-dvh"
+      :scene="scene"
+      :side="formLeft ? 'left' : 'right'"
+    />
+
+    <main
+      class="auth-panel relative flex min-w-0 flex-1 flex-col bg-black lg:h-dvh lg:overflow-y-auto"
     >
-      <img
-        :src="image"
-        alt=""
-        aria-hidden="true"
-        class="absolute inset-0 size-full object-cover object-left"
-      />
       <div
-        class="absolute inset-0 bg-linear-to-t from-black via-black/40 to-black/10"
-        aria-hidden="true"
-      />
+        class="mx-auto flex w-full max-w-[400px] flex-1 flex-col px-5 pt-2 pb-8 sm:px-8 lg:max-w-[420px] lg:justify-center lg:py-12"
+      >
+        <RouterLink
+          to="/entrar"
+          class="auth-logo mx-auto mb-8 block w-36 rounded-control focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent max-lg:-mt-16 max-lg:w-32 lg:mb-10"
+          aria-label="Urban Organization"
+        >
+          <BrandLogo on="dark" class="w-full" />
+        </RouterLink>
 
-      <BrandLogo on="dark" class="relative w-32" />
-
-      <div class="auth-aside-copy relative max-w-lg">
-        <span class="mb-6 block h-0.5 w-8 bg-accent" aria-hidden="true" />
-        <p class="text-32 leading-tight font-semibold tracking-[-0.02em]">
-          Grandes projetos começam com <span class="text-accent">organização.</span>
-        </p>
-        <p class="mt-3 text-16 text-fg-muted">
-          O Urban Organization é o espaço onde equipes transformam ideias em resultados.
-        </p>
-        <ul class="mt-10 grid grid-cols-3 gap-4">
-          <li v-for="feature in FEATURES" :key="feature.title" class="flex items-center gap-3">
-            <span
-              class="grid size-9 place-items-center rounded-control border border-border bg-surface-1/60"
-              aria-hidden="true"
-            >
-              <UiIcon :icon="feature.icon" />
-            </span>
-            <span class="min-w-0 text-13 leading-tight">
-              <span class="block text-fg">{{ feature.title }}</span>
-              <span class="block text-fg-muted">{{ feature.text }}</span>
-            </span>
-          </li>
-        </ul>
-      </div>
-    </aside>
-
-    <!-- overflow-x-clip: o formulário que sai desliza para fora sem criar rolagem horizontal -->
-    <main class="auth-main flex min-h-dvh min-w-0 flex-col overflow-x-clip px-4 py-5 sm:px-10">
-      <div class="flex items-center justify-between">
-        <span class="lg:invisible">
-          <BrandLogo class="w-24" />
-        </span>
-        <UiIconButton
-          :icon="isDark ? Sun : Moon"
-          :label="isDark ? 'Usar tema claro' : 'Usar tema escuro'"
-          @click="toggleTheme"
-        />
-      </div>
-
-      <!-- alinhado ao topo: formulários de alturas diferentes trocam sem o conteúdo pular -->
-      <div class="flex flex-1 justify-center pt-8 pb-10 sm:pt-[max(2.5rem,10vh)]">
-        <div class="auth-stage w-full max-w-100" :style="{ '--auth-dir': direction }">
+        <div class="auth-stage">
           <!-- telas de acesso usam as rotas filhas; o onboarding passa o próprio conteúdo -->
           <slot>
             <RouterView v-slot="{ Component, route: current }">
-              <Transition name="auth-slide" appear>
+              <Transition name="auth-swap" appear>
                 <KeepAlive :include="KEEP">
                   <component :is="Component" :key="current.path" class="auth-view" />
                 </KeepAlive>
@@ -108,33 +57,27 @@ const FEATURES = [
         </div>
       </div>
 
-      <footer class="text-12 text-fg-muted">© 2026 Urban Organization</footer>
+      <footer class="pb-5 text-center text-12 text-fg-muted">© 2026 Urban Organization</footer>
     </main>
   </div>
 </template>
 
 <style>
-/*
- * Troca de lado do painel (só no desktop, onde ele aparece). As colunas são 1,1fr e 1fr:
- * o painel anda a largura do conteúdo (1/1,1 da própria largura) e o conteúdo anda a do painel
- * (1,1 da própria). Só transform, então nada é recalculado no layout durante a troca.
- */
+/* 60% foto, 40% formulário; no cadastro o formulário vem primeiro */
 @media (min-width: 64rem) {
-  .auth-aside,
-  .auth-main {
-    transition: transform var(--dur-slow) var(--ease-in-out);
+  .auth-shell[data-form='right'] {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
   }
 
-  .auth-shell[data-aside='right'] .auth-aside {
-    transform: translate3d(calc(100% / 1.1), 0, 0);
+  .auth-shell[data-form='left'] {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
   }
 
-  .auth-shell[data-aside='right'] .auth-main {
-    transform: translate3d(-110%, 0, 0);
+  .auth-shell[data-form='left'] .auth-panel {
+    order: -1;
   }
 }
 
-/* Troca entre telas de acesso: a que sai e a que entra ocupam a mesma célula e deslizam juntas. */
 .auth-stage {
   display: grid;
 }
@@ -144,72 +87,223 @@ const FEATURES = [
   min-width: 0;
 }
 
-.auth-slide-enter-active {
-  transition:
-    opacity var(--dur-slow) var(--ease-out),
-    transform var(--dur-slow) var(--ease-out);
+.auth-swap-enter-active {
+  transition: opacity var(--dur-slow) var(--ease-out);
 }
 
-.auth-slide-leave-active {
+.auth-swap-leave-active {
   pointer-events: none;
-  transition:
-    opacity var(--dur-base-exit) var(--ease-in),
-    transform var(--dur-slow-exit) var(--ease-in);
+  transition: opacity var(--dur-base-exit) var(--ease-in);
 }
 
-.auth-slide-enter-from {
+.auth-swap-enter-from,
+.auth-swap-leave-to {
   opacity: 0;
-  transform: translate3d(calc(var(--auth-dir, 1) * var(--motion-slide)), 0, 0);
-}
-
-.auth-slide-leave-to {
-  opacity: 0;
-  transform: translate3d(calc(var(--auth-dir, 1) * var(--motion-slide) * -1), 0, 0)
-    scale(var(--motion-scale));
 }
 
 /* Título, botões sociais, campos e links entram em sequência curta (reaplicado ao voltar do cache). */
 @keyframes auth-item-in {
   from {
     opacity: 0;
-    transform: translate3d(calc(var(--auth-dir, 1) * var(--motion-slide) / 3), 0, 0);
+    transform: translate3d(0, 10px, 0);
   }
 }
 
 .auth-view > :not(form),
 .auth-view form > * {
-  animation: auth-item-in var(--dur-slow) var(--ease-out) backwards;
+  animation: auth-item-in 420ms var(--ease-out) backwards;
 }
 
 .auth-view > :nth-child(2),
 .auth-view form > :nth-child(1) {
-  animation-delay: 40ms;
+  animation-delay: 50ms;
 }
 .auth-view form > :nth-child(2) {
-  animation-delay: 70ms;
+  animation-delay: 90ms;
 }
 .auth-view form > :nth-child(3) {
-  animation-delay: 100ms;
+  animation-delay: 130ms;
 }
 .auth-view form > :nth-child(4) {
-  animation-delay: 130ms;
+  animation-delay: 170ms;
 }
 .auth-view form > :nth-child(n + 5),
 .auth-view > :nth-child(n + 3) {
-  animation-delay: 160ms;
+  animation-delay: 210ms;
 }
 
-/* painel decorativo: a frase e os destaques aparecem uma vez, ao abrir a área de acesso */
-.auth-aside-copy > * {
-  animation: ui-rise var(--dur-slow) var(--ease-out) backwards;
+/* a logo acende uma vez ao abrir a área de acesso */
+.auth-logo {
+  animation: auth-logo-in 640ms var(--ease-out) backwards;
 }
-.auth-aside-copy > :nth-child(2) {
-  animation-delay: 60ms;
+
+@keyframes auth-logo-in {
+  from {
+    opacity: 0;
+    filter: drop-shadow(0 0 0 transparent) brightness(0.6);
+    transform: translate3d(0, 6px, 0) scale(0.96);
+  }
+  60% {
+    filter: drop-shadow(0 0 18px rgb(249 159 17 / 0.45));
+  }
 }
-.auth-aside-copy > :nth-child(3) {
-  animation-delay: 120ms;
+</style>
+
+<style>
+/* Botões sociais (Google, GitHub): contorno com reflexo laranja, seta que avança no hover. */
+.auth-social {
+  position: relative;
+  display: flex;
+  height: 3rem;
+  width: 100%;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: var(--radius-control);
+  border: 1px solid rgb(249 159 17 / 0.35);
+  background: rgb(255 255 255 / 0.02);
+  padding-inline: 1rem;
+  font-size: var(--text-14);
+  font-weight: 500;
+  color: var(--ds-fg);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out),
+    scale var(--dur-instant) var(--ease-out);
 }
-.auth-aside-copy > :nth-child(4) {
-  animation-delay: 180ms;
+
+.auth-social:hover:not(:disabled),
+.auth-social:focus-within {
+  border-color: var(--ds-accent);
+  background: rgb(249 159 17 / 0.06);
+  box-shadow: 0 0 0 4px rgb(249 159 17 / 0.08);
+}
+
+.auth-social:active:not(:disabled) {
+  scale: 0.99;
+}
+
+.auth-social:focus-visible {
+  outline: 2px solid var(--ds-accent);
+  outline-offset: 2px;
+}
+
+.auth-social:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.auth-social-arrow {
+  color: var(--ds-fg-muted);
+  transition:
+    transform var(--dur-base) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.auth-social:hover .auth-social-arrow {
+  color: var(--ds-accent);
+  transform: translateX(3px);
+}
+
+/* Campos das telas de acesso: preto profundo, borda discreta, foco com brilho laranja. */
+.auth-shell input:not([type='checkbox']) {
+  background-color: rgb(255 255 255 / 0.03);
+}
+
+.auth-shell input:focus-visible {
+  box-shadow: 0 0 0 4px rgb(249 159 17 / 0.12);
+}
+
+/* Checkbox marcado em laranja, com o check preto. */
+.auth-shell input[type='checkbox']:checked {
+  border-color: var(--ds-accent);
+  background-color: var(--ds-accent);
+}
+
+.auth-shell input[type='checkbox']:checked ~ svg {
+  color: var(--ds-accent-fg);
+}
+
+/* Botão principal com reflexo: a luz atravessa uma vez no hover. */
+.auth-shell [data-ui='button'].bg-accent {
+  overflow: hidden;
+  box-shadow: 0 8px 24px -12px rgb(249 159 17 / 0.6);
+}
+
+.auth-shell [data-ui='button'].bg-accent::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 35%,
+    rgb(255 255 255 / 0.35) 50%,
+    transparent 65%
+  );
+  transform: translateX(-120%);
+  pointer-events: none;
+}
+
+.auth-shell [data-ui='button'].bg-accent:hover:not(:disabled)::after {
+  transform: translateX(120%);
+  transition: transform 700ms var(--ease-out);
+}
+
+.auth-cta {
+  border-radius: 4px;
+  font-weight: 500;
+  color: var(--ds-accent);
+  text-decoration: underline;
+  text-decoration-color: rgb(249 159 17 / 0.4);
+  text-underline-offset: 4px;
+  transition: text-decoration-color var(--dur-fast) var(--ease-out);
+}
+
+.auth-cta:hover {
+  text-decoration-color: var(--ds-accent);
+}
+
+.auth-cta:focus-visible {
+  outline: 2px solid var(--ds-accent);
+  outline-offset: 2px;
+}
+</style>
+
+<style>
+/* Erro do formulário: entra de cima e balança uma vez para chamar a atenção. */
+.auth-feedback-enter-active {
+  transition:
+    opacity var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+}
+
+.auth-feedback-leave-active {
+  transition: opacity var(--dur-fast-exit) var(--ease-in);
+}
+
+.auth-feedback-enter-from {
+  opacity: 0;
+  transform: translate3d(0, -4px, 0);
+}
+
+.auth-feedback-leave-to {
+  opacity: 0;
+}
+
+.auth-error {
+  animation: auth-shake 360ms var(--ease-out) 120ms;
+}
+
+@keyframes auth-shake {
+  25% {
+    transform: translateX(-4px);
+  }
+  50% {
+    transform: translateX(3px);
+  }
+  75% {
+    transform: translateX(-2px);
+  }
 }
 </style>

@@ -4,7 +4,7 @@ import { reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { GitHubLoginButton } from '@/modules/github'
 import { UiButton, UiCheckbox, UiInput } from '@/shared/components'
-import { AuthDivider, AuthHeading, GoogleButton, PasswordStrength } from '../components'
+import { AuthDivider, AuthHeading, GoogleButton, PasswordRequirements } from '../components'
 import { useAuthNavigation } from '../composables'
 import { requestRegistrationCode } from '../services'
 import { useAuthFlowStore, useAuthStore } from '../stores'
@@ -84,12 +84,12 @@ async function handleGoogleCredential(credential: string) {
 <template>
   <section>
     <AuthHeading
-      title="Crie sua conta"
-      description="Organize seus projetos e avance junto com seu time."
+      title="Criar sua conta"
+      description="Comece a organizar suas ideias e transforme projetos em resultados."
     />
 
     <template v-if="hasGoogle || hasGitHub">
-      <div class="grid gap-2">
+      <div class="grid gap-2.5">
         <GoogleButton
           v-if="hasGoogle"
           button-text="signup_with"
@@ -104,66 +104,59 @@ async function handleGoogleCredential(credential: string) {
       <AuthDivider />
     </template>
 
-    <form class="flex flex-col gap-4" novalidate @submit.prevent="handleSubmit">
+    <form class="flex flex-col gap-3.5" novalidate @submit.prevent="handleSubmit">
       <UiInput
         id="register-name"
         v-model="name"
-        label="Nome completo"
+        aria-label="Nome completo"
         size="lg"
         :icon="User"
         :error="errors.name"
         name="name"
         autocomplete="name"
-        placeholder="Seu nome"
+        placeholder="Nome completo"
         maxlength="255"
       />
       <UiInput
         id="register-email"
         v-model="email"
-        label="E-mail"
+        aria-label="E-mail"
         type="email"
         size="lg"
         :icon="Mail"
         :error="errors.email"
         name="email"
         autocomplete="email"
-        placeholder="voce@email.com"
+        placeholder="Seu e-mail"
         @blur="email && (errors.email = emailProblem(email))"
       />
-      <div class="flex flex-col gap-2">
-        <UiInput
-          id="register-password"
-          v-model="password"
-          label="Senha"
-          type="password"
-          size="lg"
-          :icon="Lock"
-          :error="errors.password"
-          hint="Mínimo de 9 caracteres, sem ser só números."
-          name="password"
-          autocomplete="new-password"
-          placeholder="Crie uma senha"
-        />
-        <PasswordStrength :password="password" />
-      </div>
+      <UiInput
+        id="register-password"
+        v-model="password"
+        aria-label="Senha"
+        type="password"
+        size="lg"
+        :icon="Lock"
+        :error="errors.password"
+        name="password"
+        autocomplete="new-password"
+        placeholder="Crie uma senha"
+      />
+      <PasswordRequirements :password="password" />
 
       <div>
         <UiCheckbox id="register-terms" v-model="acceptedTerms">
           <template #label>
-            Aceito os
-            <RouterLink
-              :to="{ name: 'TermsOfService' }"
-              target="_blank"
-              class="underline underline-offset-4 hover:text-accent"
-              >Termos de uso</RouterLink
-            >
-            e a
-            <RouterLink
-              :to="{ name: 'PrivacyPolicy' }"
-              target="_blank"
-              class="underline underline-offset-4 hover:text-accent"
-              >Política de privacidade</RouterLink
-            >
+            <span class="text-13 text-fg-muted">
+              Aceito os
+              <RouterLink :to="{ name: 'TermsOfService' }" target="_blank" class="auth-cta"
+                >Termos de uso</RouterLink
+              >
+              e a
+              <RouterLink :to="{ name: 'PrivacyPolicy' }" target="_blank" class="auth-cta"
+                >Política de privacidade</RouterLink
+              >
+            </span>
           </template>
         </UiCheckbox>
         <p v-if="errors.terms" role="alert" class="mt-1.5 text-12 text-danger">
@@ -171,13 +164,15 @@ async function handleGoogleCredential(credential: string) {
         </p>
       </div>
 
-      <p
-        v-if="formError"
-        role="alert"
-        class="rounded-control bg-danger-soft px-3 py-2.5 text-13 text-danger"
-      >
-        {{ formError }}
-      </p>
+      <Transition name="auth-feedback">
+        <p
+          v-if="formError"
+          role="alert"
+          class="auth-error rounded-control border border-danger/30 bg-danger-soft px-3 py-2.5 text-13 text-danger"
+        >
+          {{ formError }}
+        </p>
+      </Transition>
 
       <UiButton
         type="submit"
@@ -188,20 +183,15 @@ async function handleGoogleCredential(credential: string) {
         :loading="isSubmitting"
         loading-text="Enviando código..."
         :disabled="isGoogleSubmitting"
-        class="mt-2"
+        class="mt-1 h-12"
       >
         Criar conta
       </UiButton>
     </form>
 
-    <p class="mt-8 text-center text-14 text-fg-muted">
+    <p class="mt-7 text-center text-14 text-fg-muted">
       Já tem uma conta?
-      <RouterLink
-        :to="navigation.to('Login')"
-        class="font-medium text-fg underline underline-offset-4 hover:text-accent"
-      >
-        Entrar
-      </RouterLink>
+      <RouterLink :to="navigation.to('Login')" class="auth-cta">Entrar</RouterLink>
     </p>
   </section>
 </template>

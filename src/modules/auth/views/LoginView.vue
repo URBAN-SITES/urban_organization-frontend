@@ -71,14 +71,15 @@ async function handleGoogleCredential(credential: string) {
   <section>
     <AuthHeading
       title="Bem-vindo de volta"
-      description="Acesse sua conta e continue construindo com o Urban Organization."
+      description="Entre na sua conta e continue construindo grandes ideias."
     />
 
     <template v-if="hasGoogle || hasGitHub">
-      <div class="grid gap-2">
+      <div class="grid gap-2.5">
         <GoogleButton v-if="hasGoogle" @credential="handleGoogleCredential" />
         <GitHubLoginButton
           v-if="hasGitHub"
+          label="Entrar com GitHub"
           :return-to="navigation.afterLogin.value"
           @error="formError = $event"
         />
@@ -86,48 +87,47 @@ async function handleGoogleCredential(credential: string) {
       <AuthDivider />
     </template>
 
-    <form class="flex flex-col gap-4" novalidate @submit.prevent="handleSubmit">
+    <form class="flex flex-col gap-3.5" novalidate @submit.prevent="handleSubmit">
       <UiInput
         id="login-email"
         v-model="email"
-        label="E-mail"
+        aria-label="E-mail"
         type="email"
         size="lg"
         :icon="Mail"
         :error="errors.email"
         name="email"
         autocomplete="username"
-        placeholder="voce@email.com"
+        placeholder="Seu e-mail"
         @blur="email && (errors.email = emailProblem(email))"
       />
-      <div class="flex flex-col gap-2">
-        <UiInput
-          id="login-password"
-          v-model="password"
-          label="Senha"
-          type="password"
-          size="lg"
-          :icon="Lock"
-          :error="errors.password"
-          name="password"
-          autocomplete="current-password"
-          placeholder="Sua senha"
-        />
-        <RouterLink
-          :to="navigation.to('ForgotPassword')"
-          class="self-end rounded-[4px] text-13 text-fg-muted underline-offset-4 hover:text-fg hover:underline focus-visible:outline-2 focus-visible:outline-accent"
-        >
-          Esqueceu a senha?
+      <UiInput
+        id="login-password"
+        v-model="password"
+        aria-label="Senha"
+        type="password"
+        size="lg"
+        :icon="Lock"
+        :error="errors.password"
+        name="password"
+        autocomplete="current-password"
+        placeholder="Sua senha"
+      />
+      <div class="flex items-center justify-end gap-3">
+        <RouterLink :to="navigation.to('ForgotPassword')" class="auth-cta text-13">
+          Esqueceu sua senha?
         </RouterLink>
       </div>
 
-      <p
-        v-if="formError"
-        role="alert"
-        class="rounded-control bg-danger-soft px-3 py-2.5 text-13 text-danger"
-      >
-        {{ formError }}
-      </p>
+      <Transition name="auth-feedback">
+        <p
+          v-if="formError"
+          role="alert"
+          class="auth-error rounded-control border border-danger/30 bg-danger-soft px-3 py-2.5 text-13 text-danger"
+        >
+          {{ formError }}
+        </p>
+      </Transition>
 
       <UiButton
         type="submit"
@@ -138,20 +138,15 @@ async function handleGoogleCredential(credential: string) {
         :loading="isSubmitting"
         loading-text="Entrando..."
         :disabled="isGoogleSubmitting"
-        class="mt-2"
+        class="mt-1 h-12"
       >
         Entrar
       </UiButton>
     </form>
 
-    <p class="mt-8 text-center text-14 text-fg-muted">
+    <p class="mt-7 text-center text-14 text-fg-muted">
       Ainda não tem uma conta?
-      <RouterLink
-        :to="navigation.to('Register')"
-        class="font-medium text-fg underline underline-offset-4 hover:text-accent"
-      >
-        Criar conta
-      </RouterLink>
+      <RouterLink :to="navigation.to('Register')" class="auth-cta">Criar conta</RouterLink>
     </p>
   </section>
 </template>
