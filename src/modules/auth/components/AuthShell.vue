@@ -126,49 +126,12 @@ const FEATURES = [
     transition: transform var(--dur-slow) var(--ease-in-out);
   }
 
-  /* o painel preto passa por cima dos formulários durante a troca */
-  .auth-aside {
-    z-index: 1;
-  }
-
   .auth-shell[data-aside='right'] .auth-aside {
     transform: translate3d(calc(100% / 1.1), 0, 0);
   }
 
   .auth-shell[data-aside='right'] .auth-main {
     transform: translate3d(-110%, 0, 0);
-  }
-
-  /*
-   * Durante a troca o painel atravessa só preto; ao chegar do outro lado a imagem aparece.
-   * Dois nomes de keyframes iguais: trocar o nome reinicia a animação a cada mudança de lado.
-   */
-  .auth-shell[data-aside='left'] .auth-aside > * {
-    animation: auth-aside-reveal-l calc(var(--dur-slow) + var(--dur-base)) var(--ease-out) backwards;
-  }
-
-  .auth-shell[data-aside='right'] .auth-aside > * {
-    animation: auth-aside-reveal-r calc(var(--dur-slow) + var(--dur-base)) var(--ease-out) backwards;
-  }
-}
-
-@keyframes auth-aside-reveal-l {
-  0%,
-  59% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
-}
-
-@keyframes auth-aside-reveal-r {
-  0%,
-  59% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
   }
 }
 
