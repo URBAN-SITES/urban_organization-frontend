@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ArrowRight, Lock, Mail } from '@lucide/vue'
-import { reactive, ref } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { GitHubLoginButton } from '@/modules/github'
 import { UiButton, UiInput } from '@/shared/components'
@@ -18,7 +18,9 @@ const hasGoogle = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID)
 const hasGitHub = import.meta.env.VITE_GITHUB_LOGIN === 'true'
 
 // vindo de um convite, o e-mail convidado já vem preenchido
-const email = ref(typeof route.query.email === 'string' ? route.query.email : '')
+const email = ref(typeof route.query.email === 'string' ? route.query.email : authFlow.email)
+// mantém o e-mail ao alternar entre login e cadastro
+watch(email, (value) => (authFlow.email = value))
 const password = ref('')
 const errors = reactive({ email: '', password: '' })
 const formError = ref('')
