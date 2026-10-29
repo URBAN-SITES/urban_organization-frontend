@@ -71,7 +71,7 @@ async function handleGoogleCredential(credential: string) {
   <section>
     <AuthHeading
       title="Bem-vindo de volta"
-      description="Acesse sua conta e continue construindo com o Inceptum."
+      description="Acesse sua conta e continue construindo com o Urban Organization."
     />
 
     <template v-if="hasGoogle || hasGitHub">

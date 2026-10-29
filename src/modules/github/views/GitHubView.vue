@@ -196,13 +196,13 @@ onMounted(loadStatus)
       v-else-if="status && !status.configured"
       :icon="Unplug"
       title="Integração não configurada"
-      description="O servidor ainda não tem as credenciais do GitHub App. Quem administra o Inceptum configura isso seguindo o docs/GITHUB.md do backend."
+      description="O servidor ainda não tem as credenciais do GitHub App. Quem administra o Urban Organization configura isso seguindo o docs/GITHUB.md do backend."
     />
 
     <template v-else-if="status">
       <UiPanel
         title="Login com GitHub"
-        description="Use sua conta do GitHub para entrar no Inceptum. Nenhum token fica guardado para isso."
+        description="Use sua conta do GitHub para entrar no Urban Organization. Nenhum token fica guardado para isso."
       >
         <div class="flex flex-wrap items-center justify-between gap-3">
           <p class="text-14 text-fg">
@@ -237,7 +237,7 @@ onMounted(loadStatus)
 
       <UiPanel
         title="Repositórios"
-        description="O Inceptum só lê os repositórios em que você instalou o app. Ele nunca altera nada no GitHub."
+        description="O Urban Organization só lê os repositórios em que você instalou o app. Ele nunca altera nada no GitHub."
       >
         <div v-if="!status.connection" class="flex flex-wrap items-center justify-between gap-3">
           <p class="text-14 text-fg-muted">Conecte sua conta para escolher repositórios.</p>
@@ -326,7 +326,7 @@ onMounted(loadStatus)
             :description="
               filtering
                 ? 'Tente outro termo ou limpe os filtros.'
-                : 'Instale o app do Inceptum no GitHub e escolha os repositórios que ele pode ler.'
+                : 'Instale o app do Urban Organization no GitHub e escolha os repositórios que ele pode ler.'
             "
           >
             <template v-if="!filtering && status.install_url" #action>

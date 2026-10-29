@@ -193,7 +193,7 @@ function pdf() {
         v-if="notConfigured"
         :icon="Sparkles"
         title="Transcrição não configurada"
-        description="Quem administra o Inceptum liga a transcrição e o resumo no servidor seguindo o docs/IA-REUNIOES.md do backend. Tudo roda no próprio servidor."
+        description="Quem administra o Urban Organization liga a transcrição e o resumo no servidor seguindo o docs/IA-REUNIOES.md do backend. Tudo roda no próprio servidor."
       />
 
       <UiPanel
