@@ -1,7 +1,9 @@
 import {
   BarChart3,
+  Bell,
   CalendarDays,
   Folder,
+  GitBranch,
   House,
   Map as MapIcon,
   MessagesSquare,
@@ -9,7 +11,6 @@ import {
   Settings,
   Sparkles,
   Users,
-  Bell,
   type LucideIcon,
 } from '@lucide/vue'
 
@@ -49,6 +50,12 @@ export const accountNav: NavItem[] = [
     icon: Receipt,
     also: ['/planos', '/pagamentos'],
     keywords: 'plano pagamento pix assinatura',
+  },
+  {
+    to: '/integracoes/github',
+    label: 'GitHub',
+    icon: GitBranch,
+    keywords: 'integracao repositorio pull request branch',
   },
   { to: '/configuracoes', label: 'Configurações', icon: Settings, keywords: 'perfil conta tema' },
 ]

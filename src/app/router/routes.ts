@@ -4,6 +4,7 @@ import { calendarRoutes } from '@/modules/calendar'
 import { chatRoutes } from '@/modules/chat/router'
 import { configRoutes } from '@/modules/config/router'
 import { geolocationRoutes } from '@/modules/geolocation/router'
+import { githubRoutes } from '@/modules/github'
 import { invitationRoutes } from '@/modules/invitations/router'
 import { mapboxRoutes } from '@/modules/mapbox/router'
 import { moduleRoutes } from '@/modules/module/router'
@@ -34,6 +35,7 @@ export const routes: RouteRecordRaw[] = [
   ...calendarRoutes,
   ...chatRoutes,
   ...configRoutes,
+  ...githubRoutes,
   ...organizationRoutes,
   ...invitationRoutes,
   ...geolocationRoutes,

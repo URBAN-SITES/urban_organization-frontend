@@ -5,6 +5,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { getErrorMessage } from '@/app/plugins/axios'
 import { useAuthStore } from '@/modules/auth'
+import { ProjectGitHub } from '@/modules/github'
 import {
   TopbarComp,
   UiAvatar,
@@ -36,7 +37,7 @@ import {
   type BoardFilters,
 } from '../utils/board'
 
-type View = 'board' | 'list' | 'table'
+type View = 'board' | 'list' | 'table' | 'github'
 
 const props = defineProps<{ sectorId: string }>()
 const router = useRouter()
@@ -61,10 +62,13 @@ const VIEWS = [
   { value: 'board', label: 'Quadro' },
   { value: 'list', label: 'Lista' },
   { value: 'table', label: 'Tabela' },
+  { value: 'github', label: 'GitHub' },
 ]
 const view = computed<View>({
   get: () =>
-    ['list', 'table'].includes(String(route.query.view)) ? (route.query.view as View) : 'board',
+    ['list', 'table', 'github'].includes(String(route.query.view))
+      ? (route.query.view as View)
+      : 'board',
   set: (value) =>
     void router.replace({ query: { ...route.query, view: value === 'board' ? undefined : value } }),
 })
@@ -296,6 +300,7 @@ function clearFilters() {
         <div class="flex flex-wrap items-end gap-x-4 gap-y-3">
           <UiTabs v-model="view" :tabs="VIEWS" label="Modo de visualização" />
           <div
+            v-if="view !== 'github'"
             class="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:min-w-0 sm:flex-1 sm:flex-wrap sm:items-center sm:justify-end"
             role="group"
             aria-label="Filtrar tarefas"
@@ -338,11 +343,26 @@ function clearFilters() {
             >
           </div>
         </div>
-        <p v-if="filtering && view !== 'table'" class="-mt-2 text-12 text-fg-muted" role="status">
+        <p
+          v-if="filtering && view !== 'table' && view !== 'github'"
+          class="-mt-2 text-12 text-fg-muted"
+          role="status"
+        >
           Mostrando {{ visible.length }} de {{ topLevel.length }} tarefas
         </p>
 
-        <div v-if="loading" class="flex gap-3 overflow-hidden" aria-label="Carregando o quadro">
+        <div
+          v-if="view === 'github' && sector"
+          class="-mx-4 min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:-mx-8 sm:px-8"
+        >
+          <ProjectGitHub :sector-id="sector.id" :can-manage="canManage" />
+        </div>
+
+        <div
+          v-else-if="loading"
+          class="flex gap-3 overflow-hidden"
+          aria-label="Carregando o quadro"
+        >
           <div v-for="n in 3" :key="n" class="grid w-72 shrink-0 content-start gap-2">
             <UiSkeleton class="h-6 w-32" />
             <UiSkeleton v-for="m in 3" :key="m" class="h-24 rounded-card" />
