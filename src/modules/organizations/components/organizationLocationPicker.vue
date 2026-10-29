@@ -61,7 +61,10 @@ async function openSearch() {
   }
   searchLoading.value = true
   try {
-    const { default: MapboxGeocoder } = await import('@mapbox/mapbox-gl-geocoder')
+    const [{ default: MapboxGeocoder }] = await Promise.all([
+      import('@mapbox/mapbox-gl-geocoder'),
+      import('@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css'),
+    ])
     await nextTick()
     if (request !== revision || !searchContainer.value) return
     const instance = new MapboxGeocoder({

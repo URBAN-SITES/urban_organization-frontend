@@ -5,7 +5,7 @@ import { UiIcon, UiIconButton } from '@/shared/components'
 
 /** Moldura das telas de acesso e do onboarding: painel de imagem fixo à esquerda, conteúdo à direita. */
 const { isDark, toggleTheme } = useTheme()
-const image = `${import.meta.env.BASE_URL}aside-direita.png`
+const image = `${import.meta.env.BASE_URL}aside-direita.webp`
 
 const FEATURES = [
   { icon: Users, title: 'Equipes', text: 'mais produtivas' },
