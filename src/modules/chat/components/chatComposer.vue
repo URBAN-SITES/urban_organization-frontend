@@ -20,8 +20,8 @@ function handleKeydown(event: KeyboardEvent) {
 <template>
   <form
     :class="[
-      'flex flex-col gap-[10px] rounded-[12px] border bg-(--surface) px-[12px] pt-[12px] pb-[10px] transition-[border-color,box-shadow] dark:bg-black/20',
-      'border-(--border-default) focus-within:border-(--bg-orange) focus-within:shadow-[0_0_0_3px_rgb(255_103_0/0.12)] dark:border-(--border-inverse)',
+      'flex flex-col gap-[10px] rounded-[12px] border bg-surface-1 px-[12px] pt-[12px] pb-[10px] transition-[border-color,box-shadow] dark:bg-black/20',
+      'border-border focus-within:border-accent focus-within:shadow-[0_0_0_3px_rgb(255_103_0/0.12)]',
     ]"
     @submit.prevent="emit('submit')"
   >
@@ -31,7 +31,7 @@ function handleKeydown(event: KeyboardEvent) {
       v-model="model"
       rows="1"
       :placeholder="placeholder"
-      class="max-h-[120px] min-h-[24px] resize-none bg-transparent text-[13.5px] leading-[20px] outline-none placeholder:text-(--text-muted) field-sizing-content"
+      class="max-h-[120px] min-h-[24px] resize-none bg-transparent text-[13.5px] leading-[20px] outline-none placeholder:text-fg-muted field-sizing-content"
       @keydown="handleKeydown"
     ></textarea>
 
@@ -40,8 +40,8 @@ function handleKeydown(event: KeyboardEvent) {
       <button
         type="submit"
         :class="[
-          'ml-auto flex h-[32px] cursor-pointer items-center gap-[6px] rounded-[8px] px-[12px] text-[13px] font-semibold text-accent-fg transition-all duration-200 hover:-translate-y-0.5 hover:brightness-105 hover:shadow-[0_4px_12px_rgba(255,103,0,0.24)] active:translate-y-0 active:scale-[0.98]',
-          'bg-(--bg-orange)',
+          'ml-auto flex h-[32px] cursor-pointer items-center gap-[6px] rounded-[8px] px-[12px] text-[13px] font-semibold text-accent-fg transition-all duration-200 hover:-translate-y-0.5 hover:brightness-105 active:translate-y-0 active:scale-[0.98]',
+          'bg-accent',
         ]"
       >
         <span class="material-symbols-outlined text-[16px]!" aria-hidden="true">{{

@@ -151,7 +151,7 @@ onBeforeUnmount(() => {
     ref="dialog"
     aria-labelledby="avatar-crop-title"
     aria-describedby="avatar-crop-help"
-    class="m-auto h-[min(40rem,calc(100dvh_-_1.5rem))] w-[calc(100%_-_1.5rem)] max-w-lg overflow-hidden rounded-2xl border border-(--border-default) bg-(--surface) p-4 text-(--text-primary) shadow-xl backdrop:bg-black/70 sm:p-6 dark:border-(--border-inverse) dark:bg-(--surface-inverse) dark:text-(--text-inverse)"
+    class="m-auto h-[min(40rem,calc(100dvh_-_1.5rem))] w-[calc(100%_-_1.5rem)] max-w-lg overflow-hidden rounded-2xl border border-border bg-surface-1 p-4 text-fg shadow-xl backdrop:bg-black/70 sm:p-6"
     @cancel.prevent="emit('cancel')"
   >
     <div class="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] gap-3">
@@ -161,19 +161,19 @@ onBeforeUnmount(() => {
           <button
             type="button"
             aria-label="Fechar recorte"
-            class="grid size-9 place-items-center rounded-full hover:bg-(--bg-subtle) focus-visible:outline-2 dark:hover:bg-black/30"
+            class="grid size-9 place-items-center rounded-full hover:bg-surface-2 focus-visible:outline-2 dark:hover:bg-black/30"
             @click="emit('cancel')"
           >
             <span class="material-symbols-outlined" aria-hidden="true">close</span>
           </button>
         </div>
-        <p id="avatar-crop-help" class="text-sm text-(--text-muted)">
+        <p id="avatar-crop-help" class="text-sm text-fg-muted">
           Arraste para posicionar. Use pinça ou a roda do mouse para aproximar.
         </p>
       </header>
       <div
         ref="viewport"
-        class="flex min-h-0 items-center justify-center overflow-hidden rounded-xl bg-(--bg-subtle) dark:bg-black/30"
+        class="flex min-h-0 items-center justify-center overflow-hidden rounded-xl bg-surface-2 dark:bg-black/30"
       >
         <div
           class="relative shrink-0 overflow-hidden"
@@ -202,7 +202,7 @@ onBeforeUnmount(() => {
           <p
             v-if="!ready && !error"
             role="status"
-            class="absolute inset-0 grid place-items-center bg-(--surface) p-4 text-center text-sm dark:bg-(--surface-inverse)"
+            class="absolute inset-0 grid place-items-center bg-surface-1 p-4 text-center text-sm"
           >
             Abrindo imagem…
           </p>
@@ -214,19 +214,19 @@ onBeforeUnmount(() => {
             type="button"
             aria-label="Diminuir zoom"
             :disabled="!ready || exporting || zoom <= 1"
-            class="grid size-10 place-items-center rounded-full border border-(--border-default) disabled:opacity-40 focus-visible:outline-2 dark:border-(--border-inverse)"
+            class="grid size-10 place-items-center rounded-full border border-border disabled:opacity-40 focus-visible:outline-2"
             @click="setZoom(zoom - 0.2)"
           >
             <span class="material-symbols-outlined" aria-hidden="true">remove</span>
           </button>
-          <span class="w-12 text-center text-xs tabular-nums text-(--text-muted)" aria-live="polite"
+          <span class="w-12 text-center text-xs tabular-nums text-fg-muted" aria-live="polite"
             >{{ Math.round(zoom * 100) }}%</span
           >
           <button
             type="button"
             aria-label="Aumentar zoom"
             :disabled="!ready || exporting || zoom >= 5"
-            class="grid size-10 place-items-center rounded-full border border-(--border-default) disabled:opacity-40 focus-visible:outline-2 dark:border-(--border-inverse)"
+            class="grid size-10 place-items-center rounded-full border border-border disabled:opacity-40 focus-visible:outline-2"
             @click="setZoom(zoom + 0.2)"
           >
             <span class="material-symbols-outlined" aria-hidden="true">add</span>
@@ -235,16 +235,14 @@ onBeforeUnmount(() => {
             type="button"
             aria-label="Centralizar e restaurar zoom"
             :disabled="!ready || exporting"
-            class="grid size-10 place-items-center rounded-full border border-(--border-default) disabled:opacity-40 focus-visible:outline-2 dark:border-(--border-inverse)"
+            class="grid size-10 place-items-center rounded-full border border-border disabled:opacity-40 focus-visible:outline-2"
             @click="reset"
           >
             <span class="material-symbols-outlined" aria-hidden="true">restart_alt</span>
           </button>
         </div>
-        <p v-if="error" role="alert" class="text-sm text-(--text-muted)">{{ error }}</p>
-        <div
-          class="flex items-center justify-between gap-3 border-t border-(--border-default) pt-3 dark:border-(--border-inverse)"
-        >
+        <p v-if="error" role="alert" class="text-sm text-fg-muted">{{ error }}</p>
+        <div class="flex items-center justify-between gap-3 border-t border-border pt-3">
           <BaseButton
             label="Cancelar"
             variant="ghost"

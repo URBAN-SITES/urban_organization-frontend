@@ -16,24 +16,22 @@ const priceLabel = computed(() =>
 
 const FEATURE_ICONS: Record<PlanFeature['icon'], { icon: string; class: string }> = {
   check: { icon: 'check', class: 'text-[#1e9e5a]' },
-  ai: { icon: 'check', class: 'text-(--bg-orange)' },
+  ai: { icon: 'check', class: 'text-accent' },
   shield: { icon: 'verified_user', class: 'text-[#1e9e5a]' },
-  locked: { icon: 'lock', class: 'text-(--text-muted)' },
+  locked: { icon: 'lock', class: 'text-fg-muted' },
 }
 </script>
 
 <template>
   <article
     :class="[
-      'relative flex h-full flex-col gap-[16px] overflow-hidden rounded-[14px] border bg-(--surface) px-5 py-4 before:absolute before:top-0 before:left-5 before:h-[2px] before:w-8 before:rounded-full before:bg-(--bg-orange)/55 dark:bg-(--surface-inverse)',
-      plan.highlighted
-        ? 'border-(--bg-orange)/45 dark:border-(--bg-orange)/45'
-        : 'border-(--border-default) dark:border-(--border-inverse)',
+      'relative flex h-full flex-col gap-[16px] overflow-hidden rounded-card border bg-surface-1 px-5 py-4',
+      plan.highlighted ? 'border-accent/45 dark:border-accent/45' : 'border-border',
     ]"
   >
     <span
       v-if="plan.highlighted"
-      class="absolute top-4 right-4 rounded-full bg-accent-soft px-2 py-0.5 text-[11px] leading-normal font-medium text-(--bg-orange) dark:bg-(--bg-orange)/15"
+      class="absolute top-4 right-4 rounded-full bg-accent-soft px-2 py-0.5 text-[11px] leading-normal font-medium text-accent dark:bg-accent/15"
     >
       Recomendado
     </span>
@@ -42,12 +40,12 @@ const FEATURE_ICONS: Record<PlanFeature['icon'], { icon: string; class: string }
       <h2
         :class="[
           'text-[18px]! leading-normal! font-semibold! tracking-normal!',
-          plan.highlighted ? 'text-(--bg-orange)' : '',
+          plan.highlighted ? 'text-accent' : '',
         ]"
       >
         {{ plan.name }}
       </h2>
-      <p class="text-[13px] text-(--text-secondary) dark:text-(--text-inverse-muted)">
+      <p class="text-[13px] text-fg-muted">
         {{ plan.description }}
       </p>
     </header>
@@ -56,17 +54,17 @@ const FEATURE_ICONS: Record<PlanFeature['icon'], { icon: string; class: string }
       <span
         :class="[
           'text-[38px] leading-none font-semibold tracking-[-0.04em]',
-          plan.highlighted ? 'text-(--bg-orange)' : '',
+          plan.highlighted ? 'text-accent' : '',
         ]"
         >{{ priceLabel }}</span
       >
-      <span class="text-[13px] text-(--text-secondary) dark:text-(--text-inverse-muted)">
+      <span class="text-[13px] text-fg-muted">
         {{ plan.priceNote }}
       </span>
     </p>
     <p
       v-if="cycle === 'yearly' && plan.monthlyPrice"
-      class="-mt-[12px] text-[12px] leading-normal text-(--text-muted)"
+      class="-mt-[12px] text-[12px] leading-normal text-fg-muted"
     >
       cobrado anualmente
     </p>
@@ -75,27 +73,25 @@ const FEATURE_ICONS: Record<PlanFeature['icon'], { icon: string; class: string }
       type="button"
       :disabled="current || plan.id === 'free'"
       :class="[
-        'no-site-hover flex h-[42px] w-full cursor-pointer items-center justify-center gap-[6px] rounded-[10px] text-[14px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--bg-orange) disabled:cursor-default disabled:opacity-60',
+        'no-site-hover flex h-[42px] w-full cursor-pointer items-center justify-center gap-[6px] rounded-[10px] text-[14px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-default disabled:opacity-60',
         plan.highlighted
-          ? 'bg-(--bg-orange) text-accent-fg hover:bg-accent-hover'
+          ? 'bg-accent text-accent-fg hover:bg-accent-hover'
           : current || plan.id === 'free'
-            ? 'border border-(--border-default) bg-(--bg-subtle) text-(--text-secondary) dark:border-(--border-inverse) dark:bg-white/5 dark:text-(--text-inverse-muted)'
-            : 'bg-(--bg-orange) text-accent-fg',
+            ? 'border border-border bg-surface-2 text-fg-muted dark:bg-white/5'
+            : 'bg-accent text-accent-fg',
       ]"
       @click="$emit('select')"
     >
       {{ plan.cta }}
     </button>
 
-    <ul
-      class="flex flex-col gap-[10px] border-t border-(--border-default) pt-[14px] dark:border-(--border-inverse)"
-    >
+    <ul class="flex flex-col gap-[10px] border-t border-border pt-[14px]">
       <li
         v-for="feature in plan.features"
         :key="feature.label"
         :class="[
           'flex items-start gap-[10px] text-[13px] leading-[19px]',
-          feature.icon === 'locked' ? 'text-(--text-muted)' : '',
+          feature.icon === 'locked' ? 'text-fg-muted' : '',
         ]"
       >
         <span

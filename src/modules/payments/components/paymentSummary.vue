@@ -35,16 +35,14 @@ const rows = computed(() =>
   <div>
     <dl class="flex flex-col gap-[10px] text-[13px] leading-normal">
       <div v-for="row in rows" :key="row.label" class="flex justify-between gap-[16px]">
-        <dt class="text-(--text-secondary) dark:text-(--text-inverse-muted)">{{ row.label }}</dt>
+        <dt class="text-fg-muted">{{ row.label }}</dt>
         <dd class="min-w-0 text-right font-medium wrap-break-word">{{ row.value }}</dd>
       </div>
     </dl>
 
-    <div
-      class="mt-[16px] flex items-baseline justify-between border-t border-(--border-default) pt-[16px] dark:border-(--border-inverse)"
-    >
+    <div class="mt-[16px] flex items-baseline justify-between border-t border-border pt-[16px]">
       <span class="text-[13px] font-semibold">Total</span>
-      <span class="text-[24px] leading-none font-semibold tracking-[-0.02em] text-(--bg-orange)">{{
+      <span class="text-[24px] leading-none font-semibold tracking-[-0.02em] text-accent">{{
         formatCurrency(amount)
       }}</span>
     </div>

@@ -3,7 +3,8 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { getErrorMessage } from '@/app/plugins/axios'
-import { BaseButton, TopbarComp } from '@/shared/components'
+import { CalendarCheck, CalendarDays, Check, ChevronLeft, ChevronRight } from '@lucide/vue'
+import { PageLayout, UiButton, UiIconButton } from '@/shared/components'
 import { ensureGoogleConnected, useGoogleStore } from '@/modules/calendar_sync'
 import { useOrganizationsStore } from '@/modules/organizations'
 import { listCalendar } from '../services'
@@ -21,17 +22,16 @@ import {
 const MAX_CHIPS = 3
 const WEEKDAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 const DOT: Record<CalendarState, string> = {
-  done: 'bg-[#15924a]',
-  late: 'bg-[#dc2626]',
-  in_progress: 'bg-(--bg-orange)',
-  todo: 'bg-(--text-muted)',
+  done: 'bg-success',
+  late: 'bg-danger',
+  in_progress: 'bg-accent',
+  todo: 'bg-fg-muted',
 }
 const CHIP: Record<CalendarState, string> = {
-  done: 'bg-[#e4f4ea] text-[#127a3e] dark:bg-[#127a3e]/25 dark:text-[#7ed9a2]',
-  late: 'bg-[#fde8e8] text-[#c42b2b] dark:bg-[#dc2626]/20 dark:text-[#ff8a8a]',
-  in_progress:
-    'bg-(--bg-orange)/10 text-(--bg-orange) dark:bg-(--bg-orange)/20 dark:text-(--bg-orange)',
-  todo: 'bg-(--bg-muted) text-(--text-secondary) dark:bg-white/10 dark:text-fg',
+  done: 'bg-success-soft text-success',
+  late: 'bg-danger-soft text-danger',
+  in_progress: 'bg-accent-soft text-accent',
+  todo: 'bg-surface-2 text-fg-muted',
 }
 
 const organizations = useOrganizationsStore()
@@ -100,7 +100,7 @@ const openItem = (item: CalendarItem) =>
     query: { task: item.id },
   })
 // tarefas que já estão no Google Agenda ganham anel azul e o ícone de agenda
-const GOOGLE_RING = 'ring-2 ring-[#2563eb] ring-offset-1 dark:ring-[#8fb1ff]'
+const GOOGLE_RING = 'ring-1 ring-border-strong'
 
 const dayLabel = (date: string, count: number) =>
   `${new Date(`${date}T00:00:00Z`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', timeZone: 'UTC' })}: ${
@@ -109,207 +109,132 @@ const dayLabel = (date: string, count: number) =>
 </script>
 
 <template>
-  <div
-    class="flex min-h-dvh w-full min-w-0 flex-col bg-(--background) dark:bg-(--background-inverse)"
-  >
-    <TopbarComp :crumbs="['Calendário']" />
+  <PageLayout :crumbs="['Calendário']" width="wide">
+    <template #title>
+      <span class="flex items-center gap-1">
+        <span aria-live="polite">{{ title }}</span>
+        <UiIconButton :icon="ChevronLeft" label="Mês anterior" class="ml-2" @click="go(-1)" />
+        <UiIconButton :icon="ChevronRight" label="Próximo mês" @click="go(1)" />
+      </span>
+    </template>
+    <template #description>Entregas de todos os setores que você acompanha</template>
+    <template #actions>
+      <UiButton @click="goToday">Hoje</UiButton>
+      <UiButton v-if="google.status.connected" :icon="Check" disabled>
+        Google Agenda conectada
+      </UiButton>
+      <UiButton v-else :icon="CalendarDays" @click="connectGoogle">Conectar Google Agenda</UiButton>
+    </template>
 
-    <section
-      class="flex flex-1 flex-col gap-[16px] px-[20px] pt-[24px] pb-[32px] sm:px-[36px] xl:px-[44px]"
-    >
-      <header class="flex flex-wrap items-end justify-between gap-[12px]">
-        <div>
-          <div class="flex items-center gap-[6px]">
+    <div class="rounded-card border border-border bg-surface-1 p-3 sm:p-4" :aria-busy="loading">
+      <div class="grid grid-cols-7 gap-1.5 pb-2 text-12 text-fg-muted" aria-hidden="true">
+        <span v-for="weekday in WEEKDAYS" :key="weekday" class="px-1.5">{{ weekday }}</span>
+      </div>
+
+      <div class="grid gap-1.5">
+        <div v-for="(week, w) in weeks" :key="w" class="grid grid-cols-7 gap-1.5">
+          <div
+            v-for="day in week"
+            :key="day.date"
+            role="group"
+            :aria-label="dayLabel(day.date, byDate.get(day.date)?.length ?? 0)"
+            :class="[
+              'flex min-h-21 min-w-0 flex-col gap-1 rounded-control border p-1.5 sm:min-h-30',
+              day.date === today
+                ? 'border-border-strong bg-surface-1'
+                : day.inMonth
+                  ? 'border-border bg-surface-1'
+                  : 'border-border bg-bg',
+            ]"
+          >
             <span
-              class="size-[8px] rounded-full bg-(--bg-orange) shadow-[0_0_10px_rgba(255,103,0,0.35)]"
-              aria-hidden="true"
-            />
-            <h1
-              class="text-[26px]! leading-tight! font-semibold! tracking-[-0.02em]!"
-              aria-live="polite"
-            >
-              {{ title }}
-            </h1>
-            <button
-              type="button"
-              class="grid size-[32px] cursor-pointer place-items-center rounded-[8px] border border-transparent transition-colors duration-200 hover:border-(--bg-orange)/25 hover:bg-(--bg-orange)/5 hover:text-(--bg-orange) dark:hover:bg-(--bg-orange)/10"
-              aria-label="Mês anterior"
-              @click="go(-1)"
-            >
-              <span class="material-symbols-outlined text-[20px]!" aria-hidden="true"
-                >chevron_left</span
-              >
-            </button>
-            <button
-              type="button"
-              class="grid size-[32px] cursor-pointer place-items-center rounded-[8px] border border-transparent transition-colors duration-200 hover:border-(--bg-orange)/25 hover:bg-(--bg-orange)/5 hover:text-(--bg-orange) dark:hover:bg-(--bg-orange)/10"
-              aria-label="Próximo mês"
-              @click="go(1)"
-            >
-              <span class="material-symbols-outlined text-[20px]!" aria-hidden="true"
-                >chevron_right</span
-              >
-            </button>
-          </div>
-          <p class="text-[14px] text-(--text-secondary) dark:text-(--text-inverse-muted)">
-            Entregas de todos os setores que você acompanha
-          </p>
-        </div>
-
-        <div class="flex flex-wrap gap-[8px]">
-          <BaseButton
-            label="Hoje"
-            variant="primary"
-            :full-width="false"
-            class="mt-0!"
-            @click="goToday"
-          />
-          <BaseButton
-            v-if="google.status.connected"
-            label="Google Agenda conectada"
-            icon="check"
-            icon-position="left"
-            variant="secondary"
-            :full-width="false"
-            class="mt-0!"
-            disabled
-          />
-          <BaseButton
-            v-else
-            label="Conectar Google Agenda"
-            icon="calendar_month"
-            icon-position="left"
-            variant="secondary"
-            :full-width="false"
-            class="mt-0!"
-            @click="connectGoogle"
-          />
-        </div>
-      </header>
-
-      <div
-        class="rounded-[16px] border border-(--border-default) border-t-2 border-t-(--bg-orange)/60 bg-(--surface) p-[16px] dark:border-(--border-inverse) dark:border-t-(--bg-orange)/60 dark:bg-(--surface-inverse)"
-        :aria-busy="loading"
-      >
-        <div
-          class="grid grid-cols-7 gap-[6px] pb-[8px] text-[12px] text-(--text-muted)"
-          aria-hidden="true"
-        >
-          <span v-for="weekday in WEEKDAYS" :key="weekday" class="px-[6px]">{{ weekday }}</span>
-        </div>
-
-        <div class="grid gap-[6px]">
-          <div v-for="(week, w) in weeks" :key="w" class="grid grid-cols-7 gap-[6px]">
-            <div
-              v-for="day in week"
-              :key="day.date"
-              role="group"
-              :aria-label="dayLabel(day.date, byDate.get(day.date)?.length ?? 0)"
               :class="[
-                'flex min-h-[84px] min-w-0 flex-col gap-[4px] rounded-[10px] border p-[6px] sm:min-h-[118px]',
+                'text-13 leading-none tabular-nums',
                 day.date === today
-                  ? 'border-(--bg-orange)/55 bg-(--bg-orange)/[0.06] ring-1 ring-(--bg-orange)/10 dark:border-(--bg-orange)/55 dark:bg-(--bg-orange)/10'
+                  ? 'grid size-6 place-items-center rounded-full bg-fg font-semibold text-bg'
                   : day.inMonth
-                    ? 'border-(--border-default) bg-(--surface) dark:border-(--border-inverse) dark:bg-(--surface-inverse)'
-                    : 'border-(--border-default) bg-(--bg-subtle) dark:border-(--border-inverse) dark:bg-black/20',
+                    ? 'text-fg'
+                    : 'text-fg-muted',
               ]"
+              >{{ day.day }}</span
+            >
+            <div
+              v-if="byDate.get(day.date)"
+              class="flex flex-wrap gap-0.5 sm:hidden"
+              aria-hidden="true"
             >
               <span
-                :class="[
-                  'text-[13px] leading-none',
-                  day.date === today
-                    ? 'grid size-[26px] place-items-center rounded-full bg-(--bg-orange) font-semibold text-accent-fg shadow-[0_2px_8px_rgba(255,103,0,0.3)]'
-                    : day.inMonth
-                      ? ''
-                      : 'text-(--text-muted)',
-                ]"
-                >{{ day.day }}</span
-              >
-              <div
-                v-if="byDate.get(day.date)"
-                class="flex flex-wrap gap-[3px] sm:hidden"
-                aria-hidden="true"
-              >
-                <span
-                  v-for="item in byDate.get(day.date)!.slice(0, MAX_CHIPS)"
-                  :key="item.id"
-                  :class="['size-[6px] rounded-full', DOT[item.state]]"
-                />
-              </div>
-              <ul v-if="byDate.get(day.date)" class="hidden min-w-0 flex-col gap-[3px] sm:flex">
-                <li v-for="item in byDate.get(day.date)!.slice(0, MAX_CHIPS)" :key="item.id">
-                  <button
-                    type="button"
-                    :class="[
-                      'flex w-full cursor-pointer items-center gap-[4px] rounded-[5px] px-[6px] py-[2px] text-left text-[11.5px] leading-[16px] transition-[filter,box-shadow] duration-200 hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--bg-orange)',
-                      CHIP[item.state],
-                      item.in_google && GOOGLE_RING,
-                    ]"
-                    :title="`${item.title} · ${item.sector_name} · ${stateLabels[item.state]}${item.assignee_name ? ` · ${item.assignee_name}` : ''}${item.in_google ? ' · no Google Agenda' : ''}`"
-                    @click="openItem(item)"
-                  >
-                    <span
-                      v-if="item.in_google"
-                      class="material-symbols-outlined text-[13px]!"
-                      aria-label="No Google Agenda"
-                      >event_available</span
-                    >
-                    <span class="truncate">{{ item.title }}</span>
-                  </button>
-                </li>
-                <li
-                  v-if="byDate.get(day.date)!.length > MAX_CHIPS"
-                  class="px-[6px] text-[11.5px] text-(--text-muted)"
-                >
-                  +{{ byDate.get(day.date)!.length - MAX_CHIPS }} mais
-                </li>
-              </ul>
+                v-for="item in byDate.get(day.date)!.slice(0, MAX_CHIPS)"
+                :key="item.id"
+                :class="['size-1.5 rounded-full', DOT[item.state]]"
+              />
             </div>
+            <ul v-if="byDate.get(day.date)" class="hidden min-w-0 flex-col gap-0.5 sm:flex">
+              <li v-for="item in byDate.get(day.date)!.slice(0, MAX_CHIPS)" :key="item.id">
+                <button
+                  type="button"
+                  :class="[
+                    'flex w-full cursor-pointer items-center gap-1 rounded-[4px] px-1.5 py-0.5 text-left text-12 leading-4 transition-[filter] duration-(--dur-fast) ease-out hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent',
+                    CHIP[item.state],
+                    item.in_google && GOOGLE_RING,
+                  ]"
+                  :title="`${item.title} · ${item.sector_name} · ${stateLabels[item.state]}${item.assignee_name ? ` · ${item.assignee_name}` : ''}${item.in_google ? ' · no Google Agenda' : ''}`"
+                  @click="openItem(item)"
+                >
+                  <CalendarCheck
+                    v-if="item.in_google"
+                    :size="12"
+                    class="shrink-0"
+                    aria-label="No Google Agenda"
+                  />
+                  <span class="truncate">{{ item.title }}</span>
+                </button>
+              </li>
+              <li
+                v-if="byDate.get(day.date)!.length > MAX_CHIPS"
+                class="px-1.5 text-12 text-fg-muted"
+              >
+                +{{ byDate.get(day.date)!.length - MAX_CHIPS }} mais
+              </li>
+            </ul>
           </div>
         </div>
       </div>
+    </div>
 
-      <section v-if="agenda.length" class="sm:hidden" aria-label="Entregas do mês">
-        <h2 class="pb-[8px] text-[15px]! leading-normal! font-semibold! tracking-normal!">
-          Neste mês
-        </h2>
-        <ul
-          class="rounded-[16px] border border-(--border-default) bg-(--surface) px-[14px] dark:border-(--border-inverse) dark:bg-(--surface-inverse)"
+    <section v-if="agenda.length" class="sm:hidden" aria-label="Entregas do mês">
+      <h2 class="pb-2 text-14 font-semibold text-fg">Neste mês</h2>
+      <ul class="rounded-card border border-border bg-surface-1 px-3.5">
+        <li
+          v-for="item in agenda"
+          :key="item.id"
+          class="flex cursor-pointer items-center gap-2.5 border-b border-border py-3 last:border-b-0 hover:text-fg"
+          @click="openItem(item)"
         >
-          <li
-            v-for="item in agenda"
-            :key="item.id"
-            class="flex cursor-pointer items-center gap-[10px] border-b border-(--border-default) py-[12px] transition-colors duration-200 hover:text-(--bg-orange) last:border-b-0 dark:border-(--border-inverse)"
-            @click="openItem(item)"
-          >
-            <span
-              :class="['size-[8px] shrink-0 rounded-full', DOT[item.state]]"
-              aria-hidden="true"
-            />
-            <span class="flex min-w-0 flex-1 flex-col leading-normal">
-              <span class="truncate text-[14px] font-medium"
-                ><span
-                  v-if="item.in_google"
-                  class="material-symbols-outlined mr-[4px] align-middle text-[15px]! text-[#2563eb]"
-                  aria-label="No Google Agenda"
-                  >event_available</span
-                >{{ item.title }}</span
-              >
-              <span class="truncate text-[12px] text-(--text-muted)"
-                >{{ agendaDate(item.due_date) }} · {{ item.sector_name }}</span
-              >
+          <span :class="['size-2 shrink-0 rounded-full', DOT[item.state]]" aria-hidden="true" />
+          <span class="flex min-w-0 flex-1 flex-col">
+            <span class="flex min-w-0 items-center gap-1 text-14 font-medium">
+              <CalendarCheck
+                v-if="item.in_google"
+                :size="14"
+                class="shrink-0 text-fg-muted"
+                aria-label="No Google Agenda"
+              />
+              <span class="truncate">{{ item.title }}</span>
             </span>
-            <span
-              :class="['shrink-0 rounded-[6px] px-[8px] py-[2px] text-[11.5px]', CHIP[item.state]]"
-              >{{ stateLabels[item.state] }}</span
+            <span class="truncate text-12 text-fg-muted"
+              >{{ agendaDate(item.due_date) }} · {{ item.sector_name }}</span
             >
-          </li>
-        </ul>
-      </section>
-
-      <p v-if="!loading && !items.length" class="text-[13px] text-(--text-muted)">
-        Nenhuma entrega com data neste período. Tarefas com prazo aparecem aqui.
-      </p>
+          </span>
+          <span :class="['shrink-0 rounded-[4px] px-1.5 py-0.5 text-12', CHIP[item.state]]">{{
+            stateLabels[item.state]
+          }}</span>
+        </li>
+      </ul>
     </section>
-  </div>
+
+    <p v-if="!loading && !items.length" class="text-13 text-fg-muted">
+      Nenhuma entrega com data neste período. Tarefas com prazo aparecem aqui.
+    </p>
+  </PageLayout>
 </template>

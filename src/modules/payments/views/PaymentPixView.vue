@@ -97,20 +97,18 @@ onBeforeUnmount(() => {
           <PixCode :qr-code="payment.qr_code" :qr-code-base64="payment.qr_code_base64" />
         </div>
 
-        <ol
-          class="grid gap-[14px] border-t border-(--border-default) pt-[16px] sm:grid-cols-3 dark:border-(--border-inverse)"
-        >
+        <ol class="grid gap-[14px] border-t border-border pt-[16px] sm:grid-cols-3">
           <li
             v-for="(step, index) in steps"
             :key="step"
             class="flex gap-[10px] text-[13px] leading-[19px]"
           >
             <span
-              class="flex size-[22px] shrink-0 items-center justify-center rounded-full border border-(--border-default) text-[11px] font-semibold dark:border-(--border-inverse)"
+              class="flex size-[22px] shrink-0 items-center justify-center rounded-full border border-border text-[11px] font-semibold"
             >
               {{ index + 1 }}
             </span>
-            <span class="text-(--text-secondary) dark:text-(--text-inverse-muted)">{{ step }}</span>
+            <span class="text-fg-muted">{{ step }}</span>
           </li>
         </ol>
       </PaymentCard>

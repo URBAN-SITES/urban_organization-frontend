@@ -6,9 +6,7 @@ defineProps<{
 </script>
 
 <template>
-  <div
-    class="py-3 px-5 border border-(--border-default) rounded-[14px] w-full bg-(--surface) dark:bg-(--surface-inverse) grid gap-1 dark:border-(--border-inverse)"
-  >
+  <div class="py-3 px-5 border border-border rounded-card w-full bg-surface-1 grid gap-1">
     <h3 class="font-semibold text-sm">{{ title }}</h3>
 
     <ul>

@@ -155,7 +155,7 @@ onBeforeUnmount(() => {
     ref="dialog"
     aria-labelledby="avatar-camera-title"
     aria-describedby="avatar-camera-help"
-    class="m-auto h-[min(40rem,calc(100dvh_-_1.5rem))] w-[calc(100%_-_1.5rem)] max-w-md overflow-hidden rounded-2xl border border-(--border-default) bg-(--surface) p-4 text-(--text-primary) shadow-xl backdrop:bg-black/70 dark:border-(--border-inverse) dark:bg-(--surface-inverse) dark:text-(--text-inverse)"
+    class="m-auto h-[min(40rem,calc(100dvh_-_1.5rem))] w-[calc(100%_-_1.5rem)] max-w-md overflow-hidden rounded-2xl border border-border bg-surface-1 p-4 text-fg shadow-xl backdrop:bg-black/70"
     @cancel.prevent="emit('cancel')"
   >
     <div class="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] gap-3">
@@ -165,17 +165,17 @@ onBeforeUnmount(() => {
           <button
             type="button"
             aria-label="Fechar câmera"
-            class="grid size-9 shrink-0 place-items-center rounded-full hover:bg-(--bg-subtle) focus-visible:outline-2 dark:hover:bg-black/30"
+            class="grid size-9 shrink-0 place-items-center rounded-full hover:bg-surface-2 focus-visible:outline-2 dark:hover:bg-black/30"
             @click="emit('cancel')"
           >
             <span class="material-symbols-outlined" aria-hidden="true">close</span>
           </button>
         </div>
-        <p id="avatar-camera-help" class="mt-1 text-sm text-(--text-muted)">
+        <p id="avatar-camera-help" class="mt-1 text-sm text-fg-muted">
           Posicione o rosto. Você poderá ajustar o recorte depois.
         </p>
       </header>
-      <div class="relative min-h-0 overflow-hidden rounded-2xl bg-(--bg-subtle) dark:bg-black/30">
+      <div class="relative min-h-0 overflow-hidden rounded-2xl bg-surface-2 dark:bg-black/30">
         <video
           ref="video"
           autoplay
@@ -190,13 +190,13 @@ onBeforeUnmount(() => {
         <p
           v-if="opening"
           role="status"
-          class="absolute inset-0 grid place-items-center bg-(--surface)/90 p-4 text-center text-sm dark:bg-(--surface-inverse)/90"
+          class="absolute inset-0 grid place-items-center bg-surface-1/90 p-4 text-center text-sm"
         >
           Aguardando acesso à câmera…
         </p>
       </div>
       <footer class="flex flex-col gap-3">
-        <p v-if="error" role="alert" class="text-sm text-(--text-muted)">{{ error }}</p>
+        <p v-if="error" role="alert" class="text-sm text-fg-muted">{{ error }}</p>
         <div class="flex items-center justify-center gap-3">
           <BaseButton
             label="Alternar"

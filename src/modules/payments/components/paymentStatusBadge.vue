@@ -14,7 +14,7 @@ const isWaiting = computed(() => !isPaymentFinal(props.status))
 const badgeClasses = computed(() => {
   if (isPaymentApproved(props.status)) return 'bg-(--sucess)/10 text-(--sucess)'
   if (isWaiting.value) {
-    return 'bg-(--bg-subtle) text-(--text-primary) dark:bg-(--bg-subtle)/10 dark:text-(--text-inverse)'
+    return 'bg-surface-2 text-fg dark:bg-surface-2/10'
   }
   return 'bg-(--destructive)/10 text-(--destructive)'
 })

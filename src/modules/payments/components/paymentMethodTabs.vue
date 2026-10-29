@@ -18,8 +18,8 @@ const METHODS: { value: PaymentMethod; label: string; icon: string; note: string
       :class="[
         'flex cursor-pointer items-center gap-[12px] rounded-[12px] border p-[12px] transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2',
         method === item.value
-          ? 'border-(--bg-orange)/55 bg-(--bg-orange)/[0.04] dark:border-(--bg-orange)/55 dark:bg-(--bg-orange)/[0.08]'
-          : 'border-(--border-default) hover:border-(--bg-orange)/35 dark:border-(--border-inverse)',
+          ? 'border-accent/55 bg-accent/[0.04] dark:border-accent/55 dark:bg-accent/[0.08]'
+          : 'border-border hover:border-border-strong',
       ]"
     >
       <input
@@ -33,8 +33,8 @@ const METHODS: { value: PaymentMethod; label: string; icon: string; note: string
         :class="[
           'grid size-[36px] shrink-0 place-items-center rounded-[10px] transition-colors',
           method === item.value
-            ? 'bg-(--bg-orange)/10 text-(--bg-orange) dark:bg-(--bg-orange)/15'
-            : 'bg-(--bg-subtle) dark:bg-black/30',
+            ? 'bg-accent/10 text-accent dark:bg-accent/15'
+            : 'bg-surface-2 dark:bg-black/30',
         ]"
         aria-hidden="true"
       >
@@ -42,18 +42,16 @@ const METHODS: { value: PaymentMethod; label: string; icon: string; note: string
       </span>
       <span class="flex min-w-0 flex-1 flex-col leading-normal">
         <span class="text-[14px] font-medium">{{ item.label }}</span>
-        <span class="text-[12px] text-(--text-muted)">{{ item.note }}</span>
+        <span class="text-[12px] text-fg-muted">{{ item.note }}</span>
       </span>
       <span
         :class="[
           'grid size-[18px] shrink-0 place-items-center rounded-full border-2',
-          method === item.value
-            ? 'border-(--bg-orange)'
-            : 'border-(--border-default) dark:border-(--border-inverse)',
+          method === item.value ? 'border-accent' : 'border-border',
         ]"
         aria-hidden="true"
       >
-        <span v-if="method === item.value" class="size-[8px] rounded-full bg-(--bg-orange)"></span>
+        <span v-if="method === item.value" class="size-[8px] rounded-full bg-accent"></span>
       </span>
     </label>
   </fieldset>

@@ -25,10 +25,8 @@ const style = computed(() => ({
   <span
     :class="[
       'relative grid shrink-0 place-items-center rounded-full leading-none font-semibold text-white',
-      variant === 'self'
-        ? 'bg-(--text-primary) dark:bg-(--text-inverse) dark:text-(--text-primary)'
-        : '',
-      variant === 'ai' ? 'rounded-[10px]! bg-linear-to-br from-[#ff9a55] to-(--bg-orange)' : '',
+      variant === 'self' ? 'bg-(--text-primary) dark:bg-(--text-inverse) dark:text-fg' : '',
+      variant === 'ai' ? 'rounded-[10px]! bg-linear-to-br from-[#ff9a55] to-accent' : '',
     ]"
     :style="style"
     aria-hidden="true"
@@ -42,7 +40,7 @@ const style = computed(() => ({
     <template v-else>{{ initials(name) }}</template>
     <span
       v-if="online"
-      class="absolute -right-px -bottom-px size-[9px] rounded-full bg-[#1e9e5a] ring-2 ring-(--bg-subtle) dark:ring-(--surface-inverse)"
+      class="absolute -right-px -bottom-px size-[9px] rounded-full bg-[#1e9e5a] ring-2 ring-surface-2"
     ></span>
   </span>
 </template>

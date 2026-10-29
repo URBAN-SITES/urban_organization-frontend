@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useAuthStore } from '@/modules/auth'
-import { BaseButton, UiSpinner } from '@/shared/components'
+import { Plus } from '@lucide/vue'
+import { BaseButton, UiButton, UiSpinner } from '@/shared/components'
 import { getErrorMessage } from '@/app/plugins/axios'
 import {
   listTeams,
@@ -189,20 +190,17 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <OrganizationLayout legacy title="Times" :organization-id="organization?.id">
-    <div class="workspace-heading">
-      <div>
-        <h1>Times</h1>
-        <p>{{ organization?.name }} · Agrupe pessoas e compartilhe o acesso aos setores.</p>
-      </div>
-      <BaseButton
-        v-if="canAdmin"
-        label="Novo time"
-        :full-width="false"
-        :disabled="saving || busy"
-        @click="newTeam"
-      />
-    </div>
+  <OrganizationLayout
+    legacy
+    title="Times"
+    :description="`${organization?.name ?? ''} · Agrupe pessoas e compartilhe o acesso aos setores.`"
+    :organization-id="organization?.id"
+  >
+    <template v-if="canAdmin" #actions>
+      <UiButton variant="primary" :icon="Plus" :disabled="saving || busy" @click="newTeam">
+        Novo time
+      </UiButton>
+    </template>
     <p v-if="loading || busy" class="flex items-center gap-2 text-13 text-fg-muted">
       <UiSpinner :size="14" />
       Carregando...

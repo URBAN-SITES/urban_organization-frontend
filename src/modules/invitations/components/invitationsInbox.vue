@@ -55,12 +55,9 @@ async function decline(id: string, name: string) {
   <section
     v-if="invitations.mine.length"
     aria-labelledby="invitations-inbox-title"
-    class="grid gap-3 rounded-[16px] border border-(--bg-orange) bg-(--bg-orange)/5 p-4"
+    class="grid gap-3 rounded-card border border-accent bg-accent/5 p-4"
   >
-    <h2
-      id="invitations-inbox-title"
-      class="text-[15px]! leading-normal! font-semibold! tracking-normal!"
-    >
+    <h2 id="invitations-inbox-title" class="text-16 font-semibold text-fg">
       {{
         invitations.mine.length === 1
           ? 'Você foi convidado para uma organização'
@@ -71,7 +68,7 @@ async function decline(id: string, name: string) {
       <li
         v-for="invitation in invitations.mine"
         :key="invitation.id"
-        class="flex flex-wrap items-center gap-3 rounded-xl bg-(--surface) px-4 py-3 dark:bg-(--surface-inverse)"
+        class="flex flex-wrap items-center gap-3 rounded-xl bg-surface-1 px-4 py-3"
       >
         <span
           class="grid size-9 shrink-0 place-items-center rounded-lg bg-(--background-inverse) text-sm font-bold text-(--text-inverse) dark:bg-white/15"
@@ -82,7 +79,7 @@ async function decline(id: string, name: string) {
           <span class="block truncate text-[14px] font-semibold">{{
             invitation.organization_name
           }}</span>
-          <span class="block text-[12.5px] text-(--text-muted)">
+          <span class="block text-[12.5px] text-fg-muted">
             Como {{ roleLabels[invitation.role].toLowerCase() }} · válido até
             {{ expires(invitation.expires_at) }}
           </span>

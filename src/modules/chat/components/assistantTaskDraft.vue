@@ -105,18 +105,18 @@ function confirm() {
 }
 
 const field =
-  'w-full rounded-[8px] border border-(--border-default) bg-transparent px-[10px] py-[6px] text-[13px] outline-none focus:border-(--chat-ai) disabled:opacity-60 dark:border-(--border-inverse)'
-const label = 'text-[11.5px] font-medium text-(--text-muted)'
+  'w-full rounded-[8px] border border-border bg-transparent px-[10px] py-[6px] text-[13px] outline-none focus:border-(--chat-ai) disabled:opacity-60'
+const label = 'text-[11.5px] font-medium text-fg-muted'
 </script>
 
 <template>
   <div
-    class="flex min-w-0 max-w-[640px] flex-col gap-[12px] rounded-[12px] border border-(--chat-ai) bg-(--surface) px-[14px] py-[14px] dark:bg-black/20"
+    class="flex min-w-0 max-w-[640px] flex-col gap-[12px] rounded-[12px] border border-(--chat-ai) bg-surface-1 px-[14px] py-[14px] dark:bg-black/20"
   >
     <p v-if="state?.status === 'created'" class="text-[13px] font-medium text-(--chat-ai)">
       ✓ Tarefa criada a partir deste rascunho.
     </p>
-    <p v-else-if="state?.status === 'discarded'" class="text-[13px] text-(--text-muted)">
+    <p v-else-if="state?.status === 'discarded'" class="text-[13px] text-fg-muted">
       Rascunho descartado.
     </p>
 
@@ -155,7 +155,7 @@ const label = 'text-[11.5px] font-medium text-(--text-muted)'
                 'h-[32px] flex-1 cursor-pointer rounded-[8px] border text-[12px] transition-colors disabled:cursor-not-allowed disabled:opacity-60',
                 form.priority === value
                   ? 'border-(--chat-ai) bg-(--chat-ai) text-white'
-                  : 'border-(--border-default) hover:border-(--chat-ai) dark:border-(--border-inverse)',
+                  : 'border-border hover:border-(--chat-ai)',
               ]"
               @click="form.priority = value"
             >
@@ -175,7 +175,7 @@ const label = 'text-[11.5px] font-medium text-(--text-muted)'
           <input v-model="form.due_time" type="time" :disabled="locked" :class="field" />
         </label>
       </div>
-      <p v-if="form.due_time" class="-mt-[4px] text-[11.5px] text-(--text-muted)">
+      <p v-if="form.due_time" class="-mt-[4px] text-[11.5px] text-fg-muted">
         O quadro guarda só a data do prazo; o horário vai na descrição da tarefa.
       </p>
 
@@ -188,14 +188,14 @@ const label = 'text-[11.5px] font-medium text-(--text-muted)'
             class="flex items-center gap-[6px] rounded-full bg-(--chat-ai)/10 px-[10px] py-[4px] text-[12.5px]"
           >
             {{ person.name }}
-            <span class="text-[10.5px] text-(--text-muted)">{{
+            <span class="text-[10.5px] text-fg-muted">{{
               index === 0 ? 'responsável' : 'envolvido(a)'
             }}</span>
             <button
               type="button"
               :disabled="locked"
               :aria-label="`Remover ${person.name}`"
-              class="cursor-pointer text-(--text-muted) hover:text-(--destructive)"
+              class="cursor-pointer text-fg-muted hover:text-(--destructive)"
               @click="assigneeIds = assigneeIds.filter((id) => id !== person.id)"
             >
               ×
@@ -220,12 +220,12 @@ const label = 'text-[11.5px] font-medium text-(--text-muted)'
           </select>
           <span
             v-if="!selected.length && !addable.length && !loadingPeople"
-            class="text-[12px] text-(--text-muted)"
+            class="text-[12px] text-fg-muted"
           >
             {{ form.sector_id ? 'Ninguém disponível neste setor.' : 'Escolha o setor primeiro.' }}
           </span>
         </div>
-        <p v-if="selected.length > 1" class="text-[11.5px] text-(--text-muted)">
+        <p v-if="selected.length > 1" class="text-[11.5px] text-fg-muted">
           A tarefa tem um único responsável ({{ selected[0]?.name }}); os demais ficam registrados
           na descrição.
         </p>

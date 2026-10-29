@@ -1,6 +1,29 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import UiSpinner from '../ui/UiSpinner.vue'
+import {
+  ArrowLeft,
+  ArrowRight,
+  Calendar,
+  Camera,
+  Check,
+  Download,
+  Folder,
+  House,
+  Image,
+  KeyRound,
+  Pencil,
+  Plus,
+  SwitchCamera,
+  Upload,
+  UserCog,
+  Video,
+} from '@lucide/vue'
+import type { Component } from 'vue'
+import UiButton from '../ui/UiButton.vue'
+
+/*
+ * Botão legado: mantém a API antiga (rótulo e ícone por nome) e desenha o UiButton do
+ * sistema, para as telas antigas ficarem iguais às novas. Código novo usa UiButton direto.
+ */
 
 interface Props {
   variant?: 'primary' | 'secondary' | 'ghost' | 'destructive' | 'success'
@@ -26,72 +49,48 @@ const props = withDefaults(defineProps<Props>(), {
   type: 'button',
 })
 
-const buttonClasses = computed(() => [
-  // BASE
-  'group inline-flex items-center justify-center gap-2 rounded-xl',
-  'font-semibold transition-all duration-300 ease-out',
+// nomes do Material Symbols ainda usados pelas telas antigas
+const ICONS: Record<string, Component> = {
+  add: Plus,
+  arrow_back: ArrowLeft,
+  arrow_forward: ArrowRight,
+  calendar_month: Calendar,
+  cameraswitch: SwitchCamera,
+  check: Check,
+  download: Download,
+  edit: Pencil,
+  folder: Folder,
+  home: House,
+  image: Image,
+  lock_reset: KeyRound,
+  manage_accounts: UserCog,
+  photo_camera: Camera,
+  upload: Upload,
+  videocam: Video,
+}
 
-  // WIDTH
-  props.fullWidth ? 'w-full' : 'w-fit',
-
-  // SIZE
-  props.size === 'sm' ? 'px-4 py-2 text-xs' : 'px-5 py-2.5 text-sm',
-
-  // VARIANTS
-  {
-    /* PRIMARY */
-    'bg-(--bg-orange) text-accent-fg hover:brightness-105': props.variant === 'primary',
-
-    /* SECONDARY */
-    'dark:bg-(--surface-inverse) dark:text-(--text-inverse) bg-(--surface) text-(--text-primary) border border-(--border-default) dark:border-(--border-inverse) hover:border-(--bg-orange)/35 hover:bg-(--bg-orange)/5':
-      props.variant === 'secondary',
-
-    /* GHOST */
-    'bg-transparent text-(--text-primary) dark:text-(--text-inverse) hover:bg-(--bg-orange)/5 hover:text-(--bg-orange) dark:hover:bg-(--bg-orange)/10':
-      props.variant === 'ghost',
-
-    /* DESTRUCTIVE */
-    'bg-(--destructive) text-(--text-inverse) hover:brightness-105':
-      props.variant === 'destructive',
-
-    /* SUCCESS */
-    'bg-(--sucess) text-(--text-inverse) hover:brightness-105': props.variant === 'success',
-
-    /* DISABLED */
-    'cursor-not-allowed opacity-50 shadow-none hover:translate-y-0 hover:shadow-none':
-      props.disabled || props.loading,
-
-    /* LOADING */
-    'cursor-wait': props.loading,
-
-    /* ENABLED */
-    'cursor-pointer hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]':
-      !props.disabled && !props.loading,
-  },
-])
+const VARIANTS = {
+  primary: 'primary',
+  secondary: 'secondary',
+  ghost: 'ghost',
+  destructive: 'danger',
+  success: 'secondary',
+} as const
 </script>
 
 <template>
-  <button :type="type" :disabled="disabled || loading" :class="['mt-5 group', buttonClasses]">
-    <UiSpinner v-if="loading" :size="16" />
-
-    <span
-      v-else-if="icon && iconPosition === 'left'"
-      class="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-all duration-300"
-    >
-      {{ icon }}
-    </span>
-
-    <span v-if="label">
-      {{ label }}
-    </span>
-
-    <span
-      v-if="!loading && icon && iconPosition === 'right'"
-      class="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-all duration-300"
-    >
-      {{ icon }}
-    </span>
+  <UiButton
+    :type="type"
+    :variant="VARIANTS[props.variant]"
+    :size="props.size === 'sm' ? 'md' : 'lg'"
+    :icon="props.iconPosition === 'left' ? ICONS[props.icon] : undefined"
+    :icon-right="props.iconPosition === 'right' ? ICONS[props.icon] : undefined"
+    :loading="loading"
+    :disabled="disabled"
+    :block="fullWidth"
+    class="mt-5"
+  >
+    {{ label }}
     <slot name="after" />
-  </button>
+  </UiButton>
 </template>

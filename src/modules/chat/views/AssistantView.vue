@@ -143,9 +143,7 @@ async function analyze() {
 </script>
 
 <template>
-  <div
-    class="flex h-[calc(100dvh-3.75rem)] md:h-dvh w-full min-w-0 flex-col bg-(--background) dark:bg-(--background-inverse)"
-  >
+  <div class="flex h-[calc(100dvh-3.75rem)] md:h-dvh w-full min-w-0 flex-col bg-bg">
     <TopbarComp v-model:search="search" :crumbs="['Inceptum AI', historyTitle]" />
 
     <div
@@ -155,24 +153,22 @@ async function analyze() {
         <template #aside>
           <div class="flex items-center gap-[10px] px-[18px] pt-[18px]">
             <ChatAvatar name="Inceptum AI" variant="ai" :size="30" />
-            <h2 class="text-[17px]! leading-normal! font-semibold! tracking-normal!">
+            <h2 class="text-16 font-semibold text-fg">
               <AiBrandName />
             </h2>
           </div>
-          <p
-            class="px-[18px] pt-[12px] text-[12.5px] leading-[19px] text-(--text-secondary) dark:text-(--text-inverse-muted)"
-          >
+          <p class="px-[18px] pt-[12px] text-[12.5px] leading-[19px] text-fg-muted">
             Consulte, crie e organize suas tarefas por mensagem. A Inceptum AI usa os setores aos
             quais você tem acesso.
           </p>
           <div
-            class="mx-[16px] mt-[16px] rounded-[12px] border border-(--border-default) bg-(--surface) p-[12px] text-[12px] leading-[19px] dark:border-(--border-inverse) dark:bg-(--surface-inverse)"
+            class="mx-[16px] mt-[16px] rounded-[12px] border border-border bg-surface-1 p-[12px] text-[12px] leading-[19px]"
           >
             <p>
               As alterações confirmadas pelo assistente já são salvas nas tarefas. Exclusões
               precisam da sua confirmação.
             </p>
-            <p class="mt-[8px] text-(--text-secondary) dark:text-(--text-inverse-muted)">
+            <p class="mt-[8px] text-fg-muted">
               Imagens e PDFs podem ser analisados separadamente para gerar um relatório.
             </p>
           </div>
@@ -188,8 +184,8 @@ async function analyze() {
               :class="[
                 'mx-[8px] cursor-pointer truncate rounded-[9px] px-[10px] py-[8px] text-left text-[13px] leading-normal transition-colors disabled:cursor-wait disabled:opacity-50',
                 item.id === ai.activeId
-                  ? 'bg-(--surface) font-medium shadow-[0_1px_3px_rgb(0_0_0/0.08)] dark:bg-(--surface-inverse)'
-                  : 'text-(--text-secondary) hover:bg-black/3 dark:text-(--text-inverse-muted) dark:hover:bg-white/5',
+                  ? 'bg-surface-1 font-medium shadow-[0_1px_3px_rgb(0_0_0/0.08)]'
+                  : 'text-fg-muted hover:bg-black/3 dark:hover:bg-white/5',
               ]"
               @click="openHistory(item.id)"
             >
@@ -201,10 +197,10 @@ async function analyze() {
         <template #header>
           <ChatAvatar name="Inceptum AI" variant="ai" :size="32" />
           <div class="flex min-w-0 flex-1 flex-col leading-normal">
-            <h1 class="text-[16px]! leading-normal! font-semibold! tracking-normal!">
+            <h1 class="text-16 font-semibold text-fg">
               <AiBrandName />
             </h1>
-            <p class="truncate text-[12px] text-(--text-muted)">Tarefas e setores da sua conta</p>
+            <p class="truncate text-[12px] text-fg-muted">Tarefas e setores da sua conta</p>
           </div>
           <BaseButton
             variant="secondary"
@@ -221,7 +217,7 @@ async function analyze() {
             :value="ai.activeId ?? ''"
             aria-label="Selecionar conversa do assistente"
             :disabled="ai.isBusy || !ai.conversations.length"
-            class="h-[36px] w-full basis-full min-w-0 rounded-[9px] border border-(--border-default) bg-(--surface) px-[10px] text-[13px] text-(--text-primary) outline-none focus:border-(--bg-orange) disabled:opacity-60 md:hidden dark:border-(--border-inverse) dark:bg-(--surface-inverse) dark:text-(--text-inverse)"
+            class="h-[36px] w-full basis-full min-w-0 rounded-[9px] border border-border bg-surface-1 px-[10px] text-[13px] text-fg outline-none focus:border-accent disabled:opacity-60 md:hidden"
             @change="selectHistoryFromPicker"
           >
             <option value="" disabled>Selecionar conversa</option>
@@ -244,7 +240,7 @@ async function analyze() {
             <ChatAvatar name="Inceptum AI" variant="ai" :size="44" />
             <p class="leading-normal"><AiBrandName class="text-[24px]" /></p>
             <p class="text-[15px] font-semibold">Como posso ajudar?</p>
-            <p class="max-w-[420px] text-[13px] leading-[20px] text-(--text-muted)">
+            <p class="max-w-[420px] text-[13px] leading-[20px] text-fg-muted">
               Peça para criar uma tarefa, consultar seus prazos ou atualizar uma prioridade. Informe
               o setor quando necessário.
             </p>
@@ -253,18 +249,18 @@ async function analyze() {
           <template v-for="entry in ai.messages" :key="entry.id">
             <article v-if="entry.role === 'user'" class="flex justify-end gap-[10px]">
               <div class="flex max-w-[min(560px,85%)] flex-col items-end gap-[6px]">
-                <p class="text-[11.5px] leading-normal text-(--text-muted)">
+                <p class="text-[11.5px] leading-normal text-fg-muted">
                   Você · {{ formatTime(entry.created_at) }}
                 </p>
                 <p
-                  class="whitespace-pre-wrap rounded-[12px] rounded-tr-[4px] bg-(--text-primary) px-[12px] py-[8px] text-[13.5px] leading-[20px] text-white dark:bg-(--surface-inverse) dark:text-(--text-inverse)"
+                  class="whitespace-pre-wrap rounded-[12px] rounded-tr-[4px] bg-(--text-primary) px-[12px] py-[8px] text-[13.5px] leading-[20px] text-white"
                 >
                   {{ entry.content }}
                 </p>
                 <p
                   v-for="file in entry.files"
                   :key="file.name"
-                  class="max-w-full break-all text-[12px] text-(--text-muted)"
+                  class="max-w-full break-all text-[12px] text-fg-muted"
                 >
                   {{ file.name }} · {{ formatSize(file.size) }}
                 </p>
@@ -280,7 +276,7 @@ async function analyze() {
               <div class="flex min-w-0 flex-1 flex-col gap-[10px]">
                 <p class="flex items-baseline gap-[8px] leading-normal">
                   <AiBrandName class="text-[13.5px]" />
-                  <span class="text-[11.5px] text-(--text-muted)">{{
+                  <span class="text-[11.5px] text-fg-muted">{{
                     formatTime(entry.created_at)
                   }}</span>
                 </p>
@@ -326,7 +322,7 @@ async function analyze() {
                     <p class="text-[12px] font-medium text-(--chat-ai)">
                       {{ aiActionLabel(action) }}
                     </p>
-                    <p v-if="aiActionDeleted(action)" class="text-[12px] text-(--text-muted)">
+                    <p v-if="aiActionDeleted(action)" class="text-[12px] text-fg-muted">
                       Removido com sucesso.
                     </p>
                     <AssistantTaskCard
@@ -339,7 +335,7 @@ async function analyze() {
                     <p
                       v-for="note in aiActionNotes(action)"
                       :key="note"
-                      class="text-[12px] leading-[18px] text-(--text-muted)"
+                      class="text-[12px] leading-[18px] text-fg-muted"
                     >
                       ℹ {{ note }}
                     </p>
@@ -393,7 +389,7 @@ async function analyze() {
                   v-if="entry.report"
                   :href="entry.report.url"
                   :download="entry.report.file_name"
-                  class="flex w-fit items-center gap-[6px] rounded-[9px] bg-(--bg-orange) px-[12px] py-[8px] text-[13px] font-medium text-accent-fg transition-colors hover:bg-accent-hover dark:text-accent-fg"
+                  class="flex w-fit items-center gap-[6px] rounded-[9px] bg-accent px-[12px] py-[8px] text-[13px] font-medium text-accent-fg transition-colors hover:bg-accent-hover dark:text-accent-fg"
                 >
                   <span class="material-symbols-outlined text-[17px]!" aria-hidden="true"
                     >download</span
@@ -402,7 +398,7 @@ async function analyze() {
               </div>
             </article>
           </template>
-          <p v-if="ai.isBusy" role="status" class="text-[13px] text-(--text-muted)">
+          <p v-if="ai.isBusy" role="status" class="text-[13px] text-fg-muted">
             {{
               ai.isAnalyzing
                 ? 'Analisando os arquivos e gerando o relatório…'
@@ -413,7 +409,7 @@ async function analyze() {
             v-if="ai.active?.pending && !ai.isBusy"
             class="flex flex-wrap items-center gap-[10px]"
           >
-            <p class="text-[12px] text-(--text-muted)">
+            <p class="text-[12px] text-fg-muted">
               A resposta não foi recebida. Tente novamente para recuperar o resultado da mesma
               solicitação.
             </p>
@@ -437,7 +433,7 @@ async function analyze() {
               :key="prompt"
               type="button"
               :disabled="composerDisabled"
-              class="h-[30px] cursor-pointer rounded-full border border-(--border-default) bg-(--surface) px-[12px] text-[12.5px] transition-colors hover:border-(--bg-orange) hover:bg-(--bg-orange)/5 hover:text-(--bg-orange) disabled:cursor-not-allowed disabled:opacity-50 dark:border-(--border-inverse) dark:bg-transparent dark:hover:bg-(--bg-orange)/10"
+              class="h-[30px] cursor-pointer rounded-full border border-border bg-surface-1 px-[12px] text-[12.5px] transition-colors hover:border-accent hover:bg-surface-2 hover:text-fg disabled:cursor-not-allowed disabled:opacity-50 dark:bg-transparent dark:hover:bg-surface-2"
               @click="draft = prompt"
             >
               {{ prompt }}
@@ -445,9 +441,9 @@ async function analyze() {
           </div>
           <div
             v-if="files.length"
-            class="mb-[10px] flex flex-col gap-[6px] rounded-[10px] border border-(--border-default) p-[10px] dark:border-(--border-inverse)"
+            class="mb-[10px] flex flex-col gap-[6px] rounded-[10px] border border-border p-[10px]"
           >
-            <p class="text-[12px] text-(--text-muted)">
+            <p class="text-[12px] text-fg-muted">
               Os arquivos serão analisados separadamente para gerar um relatório PDF.
             </p>
             <div
@@ -462,7 +458,7 @@ async function analyze() {
                 type="button"
                 :disabled="ai.isBusy"
                 :aria-label="`Remover ${file.name}`"
-                class="cursor-pointer text-(--text-muted)"
+                class="cursor-pointer text-fg-muted"
                 @click="files.splice(index, 1)"
               >
                 Remover

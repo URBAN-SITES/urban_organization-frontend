@@ -18,7 +18,7 @@ withDefaults(
 const model = defineModel<string>({ default: '' })
 
 const control =
-  'w-full rounded-[10px] border border-(--border-default) bg-(--surface) px-[12px] text-[14px] leading-5 text-(--text-primary) outline-none transition-[border-color,box-shadow] placeholder:text-(--text-muted) focus:border-(--bg-orange) focus:shadow-[0_0_0_3px_rgb(255_103_0/0.12)] disabled:opacity-60 dark:border-(--border-inverse) dark:bg-black/30 dark:text-(--text-inverse) dark:focus:border-(--bg-orange)'
+  'w-full rounded-[10px] border border-border bg-surface-1 px-[12px] text-[14px] leading-5 text-fg outline-none transition-[border-color,box-shadow] placeholder:text-fg-muted focus:border-accent focus:shadow-[0_0_0_3px_rgb(255_103_0/0.12)] disabled:opacity-60 dark:bg-black/30 dark:focus:border-accent'
 </script>
 
 <template>
@@ -45,7 +45,7 @@ const control =
         </option>
       </select>
       <span
-        class="material-symbols-outlined pointer-events-none absolute top-1/2 right-[10px] -translate-y-1/2 text-[18px]! text-(--text-muted) transition-colors group-focus-within:text-(--bg-orange)"
+        class="material-symbols-outlined pointer-events-none absolute top-1/2 right-[10px] -translate-y-1/2 text-[18px]! text-fg-muted transition-colors group-focus-within:text-accent"
         aria-hidden="true"
         >unfold_more</span
       >
@@ -60,6 +60,6 @@ const control =
       :class="[control, 'h-[44px]']"
     />
 
-    <p v-if="hint" class="text-[12px] leading-normal text-(--text-muted)">{{ hint }}</p>
+    <p v-if="hint" class="text-[12px] leading-normal text-fg-muted">{{ hint }}</p>
   </div>
 </template>

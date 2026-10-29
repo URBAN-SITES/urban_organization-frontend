@@ -29,7 +29,7 @@ const value = computed({
 
 <template>
   <div
-    class="relative flex items-center rounded-2xl px-5 py-3 mt-5 shadow-inner transition-all duration-300 focus-within:ring-2 border border-(--border-default) dark:border-(--border-inverse)"
+    class="relative flex items-center rounded-2xl px-5 py-3 mt-5 shadow-inner transition-all duration-300 focus-within:ring-2 border border-border"
   >
     <span class="material-symbols-outlined mr-2 text-[20px] transition-colors duration-300">
       lock
@@ -40,7 +40,7 @@ const value = computed({
       :type="showPassword ? 'text' : 'password'"
       :placeholder="placeholder"
       :disabled="disabled"
-      class="input-autofill w-full text-sm outline-none placeholder:text-(--text-muted)"
+      class="input-autofill w-full text-sm outline-none placeholder:text-fg-muted"
     />
 
     <button

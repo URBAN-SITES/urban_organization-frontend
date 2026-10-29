@@ -18,7 +18,7 @@ const router = useRouter()
 <template>
   <div class="flex flex-col items-start gap-[16px] xl:flex-row">
     <ConfigCard title="Alterar senha" class="w-full xl:flex-1">
-      <p class="text-sm text-(--text-muted)">
+      <p class="text-sm text-fg-muted">
         Enviaremos um código ao seu e-mail para confirmar a alteração. Ao concluir, entre novamente
         com a nova senha.
       </p>
@@ -67,7 +67,7 @@ const router = useRouter()
             :action="session.current ? '' : 'Encerrar'"
             @action="$emit('endSession', session.id)"
           />
-          <p v-if="!sessions.length" class="py-[10px] text-[12px] text-(--text-muted)">
+          <p v-if="!sessions.length" class="py-[10px] text-[12px] text-fg-muted">
             Nenhuma sessão ativa encontrada.
           </p>
         </fieldset>

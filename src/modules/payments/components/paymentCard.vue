@@ -12,18 +12,13 @@ withDefaults(defineProps<Props>(), {
 
 <template>
   <section
-    class="flex flex-col gap-[14px] rounded-[16px] border border-(--border-default) bg-(--surface) p-[18px] sm:p-[22px] dark:border-(--border-inverse) dark:bg-(--surface-inverse)"
+    class="flex flex-col gap-[14px] rounded-card border border-border bg-surface-1 p-[18px] sm:p-[22px]"
   >
     <header v-if="title" class="flex flex-col gap-[2px] leading-normal">
-      <h2
-        class="border-l-2 border-(--bg-orange) pl-[9px] text-[15px]! leading-normal! font-semibold! tracking-normal!"
-      >
+      <h2 class="border-l-2 border-accent pl-[9px] text-16 font-semibold text-fg">
         {{ title }}
       </h2>
-      <p
-        v-if="description"
-        class="text-[13px] text-(--text-secondary) dark:text-(--text-inverse-muted)"
-      >
+      <p v-if="description" class="text-[13px] text-fg-muted">
         {{ description }}
       </p>
     </header>

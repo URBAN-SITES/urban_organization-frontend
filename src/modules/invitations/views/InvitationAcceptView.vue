@@ -92,9 +92,9 @@ watch(token, load, { immediate: true })
 <template>
   <OrganizationLayout title="Convite">
     <section class="workspace-card invitation-accept" aria-labelledby="accept-title">
-      <h1 id="accept-title">
+      <h2 id="accept-title" class="text-16 font-semibold text-fg">
         {{ preview ? `Entrar em ${preview.organization_name}` : 'Convite para uma organização' }}
-      </h1>
+      </h2>
 
       <p v-if="!validToken">
         Este link está incompleto ou é inválido. Abra o link completo do e-mail de convite.

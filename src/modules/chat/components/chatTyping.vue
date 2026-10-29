@@ -6,7 +6,7 @@ defineProps<{ name: string }>()
 
 <template>
   <p
-    class="flex items-center gap-[8px] py-[6px] text-[12px] leading-normal text-(--text-muted)"
+    class="flex items-center gap-[8px] py-[6px] text-[12px] leading-normal text-fg-muted"
     aria-live="polite"
   >
     <ChatAvatar :name="name" :size="20" />

@@ -19,7 +19,7 @@ const model = defineModel<string>({ default: '' })
   <div>
     <label :for="id" class="mb-2 block text-[14px] font-medium leading-5">{{ label }}</label>
     <div
-      class="flex h-13 items-center gap-3 rounded-lg border border-(--border-default) bg-(--surface) px-4 text-(--text-muted) transition-colors focus-within:border-(--border-strong) dark:border-(--border-inverse) dark:bg-black/30 dark:focus-within:border-(--text-inverse-muted)"
+      class="flex h-13 items-center gap-3 rounded-lg border border-border bg-surface-1 px-4 text-fg-muted transition-colors focus-within:border-(--border-strong) dark:bg-black/30 dark:focus-within:border-(--text-inverse-muted)"
     >
       <span class="material-symbols-outlined text-[20px]!" aria-hidden="true">{{ icon }}</span>
       <input
@@ -27,14 +27,11 @@ const model = defineModel<string>({ default: '' })
         v-model="model"
         :type="type"
         v-bind="$attrs"
-        class="auth-input h-full w-full bg-transparent text-[16px] text-(--text-primary) outline-none placeholder:text-(--text-muted) dark:text-(--text-inverse)"
+        class="auth-input h-full w-full bg-transparent text-[16px] text-fg outline-none placeholder:text-fg-muted"
       />
     </div>
     <slot name="after" />
-    <p
-      v-if="hint"
-      class="mt-2 text-[12px] leading-4 text-(--text-secondary) dark:text-(--text-inverse-muted)"
-    >
+    <p v-if="hint" class="mt-2 text-[12px] leading-4 text-fg-muted">
       {{ hint }}
     </p>
   </div>
