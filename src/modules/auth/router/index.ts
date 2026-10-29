@@ -6,6 +6,8 @@ declare module 'vue-router' {
     authStep?: number
     /** Sign-up screens show the image panel on the right instead of the left. */
     authAsideRight?: boolean
+    /** Office photo shown in the institutional panel. */
+    authScene?: 'executive' | 'workstation' | 'boardroom'
   }
 }
 
@@ -25,33 +27,33 @@ export const authRoutes: RouteRecordRaw[] = [
       {
         path: '/registrar',
         name: 'Register',
-        meta: { authStep: 1, authAsideRight: true },
+        meta: { authStep: 1, authAsideRight: true, authScene: 'workstation' },
         component: () => import('../views/RegisterView.vue'),
       },
       {
         path: '/registrar/codigo',
         name: 'RegisterCode',
-        meta: { authStep: 2, authAsideRight: true },
+        meta: { authStep: 2, authAsideRight: true, authScene: 'workstation' },
         component: () => import('../views/VerifyCodeView.vue'),
         props: { flow: 'register' },
       },
       {
         path: '/esqueci-senha',
         name: 'ForgotPassword',
-        meta: { authStep: 1 },
+        meta: { authStep: 1, authScene: 'boardroom' },
         component: () => import('../views/ForgotPasswordView.vue'),
       },
       {
         path: '/esqueci-senha/codigo',
         name: 'ResetCode',
-        meta: { authStep: 2 },
+        meta: { authStep: 2, authScene: 'boardroom' },
         component: () => import('../views/VerifyCodeView.vue'),
         props: { flow: 'reset' },
       },
       {
         path: '/esqueci-senha/nova-senha',
         name: 'ResetPassword',
-        meta: { authStep: 3 },
+        meta: { authStep: 3, authScene: 'boardroom' },
         component: () => import('../views/ResetPasswordView.vue'),
       },
     ],
