@@ -1,12 +1,25 @@
 <script setup lang="ts">
+import { ArrowRight, Building2, Plus, Settings } from '@lucide/vue'
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { getErrorMessage } from '@/app/plugins/axios'
 import { InvitationsInbox } from '@/modules/invitations'
+import {
+  UiAvatar,
+  UiBadge,
+  UiButton,
+  UiEmptyState,
+  UiErrorState,
+  UiIconButton,
+  UiSkeleton,
+} from '@/shared/components'
 import OrganizationLayout from '../components/organizationLayout.vue'
 import { useOrganizationsStore } from '../stores'
+import type { Organization } from '../types'
 import { roleLabels } from '../utils'
 
 const store = useOrganizationsStore()
+const router = useRouter()
 const loading = ref(true)
 const error = ref('')
 
@@ -16,45 +29,98 @@ async function load() {
   try {
     await store.load()
   } catch (cause) {
-    error.value = getErrorMessage(cause, 'Não foi possível carregar suas organizações.')
+    error.value = getErrorMessage(cause, 'Verifique sua conexão e tente de novo.')
   } finally {
     loading.value = false
   }
 }
 onMounted(load)
+
+function open(organization: Organization) {
+  store.select(organization.id)
+  void router.push('/')
+}
 </script>
 
 <template>
-  <OrganizationLayout title="Organizações">
-    <InvitationsInbox class="mb-4" />
-    <div class="workspace-heading">
-      <div>
-        <h1>Suas organizações</h1>
-        <p>Escolha seu espaço de trabalho ou crie uma organização.</p>
-      </div>
-      <RouterLink :to="{ name: 'OrganizationOnboarding' }" class="workspace-link-button"
-        >Criar organização</RouterLink
+  <OrganizationLayout
+    title="Organizações"
+    description="Escolha seu espaço de trabalho ou crie uma organização."
+  >
+    <template #actions>
+      <UiButton
+        variant="primary"
+        :icon="Plus"
+        @click="router.push({ name: 'OrganizationOnboarding' })"
       >
-    </div>
-    <p v-if="loading" role="status">Carregando organizações…</p>
-    <div v-else-if="error" role="alert" class="workspace-error">
-      {{ error }} <button type="button" @click="load">Tentar novamente</button>
-    </div>
-    <div v-else class="organization-grid">
-      <RouterLink
+        Criar organização
+      </UiButton>
+    </template>
+
+    <InvitationsInbox />
+
+    <ul v-if="loading" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label="Carregando">
+      <li v-for="n in 3" :key="n"><UiSkeleton class="h-32 rounded-card" /></li>
+    </ul>
+    <UiErrorState
+      v-else-if="error"
+      title="Não foi possível carregar suas organizações"
+      :description="error"
+      @retry="load"
+    />
+    <UiEmptyState
+      v-else-if="!store.organizations.length"
+      :icon="Building2"
+      title="Você ainda não participa de uma organização"
+      description="Crie uma para organizar projetos com seu time."
+    />
+    <ul v-else class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <li
         v-for="organization in store.organizations"
         :key="organization.id"
-        class="workspace-card organization-card"
-        :to="{ name: 'OrganizationMembers', params: { organizationId: organization.id } }"
+        :class="[
+          'flex flex-col gap-4 rounded-card border bg-surface-1 p-4',
+          store.current?.id === organization.id ? 'border-border-strong' : 'border-border',
+        ]"
       >
-        <span class="workspace-eyebrow">{{
-          organization.is_personal ? 'Espaço pessoal' : 'Organização'
-        }}</span>
-        <h2>{{ organization.name }}</h2>
-        <p v-if="organization.description">{{ organization.description }}</p>
-        <span class="workspace-badge">{{ roleLabels[organization.current_role] }}</span>
-      </RouterLink>
-      <p v-if="!store.organizations.length">Você ainda não participa de uma organização.</p>
-    </div>
+        <div class="flex items-start gap-3">
+          <img
+            v-if="organization.logo_url"
+            :src="organization.logo_url"
+            alt=""
+            class="size-10 rounded-control border border-border object-cover"
+          />
+          <UiAvatar v-else :name="organization.name" size="lg" class="rounded-control!" />
+          <div class="min-w-0 flex-1">
+            <h2 class="truncate text-14 font-semibold text-fg">{{ organization.name }}</h2>
+            <p class="text-12 text-fg-muted">
+              {{ organization.is_personal ? 'Espaço pessoal' : 'Organização' }}
+            </p>
+          </div>
+          <UiBadge v-if="store.current?.id === organization.id" tone="accent">Atual</UiBadge>
+        </div>
+        <p v-if="organization.description" class="line-clamp-2 text-13 text-fg-muted">
+          {{ organization.description }}
+        </p>
+        <div class="mt-auto flex items-center justify-between gap-2">
+          <UiBadge>{{ roleLabels[organization.current_role] }}</UiBadge>
+          <span class="flex items-center gap-1">
+            <UiIconButton
+              :icon="Settings"
+              :label="`Gerenciar ${organization.name}`"
+              @click="
+                router.push({
+                  name: 'OrganizationMembers',
+                  params: { organizationId: organization.id },
+                })
+              "
+            />
+            <UiButton size="sm" :icon-right="ArrowRight" @click="open(organization)">
+              Abrir
+            </UiButton>
+          </span>
+        </div>
+      </li>
+    </ul>
   </OrganizationLayout>
 </template>

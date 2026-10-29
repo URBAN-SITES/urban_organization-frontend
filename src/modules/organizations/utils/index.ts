@@ -7,6 +7,23 @@ export const roleLabels: Record<OrganizationRole, string> = {
   viewer: 'Leitor',
 }
 
+export const TEAM_SIZES = [
+  { value: '1', label: 'Só eu' },
+  { value: '2-10', label: '2 a 10 pessoas' },
+  { value: '11-50', label: '11 a 50 pessoas' },
+  { value: '51-200', label: '51 a 200 pessoas' },
+  { value: '201+', label: 'Mais de 200 pessoas' },
+]
+
+const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
+
+/** Mensagem de erro do endereço (slug), ou '' quando está ok. */
+export function slugProblem(value: string): string {
+  return SLUG_PATTERN.test(value)
+    ? ''
+    : 'Use letras minúsculas, números e hífens, como norte-studio.'
+}
+
 export function initials(name: string): string {
   return name
     .trim()

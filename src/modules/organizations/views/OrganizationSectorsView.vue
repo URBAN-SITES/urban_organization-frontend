@@ -239,7 +239,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <OrganizationLayout title="Setores" :organization-id="organization?.id">
+  <OrganizationLayout legacy title="Setores" :organization-id="organization?.id">
     <div class="workspace-heading">
       <div>
         <h1>Setores</h1>

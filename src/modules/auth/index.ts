@@ -1,7 +1,7 @@
 export type * from './types'
 export { useAuthStore } from './stores'
 export { useUsersStore } from './stores/users'
-export { safeRedirect } from './utils'
+export { emailProblem, safeRedirect } from './utils'
 export {
   AuthField,
   AuthHeading,

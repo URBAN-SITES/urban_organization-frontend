@@ -23,7 +23,7 @@ async function open() {
 watch(() => route.params.slug, open, { immediate: true })
 </script>
 <template>
-  <OrganizationLayout title="Workspace"
+  <OrganizationLayout legacy title="Workspace"
     ><p v-if="!error" role="status">Abrindo workspace…</p>
     <div v-else role="alert" class="workspace-error">
       {{ error }} <button type="button" @click="open">Tentar novamente</button>
