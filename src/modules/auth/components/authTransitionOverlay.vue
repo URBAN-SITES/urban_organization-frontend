@@ -41,6 +41,6 @@ defineProps<{ visible: boolean; title: string; description?: string }>()
 }
 
 .auth-cover-enter-active .auth-cover-content {
-  animation: ui-rise var(--dur-slow) var(--ease-out) 60ms both;
+  animation: ui-rise var(--dur-slow) var(--ease-out) 60ms backwards;
 }
 </style>

@@ -160,7 +160,7 @@
   }
 }
 .ui-rise {
-  animation: ui-rise var(--dur-slow) var(--ease-out) both;
+  animation: ui-rise var(--dur-slow) var(--ease-out) backwards;
 }
 
 /* barras de gráfico crescem a partir da base */

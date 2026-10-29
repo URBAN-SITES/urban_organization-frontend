@@ -4,6 +4,8 @@ declare module 'vue-router' {
   interface RouteMeta {
     /** Position in the sign-in flow; going to a higher step slides left, lower slides right. */
     authStep?: number
+    /** Sign-up screens show the image panel on the right instead of the left. */
+    authAsideRight?: boolean
   }
 }
 
@@ -23,13 +25,13 @@ export const authRoutes: RouteRecordRaw[] = [
       {
         path: '/registrar',
         name: 'Register',
-        meta: { authStep: 1 },
+        meta: { authStep: 1, authAsideRight: true },
         component: () => import('../views/RegisterView.vue'),
       },
       {
         path: '/registrar/codigo',
         name: 'RegisterCode',
-        meta: { authStep: 2 },
+        meta: { authStep: 2, authAsideRight: true },
         component: () => import('../views/VerifyCodeView.vue'),
         props: { flow: 'register' },
       },
