@@ -2,7 +2,6 @@
 import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
-import { SubheaderComp } from '@/shared/components'
 import { PaymentPage, PlanCard } from '../components'
 import type { Plan } from '../types'
 import { PLANS } from '../utils/plans'
@@ -43,13 +42,11 @@ function choose(plan: Plan) {
 </script>
 
 <template>
-  <PaymentPage :crumbs="['Conta', 'Planos']">
-    <SubheaderComp
-      title="Planos"
-      description="Use o Kanban grátis e ative o Pro para liberar recursos de IA."
-      class="mb-0!"
-    />
-
+  <PaymentPage
+    :crumbs="['Conta', 'Planos']"
+    title="Planos"
+    description="Use o Kanban grátis e ative o Pro para liberar recursos de IA."
+  >
     <div class="mx-auto grid w-full max-w-[900px] items-stretch gap-[14px] md:grid-cols-2">
       <PlanCard
         v-for="plan in plans"
@@ -61,7 +58,7 @@ function choose(plan: Plan) {
       />
     </div>
 
-    <p class="mx-auto w-full max-w-[900px] text-[12px] leading-normal text-(--text-muted)">
+    <p class="mx-auto w-full max-w-[900px] text-[12px] leading-normal text-fg-muted">
       Acesso individual à IA após a confirmação do pagamento. Sem renovação automática.
     </p>
   </PaymentPage>

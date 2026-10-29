@@ -4,7 +4,7 @@ import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
 import { RouterLink } from 'vue-router'
 import { toast } from 'vue-sonner'
 import {
-  TopbarComp,
+  PageLayout,
   UiBadge,
   UiButton,
   UiEmptyState,
@@ -145,234 +145,228 @@ function pdf() {
 </script>
 
 <template>
-  <div class="flex min-h-dvh w-full min-w-0 flex-col bg-bg">
-    <TopbarComp :crumbs="['Reuniões', meeting?.title ?? 'Gravação']" />
+  <PageLayout :crumbs="['Reuniões', meeting?.title ?? 'Gravação']">
+    <RouterLink
+      v-if="meeting"
+      :to="{
+        name: 'SectorBoard',
+        params: { sectorId: meeting.sector_id },
+        query: { view: 'meetings' },
+      }"
+      class="flex items-center gap-1.5 self-start rounded-control text-13 text-fg-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-accent"
+    >
+      <ArrowLeft :size="14" aria-hidden="true" /> Voltar às reuniões
+    </RouterLink>
 
-    <div class="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 pt-6 pb-10 sm:px-8">
-      <RouterLink
-        v-if="meeting"
-        :to="{
-          name: 'SectorBoard',
-          params: { sectorId: meeting.sector_id },
-          query: { view: 'meetings' },
-        }"
-        class="flex items-center gap-1.5 self-start rounded-control text-13 text-fg-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-accent"
+    <div v-if="!meeting && !loadError" class="grid gap-4" aria-label="Carregando">
+      <UiSkeleton class="h-10 w-2/3 rounded-control" />
+      <UiSkeleton class="aspect-video rounded-card" />
+    </div>
+
+    <UiErrorState v-else-if="loadError" :description="loadError" @retry="load" />
+
+    <template v-else-if="meeting && recording">
+      <header class="min-w-0">
+        <h1 class="text-24 leading-tight font-semibold tracking-[-0.01em] text-fg">
+          {{ meeting.title }}
+        </h1>
+        <p class="mt-1 text-14 text-fg-muted">
+          {{ when }}
+          <template v-if="recording.duration_seconds">
+            · {{ formatDuration(recording.duration_seconds) }}
+          </template>
+        </p>
+      </header>
+
+      <video
+        v-if="recording.play_url"
+        ref="video"
+        :src="recording.play_url"
+        controls
+        preload="metadata"
+        class="aspect-video w-full rounded-card bg-surface-2"
+        :aria-label="`Gravação de ${meeting.title}`"
+        @timeupdate="current = ($event.target as HTMLVideoElement).currentTime"
+      />
+
+      <UiEmptyState
+        v-if="notConfigured"
+        :icon="Sparkles"
+        title="Transcrição não configurada"
+        description="Quem administra o Inceptum liga a transcrição e o resumo no servidor seguindo o docs/IA-REUNIOES.md do backend. Tudo roda no próprio servidor."
+      />
+
+      <UiPanel
+        v-else-if="!insight"
+        title="Transcrição e resumo"
+        description="Gerados no próprio servidor, sem enviar o áudio para fora."
       >
-        <ArrowLeft :size="14" aria-hidden="true" /> Voltar às reuniões
-      </RouterLink>
-
-      <div v-if="!meeting && !loadError" class="grid gap-4" aria-label="Carregando">
-        <UiSkeleton class="h-10 w-2/3 rounded-control" />
-        <UiSkeleton class="aspect-video rounded-card" />
-      </div>
-
-      <UiErrorState v-else-if="loadError" :description="loadError" @retry="load" />
-
-      <template v-else-if="meeting && recording">
-        <header class="min-w-0">
-          <h1 class="text-24 leading-tight font-semibold tracking-[-0.01em] text-fg">
-            {{ meeting.title }}
-          </h1>
-          <p class="mt-1 text-14 text-fg-muted">
-            {{ when }}
-            <template v-if="recording.duration_seconds">
-              · {{ formatDuration(recording.duration_seconds) }}
-            </template>
-          </p>
-        </header>
-
-        <video
-          v-if="recording.play_url"
-          ref="video"
-          :src="recording.play_url"
-          controls
-          preload="metadata"
-          class="aspect-video w-full rounded-card bg-surface-2"
-          :aria-label="`Gravação de ${meeting.title}`"
-          @timeupdate="current = ($event.target as HTMLVideoElement).currentTime"
-        />
-
-        <UiEmptyState
-          v-if="notConfigured"
-          :icon="Sparkles"
-          title="Transcrição não configurada"
-          description="Quem administra o Inceptum liga a transcrição e o resumo no servidor seguindo o docs/IA-REUNIOES.md do backend. Tudo roda no próprio servidor."
-        />
-
-        <UiPanel
-          v-else-if="!insight"
-          title="Transcrição e resumo"
-          description="Gerados no próprio servidor, sem enviar o áudio para fora."
-        >
-          <div class="flex flex-wrap items-center gap-3 p-4">
-            <UiButton
-              v-if="meeting.can_manage && recording.status === 'ready'"
-              variant="primary"
-              :icon="Sparkles"
-              :loading="starting"
-              @click="start"
-            >
-              Gerar transcrição e resumo
-            </UiButton>
-            <p v-else class="text-13 text-fg-muted">
-              Ainda não há transcrição. Quem organiza a reunião pode gerar.
-            </p>
-          </div>
-        </UiPanel>
-
-        <section
-          v-else-if="running"
-          class="flex items-center gap-3 rounded-card border border-border bg-surface-1 p-4"
-          role="status"
-          aria-live="polite"
-        >
-          <UiSpinner :size="16" />
-          <div class="grid gap-0.5">
-            <p class="text-14 font-medium text-fg">{{ INSIGHT_STATUS[insight.status].label }}</p>
-            <p class="text-13 text-fg-muted">
-              No servidor, a transcrição pode levar perto da duração da reunião. Esta página
-              atualiza sozinha.
-            </p>
-          </div>
-        </section>
-
-        <section
-          v-else-if="insight.status === 'failed'"
-          class="grid gap-3 rounded-card border border-border bg-surface-1 p-4"
-        >
-          <div class="flex flex-wrap items-center gap-2">
-            <UiBadge tone="danger">Falhou</UiBadge>
-            <span class="text-13 text-fg-muted">
-              {{ insight.attempts }} {{ insight.attempts === 1 ? 'tentativa' : 'tentativas' }}. A
-              gravação continua guardada.
-            </span>
-          </div>
-          <p role="alert" class="text-13 text-fg">{{ insightError(insight.error) }}</p>
+        <div class="flex flex-wrap items-center gap-3 p-4">
           <UiButton
-            v-if="meeting.can_manage"
-            class="justify-self-start"
+            v-if="meeting.can_manage && recording.status === 'ready'"
+            variant="primary"
+            :icon="Sparkles"
             :loading="starting"
             @click="start"
           >
-            Tentar de novo
+            Gerar transcrição e resumo
           </UiButton>
-          <p v-if="insight.segments.length" class="text-13 text-fg-muted">
-            A transcrição foi salva; a nova tentativa refaz só o resumo.
+          <p v-else class="text-13 text-fg-muted">
+            Ainda não há transcrição. Quem organiza a reunião pode gerar.
           </p>
-        </section>
+        </div>
+      </UiPanel>
 
-        <template v-if="insight && (insight.status === 'done' || insight.segments.length)">
-          <div class="flex flex-wrap items-center gap-2">
-            <UiButton size="sm" variant="ghost" :icon="FileDown" @click="downloadMarkdown">
-              Markdown
-            </UiButton>
-            <UiButton
-              size="sm"
-              variant="ghost"
-              :icon="Printer"
-              title="Abre a impressão do navegador; escolha Salvar como PDF"
-              @click="pdf"
-            >
-              PDF
-            </UiButton>
-            <span class="flex-1" />
-            <UiButton
-              v-if="insight.summary?.actions.length"
-              size="sm"
-              :icon="ListChecks"
-              @click="reviewing = true"
-            >
-              {{
-                pendingActions
-                  ? `Revisar ${pendingActions} ${pendingActions === 1 ? 'ação' : 'ações'}`
-                  : 'Ações já viraram tarefas'
-              }}
-            </UiButton>
-          </div>
+      <section
+        v-else-if="running"
+        class="flex items-center gap-3 rounded-card border border-border bg-surface-1 p-4"
+        role="status"
+        aria-live="polite"
+      >
+        <UiSpinner :size="16" />
+        <div class="grid gap-0.5">
+          <p class="text-14 font-medium text-fg">{{ INSIGHT_STATUS[insight.status].label }}</p>
+          <p class="text-13 text-fg-muted">
+            No servidor, a transcrição pode levar perto da duração da reunião. Esta página atualiza
+            sozinha.
+          </p>
+        </div>
+      </section>
 
-          <UiTabs v-model="tab" :tabs="tabs" label="Conteúdo da reunião">
-            <template #default="{ active }">
-              <div class="pt-4">
-                <template v-if="active === 'summary'">
-                  <InsightSummary v-if="insight.summary" :summary="insight.summary" @seek="seek" />
-                  <UiEmptyState
-                    v-else
-                    :icon="FileText"
-                    title="Sem resumo"
-                    :description="
-                      insight.error === 'no_speech'
-                        ? 'Não encontramos fala nesta gravação.'
-                        : 'O resumo ainda não foi gerado.'
-                    "
-                  />
-                  <section
-                    v-if="insight.summary?.actions.length"
-                    aria-labelledby="summary-actions"
-                    class="mt-6 grid gap-2"
-                  >
-                    <h2 id="summary-actions" class="text-16 font-semibold text-fg">
-                      Ações sugeridas
-                    </h2>
-                    <ul class="grid gap-2">
-                      <li
-                        v-for="(action, index) in insight.summary.actions"
-                        :key="index"
-                        class="grid gap-1 rounded-card border border-border p-3 text-14"
-                      >
-                        <div class="flex flex-wrap items-center gap-2">
-                          <span class="font-medium text-fg">{{ action.title }}</span>
-                          <UiBadge v-if="action.created" tone="success">Tarefa criada</UiBadge>
-                        </div>
-                        <p class="text-13 text-fg-muted">
-                          {{ action.assignee_name ?? 'Sem responsável identificado' }} ·
-                          {{
-                            action.due_date
-                              ? new Date(`${action.due_date}T12:00`).toLocaleDateString('pt-BR')
-                              : 'sem prazo identificado'
-                          }}
-                        </p>
-                        <button
-                          type="button"
-                          class="cursor-pointer justify-self-start rounded-control text-left text-13 text-fg-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-accent"
-                          :aria-label="`Ir para ${clock(action.source.start)} no vídeo`"
-                          @click="seek(action.source.start)"
-                        >
-                          <span class="font-mono tabular-nums">{{
-                            clock(action.source.start)
-                          }}</span>
-                          “{{ action.source.quote }}”
-                        </button>
-                      </li>
-                    </ul>
-                  </section>
-                  <p class="mt-6 text-12 text-fg-muted">
-                    Gerado no servidor com {{ insight.transcribe_model }}
-                    <template v-if="insight.summary_model"> e {{ insight.summary_model }}</template>
-                    em {{ Math.round(insight.transcribe_seconds + insight.summary_seconds) }} s.
-                    Confira antes de usar: a IA pode errar.
-                  </p>
-                </template>
-                <InsightTranscript
+      <section
+        v-else-if="insight.status === 'failed'"
+        class="grid gap-3 rounded-card border border-border bg-surface-1 p-4"
+      >
+        <div class="flex flex-wrap items-center gap-2">
+          <UiBadge tone="danger">Falhou</UiBadge>
+          <span class="text-13 text-fg-muted">
+            {{ insight.attempts }} {{ insight.attempts === 1 ? 'tentativa' : 'tentativas' }}. A
+            gravação continua guardada.
+          </span>
+        </div>
+        <p role="alert" class="text-13 text-fg">{{ insightError(insight.error) }}</p>
+        <UiButton
+          v-if="meeting.can_manage"
+          class="justify-self-start"
+          :loading="starting"
+          @click="start"
+        >
+          Tentar de novo
+        </UiButton>
+        <p v-if="insight.segments.length" class="text-13 text-fg-muted">
+          A transcrição foi salva; a nova tentativa refaz só o resumo.
+        </p>
+      </section>
+
+      <template v-if="insight && (insight.status === 'done' || insight.segments.length)">
+        <div class="flex flex-wrap items-center gap-2">
+          <UiButton size="sm" variant="ghost" :icon="FileDown" @click="downloadMarkdown">
+            Markdown
+          </UiButton>
+          <UiButton
+            size="sm"
+            variant="ghost"
+            :icon="Printer"
+            title="Abre a impressão do navegador; escolha Salvar como PDF"
+            @click="pdf"
+          >
+            PDF
+          </UiButton>
+          <span class="flex-1" />
+          <UiButton
+            v-if="insight.summary?.actions.length"
+            size="sm"
+            :icon="ListChecks"
+            @click="reviewing = true"
+          >
+            {{
+              pendingActions
+                ? `Revisar ${pendingActions} ${pendingActions === 1 ? 'ação' : 'ações'}`
+                : 'Ações já viraram tarefas'
+            }}
+          </UiButton>
+        </div>
+
+        <UiTabs v-model="tab" :tabs="tabs" label="Conteúdo da reunião">
+          <template #default="{ active }">
+            <div class="pt-4">
+              <template v-if="active === 'summary'">
+                <InsightSummary v-if="insight.summary" :summary="insight.summary" @seek="seek" />
+                <UiEmptyState
                   v-else
-                  :segments="insight.segments"
-                  :current="current"
-                  @seek="seek"
+                  :icon="FileText"
+                  title="Sem resumo"
+                  :description="
+                    insight.error === 'no_speech'
+                      ? 'Não encontramos fala nesta gravação.'
+                      : 'O resumo ainda não foi gerado.'
+                  "
                 />
-              </div>
-            </template>
-          </UiTabs>
+                <section
+                  v-if="insight.summary?.actions.length"
+                  aria-labelledby="summary-actions"
+                  class="mt-6 grid gap-2"
+                >
+                  <h2 id="summary-actions" class="text-16 font-semibold text-fg">
+                    Ações sugeridas
+                  </h2>
+                  <ul class="grid gap-2">
+                    <li
+                      v-for="(action, index) in insight.summary.actions"
+                      :key="index"
+                      class="grid gap-1 rounded-card border border-border p-3 text-14"
+                    >
+                      <div class="flex flex-wrap items-center gap-2">
+                        <span class="font-medium text-fg">{{ action.title }}</span>
+                        <UiBadge v-if="action.created" tone="success">Tarefa criada</UiBadge>
+                      </div>
+                      <p class="text-13 text-fg-muted">
+                        {{ action.assignee_name ?? 'Sem responsável identificado' }} ·
+                        {{
+                          action.due_date
+                            ? new Date(`${action.due_date}T12:00`).toLocaleDateString('pt-BR')
+                            : 'sem prazo identificado'
+                        }}
+                      </p>
+                      <button
+                        type="button"
+                        class="cursor-pointer justify-self-start rounded-control text-left text-13 text-fg-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-accent"
+                        :aria-label="`Ir para ${clock(action.source.start)} no vídeo`"
+                        @click="seek(action.source.start)"
+                      >
+                        <span class="font-mono tabular-nums">{{ clock(action.source.start) }}</span>
+                        “{{ action.source.quote }}”
+                      </button>
+                    </li>
+                  </ul>
+                </section>
+                <p class="mt-6 text-12 text-fg-muted">
+                  Gerado no servidor com {{ insight.transcribe_model }}
+                  <template v-if="insight.summary_model"> e {{ insight.summary_model }}</template>
+                  em {{ Math.round(insight.transcribe_seconds + insight.summary_seconds) }} s.
+                  Confira antes de usar: a IA pode errar.
+                </p>
+              </template>
+              <InsightTranscript
+                v-else
+                :segments="insight.segments"
+                :current="current"
+                @seek="seek"
+              />
+            </div>
+          </template>
+        </UiTabs>
 
-          <ActionReviewDialog
-            v-if="insight.summary"
-            v-model:open="reviewing"
-            :meeting-id="meetingId"
-            :recording-id="recordingId"
-            :actions="insight.summary.actions"
-            :people="meeting.participants"
-            @created="loadInsight"
-          />
-        </template>
+        <ActionReviewDialog
+          v-if="insight.summary"
+          v-model:open="reviewing"
+          :meeting-id="meetingId"
+          :recording-id="recordingId"
+          :actions="insight.summary.actions"
+          :people="meeting.participants"
+          @created="loadInsight"
+        />
       </template>
-    </div>
-  </div>
+    </template>
+  </PageLayout>
 </template>

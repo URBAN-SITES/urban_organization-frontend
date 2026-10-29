@@ -91,11 +91,11 @@ const current = computed(() => docs[props.doc])
 <template>
   <main class="mx-auto min-h-dvh w-full max-w-3xl px-4 py-12 sm:px-6">
     <h1 class="text-3xl font-bold">{{ current.title }}</h1>
-    <p class="mt-2 text-sm text-(--text-muted)">Última atualização: {{ UPDATED }}</p>
+    <p class="mt-2 text-sm text-fg-muted">Última atualização: {{ UPDATED }}</p>
 
     <section v-for="[heading, text] in current.sections" :key="heading" class="mt-8">
       <h2 class="text-xl font-semibold">{{ heading }}</h2>
-      <p class="mt-2 leading-relaxed text-(--text-muted)">{{ text }}</p>
+      <p class="mt-2 leading-relaxed text-fg-muted">{{ text }}</p>
     </section>
   </main>
 </template>

@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { getErrorMessage } from '@/app/plugins/axios'
-import { BaseButton, SubheaderComp, TopbarComp, UiSpinner } from '@/shared/components'
+import { BaseButton, PageLayout, UiSpinner } from '@/shared/components'
 import { avatar } from '@/shared/utils/people'
 import { categoryColors } from '@/shared/utils/chartColors'
 import {
@@ -167,294 +167,268 @@ async function archive() {
 }
 
 const field =
-  'rounded-[10px] border border-(--border-default) bg-transparent px-[12px] py-[10px] text-[14px] leading-normal outline-none focus:border-(--border-strong) disabled:opacity-60 dark:border-(--border-inverse)'
+  'rounded-[10px] border border-border bg-transparent px-[12px] py-[10px] text-[14px] leading-normal outline-none focus:border-(--border-strong) disabled:opacity-60'
 </script>
 
 <template>
-  <div
-    class="flex min-h-dvh w-full min-w-0 flex-col bg-(--background) dark:bg-(--background-inverse)"
+  <PageLayout
+    :crumbs="['Equipe e setores', sector?.name ?? 'Setor', 'Editar']"
+    title="Editar setor"
+    :description="missing ? 'Setor não encontrado' : `${sector?.name ?? ''} · ${description}`"
+    width="wide"
   >
-    <TopbarComp :crumbs="['Equipe e setores', sector?.name ?? 'Setor', 'Editar']" />
+    <template #actions>
+      <div class="flex flex-wrap items-center gap-[8px]">
+        <BaseButton
+          variant="ghost"
+          label="Cancelar"
+          :full-width="false"
+          :class="TOOLBAR_BUTTON"
+          @click="router.push({ name: 'SectorBoard', params: { sectorId: props.id } })"
+        />
+        <BaseButton
+          label="Salvar setor"
+          :full-width="false"
+          :class="TOOLBAR_BUTTON"
+          :loading="saving"
+          :disabled="!canEdit || !form.name.trim()"
+          @click="save"
+        />
+      </div>
+    </template>
 
-    <section
-      class="flex flex-1 flex-col gap-[16px] px-[20px] pt-[24px] pb-[32px] sm:px-[36px] xl:px-[44px]"
-    >
-      <SubheaderComp
-        title="Editar setor"
-        :description="missing ? 'Setor não encontrado' : `${sector?.name ?? ''} · ${description}`"
-        class="mb-0!"
+    <p v-if="missing" class="text-[14px] text-fg-muted">
+      Esse setor não existe, foi arquivado ou você não tem acesso a ele.
+      <RouterLink to="/equipe" class="underline">Voltar para Equipe e setores</RouterLink>
+    </p>
+    <p v-else-if="loading && !sector" class="flex items-center gap-2 text-14 text-fg-muted">
+      <UiSpinner :size="16" label="Carregando projeto" />
+      Carregando projeto...
+    </p>
+
+    <template v-else-if="sector">
+      <p
+        v-if="!canEdit"
+        class="rounded-[12px] border border-border bg-surface-1 px-[14px] py-[10px] text-[13px] text-fg-muted"
       >
-        <div class="flex flex-wrap items-center gap-[8px]">
-          <BaseButton
-            variant="ghost"
-            label="Cancelar"
-            :full-width="false"
-            :class="TOOLBAR_BUTTON"
-            @click="router.push({ name: 'SectorBoard', params: { sectorId: props.id } })"
-          />
-          <BaseButton
-            label="Salvar setor"
-            :full-width="false"
-            :class="TOOLBAR_BUTTON"
-            :loading="saving"
-            :disabled="!canEdit || !form.name.trim()"
-            @click="save"
-          />
-        </div>
-      </SubheaderComp>
-
-      <p v-if="missing" class="text-[14px] text-(--text-secondary)">
-        Esse setor não existe, foi arquivado ou você não tem acesso a ele.
-        <RouterLink to="/equipe" class="underline">Voltar para Equipe e setores</RouterLink>
-      </p>
-      <p v-else-if="loading && !sector" class="flex items-center gap-2 text-14 text-fg-muted">
-        <UiSpinner :size="16" label="Carregando projeto" />
-        Carregando projeto...
+        Só quem é gestor do setor pode alterar estas configurações.
       </p>
 
-      <template v-else-if="sector">
-        <p
-          v-if="!canEdit"
-          class="rounded-[12px] border border-(--border-default) bg-(--surface) px-[14px] py-[10px] text-[13px] text-(--text-secondary) dark:border-(--border-inverse) dark:bg-(--surface-inverse)"
+      <div class="grid items-start gap-[16px] xl:grid-cols-[minmax(0,1fr)_400px]">
+        <form
+          class="grid gap-[16px] rounded-card border border-border bg-surface-1 p-[18px]"
+          @submit.prevent="save"
         >
-          Só quem é gestor do setor pode alterar estas configurações.
-        </p>
+          <h2 class="text-16 font-semibold text-fg">Configurações do setor</h2>
 
-        <div class="grid items-start gap-[16px] xl:grid-cols-[minmax(0,1fr)_400px]">
-          <form
-            class="grid gap-[16px] rounded-[16px] border border-(--border-default) bg-(--surface) p-[18px] dark:border-(--border-inverse) dark:bg-(--surface-inverse)"
-            @submit.prevent="save"
-          >
-            <h2 class="text-[15px]! leading-normal! font-semibold! tracking-normal!">
-              Configurações do setor
-            </h2>
+          <label class="grid gap-[6px] text-[13px] font-medium">
+            Nome
+            <input
+              v-model="form.name"
+              maxlength="255"
+              required
+              :disabled="!canEdit"
+              :class="[field, 'font-normal']"
+            />
+          </label>
 
-            <label class="grid gap-[6px] text-[13px] font-medium">
-              Nome
-              <input
-                v-model="form.name"
-                maxlength="255"
-                required
+          <div class="grid gap-[8px]">
+            <span class="text-[13px] font-medium">Cor</span>
+            <div class="flex gap-[10px]" role="radiogroup" aria-label="Cor do setor">
+              <button
+                v-for="color in COLORS"
+                :key="color"
+                type="button"
+                role="radio"
+                :aria-checked="form.color === color"
+                :aria-label="`Cor ${color}`"
                 :disabled="!canEdit"
+                :class="[
+                  'size-[26px] cursor-pointer rounded-full ring-offset-2 ring-offset-surface-1 disabled:opacity-60',
+                  form.color === color
+                    ? 'ring-2 ring-(--text-primary) dark:ring-(--text-inverse)'
+                    : '',
+                ]"
+                :style="{ backgroundColor: color }"
+                @click="form.color = color"
+              />
+            </div>
+          </div>
+
+          <label class="grid gap-[6px] text-[13px] font-medium">
+            Descrição
+            <textarea
+              v-model="form.description"
+              rows="4"
+              :disabled="!canEdit"
+              :class="[field, 'resize-y font-normal']"
+            />
+          </label>
+
+          <div class="grid gap-[6px]">
+            <span class="text-[13px] font-medium">Colunas</span>
+            <ul class="flex flex-wrap gap-[6px] rounded-[10px] border border-border p-[8px]">
+              <li v-for="status in board.statuses" :key="status.id">
+                <span :class="[BADGE_BASE, BADGE.neutral, 'gap-[6px]']">
+                  {{ status.name }}
+                  <button
+                    v-if="canEdit && board.statuses.length > 1"
+                    type="button"
+                    class="cursor-pointer leading-none text-fg-muted hover:text-(--destructive)"
+                    :aria-label="`Remover a coluna ${status.name}`"
+                    @click="removeColumn(status.id)"
+                  >
+                    ×
+                  </button>
+                </span>
+              </li>
+              <li v-if="canEdit">
+                <input
+                  v-model="newColumn"
+                  placeholder="Nova coluna"
+                  aria-label="Nova coluna"
+                  maxlength="100"
+                  class="w-[130px] bg-transparent px-[6px] py-[2px] text-[12.5px] outline-none"
+                  @keydown.enter.prevent="addColumn"
+                />
+              </li>
+            </ul>
+            <p class="text-[12px] text-fg-muted">
+              As colunas são salvas na hora. Uma coluna só sai se não tiver tarefas.
+            </p>
+          </div>
+
+          <div class="grid gap-[16px] sm:grid-cols-2">
+            <label class="grid gap-[6px] text-[13px] font-medium">
+              Limite em andamento
+              <input
+                v-model="form.wip"
+                type="number"
+                min="1"
+                inputmode="numeric"
+                placeholder="Sem limite"
+                :disabled="!canEdit || !inProgress"
                 :class="[field, 'font-normal']"
               />
             </label>
-
-            <div class="grid gap-[8px]">
-              <span class="text-[13px] font-medium">Cor</span>
-              <div class="flex gap-[10px]" role="radiogroup" aria-label="Cor do setor">
-                <button
-                  v-for="color in COLORS"
-                  :key="color"
-                  type="button"
-                  role="radio"
-                  :aria-checked="form.color === color"
-                  :aria-label="`Cor ${color}`"
-                  :disabled="!canEdit"
-                  :class="[
-                    'size-[26px] cursor-pointer rounded-full ring-offset-2 ring-offset-(--surface) disabled:opacity-60 dark:ring-offset-(--surface-inverse)',
-                    form.color === color
-                      ? 'ring-2 ring-(--text-primary) dark:ring-(--text-inverse)'
-                      : '',
-                  ]"
-                  :style="{ backgroundColor: color }"
-                  @click="form.color = color"
-                />
-              </div>
-            </div>
-
             <label class="grid gap-[6px] text-[13px] font-medium">
-              Descrição
-              <textarea
-                v-model="form.description"
-                rows="4"
-                :disabled="!canEdit"
-                :class="[field, 'resize-y font-normal']"
-              />
+              Visibilidade
+              <select v-model="form.isPrivate" :disabled="!canEdit" :class="[field, 'font-normal']">
+                <option :value="true">Somente membros do setor</option>
+                <option :value="false">Toda a organização</option>
+              </select>
             </label>
+          </div>
+        </form>
 
-            <div class="grid gap-[6px]">
-              <span class="text-[13px] font-medium">Colunas</span>
-              <ul
-                class="flex flex-wrap gap-[6px] rounded-[10px] border border-(--border-default) p-[8px] dark:border-(--border-inverse)"
-              >
-                <li v-for="status in board.statuses" :key="status.id">
-                  <span :class="[BADGE_BASE, BADGE.neutral, 'gap-[6px]']">
-                    {{ status.name }}
-                    <button
-                      v-if="canEdit && board.statuses.length > 1"
-                      type="button"
-                      class="cursor-pointer leading-none text-(--text-muted) hover:text-(--destructive)"
-                      :aria-label="`Remover a coluna ${status.name}`"
-                      @click="removeColumn(status.id)"
-                    >
-                      ×
-                    </button>
-                  </span>
-                </li>
-                <li v-if="canEdit">
-                  <input
-                    v-model="newColumn"
-                    placeholder="Nova coluna"
-                    aria-label="Nova coluna"
-                    maxlength="100"
-                    class="w-[130px] bg-transparent px-[6px] py-[2px] text-[12.5px] outline-none"
-                    @keydown.enter.prevent="addColumn"
-                  />
-                </li>
-              </ul>
-              <p class="text-[12px] text-(--text-muted)">
-                As colunas são salvas na hora. Uma coluna só sai se não tiver tarefas.
-              </p>
-            </div>
+        <aside class="grid gap-[4px] rounded-card border border-border bg-surface-1 p-[18px]">
+          <div class="flex items-center justify-between pb-[8px]">
+            <h2 class="text-16 font-semibold text-fg">Membros · {{ access.members.length }}</h2>
+            <button
+              v-if="canEdit"
+              type="button"
+              class="cursor-pointer text-[13px] font-medium text-accent hover:underline"
+              @click="adding = !adding"
+            >
+              Adicionar
+            </button>
+          </div>
 
-            <div class="grid gap-[16px] sm:grid-cols-2">
-              <label class="grid gap-[6px] text-[13px] font-medium">
-                Limite em andamento
-                <input
-                  v-model="form.wip"
-                  type="number"
-                  min="1"
-                  inputmode="numeric"
-                  placeholder="Sem limite"
-                  :disabled="!canEdit || !inProgress"
-                  :class="[field, 'font-normal']"
-                />
-              </label>
-              <label class="grid gap-[6px] text-[13px] font-medium">
-                Visibilidade
-                <select
-                  v-model="form.isPrivate"
-                  :disabled="!canEdit"
-                  :class="[field, 'font-normal']"
-                >
-                  <option :value="true">Somente membros do setor</option>
-                  <option :value="false">Toda a organização</option>
-                </select>
-              </label>
-            </div>
+          <form v-if="adding" class="flex gap-[8px] pb-[8px]" @submit.prevent="addMember">
+            <select
+              v-model="candidate"
+              aria-label="Pessoa da organização"
+              :class="[field, 'min-w-0 flex-1']"
+            >
+              <option value="" disabled>Escolha uma pessoa</option>
+              <option v-for="person in candidates" :key="person.user_id" :value="person.user_id">
+                {{ person.name }}
+              </option>
+            </select>
+            <BaseButton
+              type="submit"
+              label="Adicionar"
+              :full-width="false"
+              :class="TOOLBAR_BUTTON"
+              :disabled="!candidate"
+            />
           </form>
+          <p v-if="adding && !candidates.length" class="pb-[8px] text-[12.5px] text-fg-muted">
+            Todas as pessoas da organização já estão neste setor.
+          </p>
 
-          <aside
-            class="grid gap-[4px] rounded-[16px] border border-(--border-default) bg-(--surface) p-[18px] dark:border-(--border-inverse) dark:bg-(--surface-inverse)"
-          >
-            <div class="flex items-center justify-between pb-[8px]">
-              <h2 class="text-[15px]! leading-normal! font-semibold! tracking-normal!">
-                Membros · {{ access.members.length }}
-              </h2>
+          <ul>
+            <li
+              v-for="member in access.members"
+              :key="member.id"
+              class="flex items-center gap-[10px] border-b border-border py-[10px] last:border-b-0"
+            >
+              <span
+                class="grid size-[30px] shrink-0 place-items-center rounded-full text-[10.5px] leading-none font-semibold text-white"
+                :style="{ backgroundColor: avatar(member.name).color }"
+                aria-hidden="true"
+                >{{ avatar(member.name).initials }}</span
+              >
+              <span class="flex min-w-0 flex-1 flex-col leading-normal">
+                <span class="truncate text-[13.5px] font-medium">{{ member.name }}</span>
+                <span class="truncate text-[12px] text-fg-muted">{{ member.email }}</span>
+              </span>
+              <select
+                v-if="canEdit"
+                :value="member.role"
+                :aria-label="`Papel de ${member.name}`"
+                class="rounded-[8px] border border-border bg-transparent px-[6px] py-[3px] text-[12px]"
+                @change="
+                  changeRole(member.id, ($event.target as HTMLSelectElement).value as SectorRole)
+                "
+              >
+                <option v-for="(label, role) in ROLE_LABELS" :key="role" :value="role">
+                  {{ label }}
+                </option>
+              </select>
+              <span v-else :class="[BADGE_BASE, ROLE_TONES[member.role]]">{{
+                ROLE_LABELS[member.role]
+              }}</span>
               <button
                 v-if="canEdit"
                 type="button"
-                class="cursor-pointer text-[13px] font-medium text-(--bg-orange) hover:underline"
-                @click="adding = !adding"
+                class="grid size-[26px] cursor-pointer place-items-center rounded-[8px] text-fg-muted hover:bg-surface-2 hover:text-(--destructive) dark:hover:bg-white/10"
+                :aria-label="`Remover ${member.name} do setor`"
+                @click="removeMember(member.id)"
               >
-                Adicionar
+                <span class="material-symbols-outlined text-[16px]!" aria-hidden="true">close</span>
               </button>
-            </div>
+            </li>
+          </ul>
+        </aside>
+      </div>
 
-            <form v-if="adding" class="flex gap-[8px] pb-[8px]" @submit.prevent="addMember">
-              <select
-                v-model="candidate"
-                aria-label="Pessoa da organização"
-                :class="[field, 'min-w-0 flex-1']"
-              >
-                <option value="" disabled>Escolha uma pessoa</option>
-                <option v-for="person in candidates" :key="person.user_id" :value="person.user_id">
-                  {{ person.name }}
-                </option>
-              </select>
-              <BaseButton
-                type="submit"
-                label="Adicionar"
-                :full-width="false"
-                :class="TOOLBAR_BUTTON"
-                :disabled="!candidate"
-              />
-            </form>
-            <p
-              v-if="adding && !candidates.length"
-              class="pb-[8px] text-[12.5px] text-(--text-muted)"
-            >
-              Todas as pessoas da organização já estão neste setor.
-            </p>
-
-            <ul>
-              <li
-                v-for="member in access.members"
-                :key="member.id"
-                class="flex items-center gap-[10px] border-b border-(--border-default) py-[10px] last:border-b-0 dark:border-(--border-inverse)"
-              >
-                <span
-                  class="grid size-[30px] shrink-0 place-items-center rounded-full text-[10.5px] leading-none font-semibold text-white"
-                  :style="{ backgroundColor: avatar(member.name).color }"
-                  aria-hidden="true"
-                  >{{ avatar(member.name).initials }}</span
-                >
-                <span class="flex min-w-0 flex-1 flex-col leading-normal">
-                  <span class="truncate text-[13.5px] font-medium">{{ member.name }}</span>
-                  <span class="truncate text-[12px] text-(--text-muted)">{{ member.email }}</span>
-                </span>
-                <select
-                  v-if="canEdit"
-                  :value="member.role"
-                  :aria-label="`Papel de ${member.name}`"
-                  class="rounded-[8px] border border-(--border-default) bg-transparent px-[6px] py-[3px] text-[12px] dark:border-(--border-inverse)"
-                  @change="
-                    changeRole(member.id, ($event.target as HTMLSelectElement).value as SectorRole)
-                  "
-                >
-                  <option v-for="(label, role) in ROLE_LABELS" :key="role" :value="role">
-                    {{ label }}
-                  </option>
-                </select>
-                <span v-else :class="[BADGE_BASE, ROLE_TONES[member.role]]">{{
-                  ROLE_LABELS[member.role]
-                }}</span>
-                <button
-                  v-if="canEdit"
-                  type="button"
-                  class="grid size-[26px] cursor-pointer place-items-center rounded-[8px] text-(--text-muted) hover:bg-(--bg-muted) hover:text-(--destructive) dark:hover:bg-white/10"
-                  :aria-label="`Remover ${member.name} do setor`"
-                  @click="removeMember(member.id)"
-                >
-                  <span class="material-symbols-outlined text-[16px]!" aria-hidden="true"
-                    >close</span
-                  >
-                </button>
-              </li>
-            </ul>
-          </aside>
+      <div
+        v-if="canEdit"
+        class="flex flex-wrap items-center justify-between gap-[12px] rounded-card bg-[#fde8e8] px-[16px] py-[14px] dark:bg-[#dc2626]/15"
+      >
+        <div class="leading-normal">
+          <p class="text-[14px] font-semibold text-[#c42b2b] dark:text-[#ff8a8a]">Zona de perigo</p>
+          <p class="text-[13px] text-fg-muted">
+            Arquivar o setor o esconde da equipe. As tarefas ficam guardadas.
+          </p>
         </div>
-
-        <div
-          v-if="canEdit"
-          class="flex flex-wrap items-center justify-between gap-[12px] rounded-[14px] bg-[#fde8e8] px-[16px] py-[14px] dark:bg-[#dc2626]/15"
-        >
-          <div class="leading-normal">
-            <p class="text-[14px] font-semibold text-[#c42b2b] dark:text-[#ff8a8a]">
-              Zona de perigo
-            </p>
-            <p class="text-[13px] text-(--text-secondary) dark:text-(--text-inverse-muted)">
-              Arquivar o setor o esconde da equipe. As tarefas ficam guardadas.
-            </p>
-          </div>
-          <BaseButton
-            variant="secondary"
-            label="Arquivar setor"
-            :full-width="false"
-            :class="TOOLBAR_BUTTON"
-            @click="confirm?.showModal()"
-          />
-        </div>
-      </template>
-    </section>
+        <BaseButton
+          variant="secondary"
+          label="Arquivar setor"
+          :full-width="false"
+          :class="TOOLBAR_BUTTON"
+          @click="confirm?.showModal()"
+        />
+      </div>
+    </template>
 
     <dialog
       ref="confirm"
-      class="m-auto w-[min(26rem,calc(100vw-2rem))] rounded-2xl border border-(--border-default) bg-(--surface) p-6 text-(--text-primary) dark:border-(--border-inverse) dark:bg-(--surface-inverse) dark:text-(--text-inverse)"
+      class="m-auto w-[min(26rem,calc(100vw-2rem))] rounded-2xl border border-border bg-surface-1 p-6 text-fg"
     >
       <h2 class="text-[18px]! font-semibold!">Arquivar {{ sector?.name }}?</h2>
-      <p class="mt-2 text-[14px] text-(--text-secondary) dark:text-(--text-inverse-muted)">
+      <p class="mt-2 text-[14px] text-fg-muted">
         O setor some da lista da equipe. As tarefas dele ficam guardadas.
       </p>
       <div class="mt-5 flex justify-end gap-2">
@@ -474,5 +448,5 @@ const field =
         />
       </div>
     </dialog>
-  </div>
+  </PageLayout>
 </template>

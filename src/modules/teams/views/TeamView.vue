@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { getErrorMessage } from '@/app/plugins/axios'
-import { BaseButton, CardComp, SubheaderComp, TopbarComp } from '@/shared/components'
+import { BaseButton, CardComp, PageLayout } from '@/shared/components'
 import { avatar } from '@/shared/utils/people'
 import { relativeTime } from '@/shared/utils/time'
 import { fetchAllPages } from '@/shared/utils'
@@ -123,284 +123,265 @@ const openSector = (sectorId: string) => router.push({ name: 'SectorBoard', para
 </script>
 
 <template>
-  <div
-    class="flex min-h-dvh w-full min-w-0 flex-col bg-(--background) dark:bg-(--background-inverse)"
+  <PageLayout
+    :crumbs="['Equipe e setores']"
+    title="Equipe e setores"
+    :description="`${organization?.name ?? ''} · quem participa de cada setor e o que pode fazer`"
+    width="wide"
   >
-    <TopbarComp :crumbs="['Equipe e setores']" />
+    <template #actions>
+      <div v-if="canManage" class="flex flex-wrap gap-[8px]">
+        <BaseButton
+          variant="secondary"
+          label="Gerenciar membros"
+          icon="manage_accounts"
+          icon-position="left"
+          :full-width="false"
+          :class="TOOLBAR_BUTTON"
+          @click="goMembers()"
+        />
+        <BaseButton
+          label="Convidar pessoas"
+          icon="add"
+          icon-position="left"
+          :full-width="false"
+          :class="TOOLBAR_BUTTON"
+          @click="goMembers(true)"
+        />
+      </div>
+    </template>
+
+    <div
+      role="tablist"
+      aria-label="Seções da equipe"
+      class="flex gap-[22px] overflow-x-auto overflow-y-hidden border-b border-border"
+    >
+      <button
+        v-for="item in tabs"
+        :key="item.id"
+        type="button"
+        role="tab"
+        :aria-selected="tab === item.id"
+        :class="[
+          '-mb-px flex shrink-0 cursor-pointer items-center gap-[6px] border-b-2 py-[10px] text-[14px] leading-normal font-medium whitespace-nowrap transition-colors',
+          tab === item.id
+            ? 'border-(--text-primary) dark:border-(--text-inverse)'
+            : 'border-transparent text-fg-muted hover:text-fg-muted',
+        ]"
+        @click="tab = item.id"
+      >
+        {{ item.label }}
+        <span
+          class="rounded-[5px] bg-surface-2 px-[5px] font-mono text-[10.5px] leading-[16px] text-fg-muted dark:bg-white/10"
+          >{{ item.count }}</span
+        >
+      </button>
+    </div>
+
+    <template v-if="tab === 'members'">
+      <div class="grid grid-cols-1 gap-[12px] sm:grid-cols-2 xl:grid-cols-4">
+        <CardComp
+          title="Membros"
+          :data="organizations.members.length"
+          :description="`${online.length} online agora`"
+        />
+        <CardComp
+          title="Setores"
+          :data="sectors.sectors.length"
+          :description="
+            busiestSector ? `${busiestSector} tem mais tarefas abertas` : 'sem tarefas abertas'
+          "
+        />
+        <CardComp
+          title="Concluídas em 7 dias"
+          :data="report?.completed ?? 0"
+          :description="`${report?.completed_previous ?? 0} nos 7 dias anteriores`"
+        />
+        <CardComp
+          title="Atrasadas"
+          :data="report?.overdue ?? 0"
+          :description="report?.overdue ? 'veja em Relatórios' : 'nenhuma atrasada'"
+          :tone="report?.overdue ? 'bad' : undefined"
+        />
+      </div>
+    </template>
+
+    <div v-if="tab !== 'invites'" class="grid grid-cols-1 gap-[12px] sm:grid-cols-2 xl:grid-cols-4">
+      <button
+        v-for="sector in sectors.sectors"
+        :key="sector.id"
+        type="button"
+        class="flex cursor-pointer flex-col gap-[12px] rounded-card border border-border bg-surface-1 p-[14px] text-left transition-colors hover:border-(--text-muted)"
+        :aria-label="`Abrir o Kanban de ${sector.name}`"
+        @click="openSector(sector.id)"
+      >
+        <span class="flex items-center gap-[10px]">
+          <span
+            class="grid size-[32px] shrink-0 place-items-center rounded-[9px]"
+            :style="{
+              backgroundColor: `${sector.color || '#8a857d'}1f`,
+              color: sector.color || '#8a857d',
+            }"
+            aria-hidden="true"
+          >
+            <span class="material-symbols-outlined text-[18px]!">{{
+              sector.icon || 'workspaces'
+            }}</span>
+          </span>
+          <span class="flex min-w-0 flex-col leading-normal">
+            <span class="truncate text-[14px] font-semibold">{{ sector.name }}</span>
+            <span class="text-[12px] text-fg-muted"
+              >{{ sectorMemberCount[sector.id] ?? 0 }}
+              {{ sectorMemberCount[sector.id] === 1 ? 'membro' : 'membros' }}</span
+            >
+          </span>
+        </span>
+        <span class="flex items-center justify-between text-[12px] text-fg-muted">
+          <span v-if="sector.is_private" class="inline-flex items-center gap-[4px]">
+            <span class="material-symbols-outlined text-[14px]!" aria-hidden="true">lock</span>
+            Privado
+          </span>
+          <span v-else>Aberto à organização</span>
+          <span class="font-mono">{{ openBySector[sector.name] ?? 0 }} abertas</span>
+        </span>
+      </button>
+      <button
+        v-if="canManage"
+        type="button"
+        class="flex min-h-[96px] cursor-pointer items-center justify-center gap-[8px] rounded-card border border-dashed border-(--text-muted) text-[13.5px] text-fg-muted transition-colors hover:border-(--text-primary)"
+        @click="goNewSector"
+      >
+        <span class="material-symbols-outlined text-[18px]!" aria-hidden="true">add</span>
+        Novo setor
+      </button>
+    </div>
 
     <section
-      class="flex flex-1 flex-col gap-[16px] px-[20px] pt-[24px] pb-[32px] sm:px-[36px] xl:px-[44px]"
+      v-if="tab !== 'sectors'"
+      class="overflow-x-auto rounded-card border border-border bg-surface-1"
     >
-      <SubheaderComp
-        title="Equipe e setores"
-        :description="`${organization?.name ?? ''} · quem participa de cada setor e o que pode fazer`"
-        class="mb-0!"
-      >
-        <div v-if="canManage" class="flex flex-wrap gap-[8px]">
-          <BaseButton
-            variant="secondary"
-            label="Gerenciar membros"
-            icon="manage_accounts"
-            icon-position="left"
-            :full-width="false"
-            :class="TOOLBAR_BUTTON"
-            @click="goMembers()"
-          />
-          <BaseButton
-            label="Convidar pessoas"
-            icon="add"
-            icon-position="left"
-            :full-width="false"
-            :class="TOOLBAR_BUTTON"
-            @click="goMembers(true)"
-          />
-        </div>
-      </SubheaderComp>
-
-      <div
-        role="tablist"
-        aria-label="Seções da equipe"
-        class="flex gap-[22px] overflow-x-auto overflow-y-hidden border-b border-(--border-default) dark:border-(--border-inverse)"
-      >
-        <button
-          v-for="item in tabs"
-          :key="item.id"
-          type="button"
-          role="tab"
-          :aria-selected="tab === item.id"
-          :class="[
-            '-mb-px flex shrink-0 cursor-pointer items-center gap-[6px] border-b-2 py-[10px] text-[14px] leading-normal font-medium whitespace-nowrap transition-colors',
-            tab === item.id
-              ? 'border-(--text-primary) dark:border-(--text-inverse)'
-              : 'border-transparent text-(--text-muted) hover:text-(--text-secondary)',
-          ]"
-          @click="tab = item.id"
-        >
-          {{ item.label }}
-          <span
-            class="rounded-[5px] bg-(--bg-muted) px-[5px] font-mono text-[10.5px] leading-[16px] text-(--text-secondary) dark:bg-white/10 dark:text-(--text-inverse-muted)"
-            >{{ item.count }}</span
+      <table v-if="tab === 'members'" class="w-full min-w-[760px] border-collapse text-left">
+        <thead>
+          <tr class="border-b border-border bg-surface-2 dark:bg-black/20">
+            <th
+              v-for="column in COLUMNS"
+              :key="column"
+              scope="col"
+              class="px-[18px] py-[9px] text-[12px] leading-normal font-normal text-fg-muted"
+            >
+              {{ column }}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="member in organizations.members"
+            :key="member.id"
+            class="border-b border-border text-[13px] leading-normal last:border-b-0"
           >
-        </button>
-      </div>
-
-      <template v-if="tab === 'members'">
-        <div class="grid grid-cols-1 gap-[12px] sm:grid-cols-2 xl:grid-cols-4">
-          <CardComp
-            title="Membros"
-            :data="organizations.members.length"
-            :description="`${online.length} online agora`"
-          />
-          <CardComp
-            title="Setores"
-            :data="sectors.sectors.length"
-            :description="
-              busiestSector ? `${busiestSector} tem mais tarefas abertas` : 'sem tarefas abertas'
-            "
-          />
-          <CardComp
-            title="Concluídas em 7 dias"
-            :data="report?.completed ?? 0"
-            :description="`${report?.completed_previous ?? 0} nos 7 dias anteriores`"
-          />
-          <CardComp
-            title="Atrasadas"
-            :data="report?.overdue ?? 0"
-            :description="report?.overdue ? 'veja em Relatórios' : 'nenhuma atrasada'"
-            :tone="report?.overdue ? 'bad' : undefined"
-          />
-        </div>
-      </template>
-
-      <div
-        v-if="tab !== 'invites'"
-        class="grid grid-cols-1 gap-[12px] sm:grid-cols-2 xl:grid-cols-4"
-      >
-        <button
-          v-for="sector in sectors.sectors"
-          :key="sector.id"
-          type="button"
-          class="flex cursor-pointer flex-col gap-[12px] rounded-[16px] border border-(--border-default) bg-(--surface) p-[14px] text-left transition-colors hover:border-(--text-muted) dark:border-(--border-inverse) dark:bg-(--surface-inverse)"
-          :aria-label="`Abrir o Kanban de ${sector.name}`"
-          @click="openSector(sector.id)"
-        >
-          <span class="flex items-center gap-[10px]">
-            <span
-              class="grid size-[32px] shrink-0 place-items-center rounded-[9px]"
-              :style="{
-                backgroundColor: `${sector.color || '#8a857d'}1f`,
-                color: sector.color || '#8a857d',
-              }"
-              aria-hidden="true"
-            >
-              <span class="material-symbols-outlined text-[18px]!">{{
-                sector.icon || 'workspaces'
-              }}</span>
-            </span>
-            <span class="flex min-w-0 flex-col leading-normal">
-              <span class="truncate text-[14px] font-semibold">{{ sector.name }}</span>
-              <span class="text-[12px] text-(--text-muted)"
-                >{{ sectorMemberCount[sector.id] ?? 0 }}
-                {{ sectorMemberCount[sector.id] === 1 ? 'membro' : 'membros' }}</span
-              >
-            </span>
-          </span>
-          <span class="flex items-center justify-between text-[12px] text-(--text-muted)">
-            <span v-if="sector.is_private" class="inline-flex items-center gap-[4px]">
-              <span class="material-symbols-outlined text-[14px]!" aria-hidden="true">lock</span>
-              Privado
-            </span>
-            <span v-else>Aberto à organização</span>
-            <span class="font-mono">{{ openBySector[sector.name] ?? 0 }} abertas</span>
-          </span>
-        </button>
-        <button
-          v-if="canManage"
-          type="button"
-          class="flex min-h-[96px] cursor-pointer items-center justify-center gap-[8px] rounded-[16px] border border-dashed border-(--text-muted) text-[13.5px] text-(--text-secondary) transition-colors hover:border-(--text-primary) dark:text-(--text-inverse-muted)"
-          @click="goNewSector"
-        >
-          <span class="material-symbols-outlined text-[18px]!" aria-hidden="true">add</span>
-          Novo setor
-        </button>
-      </div>
-
-      <section
-        v-if="tab !== 'sectors'"
-        class="overflow-x-auto rounded-[16px] border border-(--border-default) bg-(--surface) dark:border-(--border-inverse) dark:bg-(--surface-inverse)"
-      >
-        <table v-if="tab === 'members'" class="w-full min-w-[760px] border-collapse text-left">
-          <thead>
-            <tr
-              class="border-b border-(--border-default) bg-(--bg-subtle) dark:border-(--border-inverse) dark:bg-black/20"
-            >
-              <th
-                v-for="column in COLUMNS"
-                :key="column"
-                scope="col"
-                class="px-[18px] py-[9px] text-[12px] leading-normal font-normal text-(--text-secondary) dark:text-(--text-inverse-muted)"
-              >
-                {{ column }}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="member in organizations.members"
-              :key="member.id"
-              class="border-b border-(--border-default) text-[13px] leading-normal last:border-b-0 dark:border-(--border-inverse)"
-            >
-              <td class="px-[18px] py-[12px]">
-                <span class="flex items-center gap-[10px]">
-                  <span
-                    class="grid size-[28px] shrink-0 place-items-center rounded-full text-[10px] leading-none font-semibold text-white"
-                    :style="{ backgroundColor: avatar(member.name).color }"
-                    aria-hidden="true"
-                    >{{ avatar(member.name).initials }}</span
-                  >
-                  <span class="flex min-w-0 flex-col">
-                    <span class="flex items-center gap-[6px] font-semibold">
-                      {{ member.name }}
-                      <span
-                        v-if="member.user_id === auth.user?.id"
-                        :class="[BADGE_BASE, BADGE.neutral, 'font-mono']"
-                        >você</span
-                      >
-                    </span>
-                    <span class="truncate text-[12px] text-(--text-muted)">{{ member.email }}</span>
+            <td class="px-[18px] py-[12px]">
+              <span class="flex items-center gap-[10px]">
+                <span
+                  class="grid size-[28px] shrink-0 place-items-center rounded-full text-[10px] leading-none font-semibold text-white"
+                  :style="{ backgroundColor: avatar(member.name).color }"
+                  aria-hidden="true"
+                  >{{ avatar(member.name).initials }}</span
+                >
+                <span class="flex min-w-0 flex-col">
+                  <span class="flex items-center gap-[6px] font-semibold">
+                    {{ member.name }}
+                    <span
+                      v-if="member.user_id === auth.user?.id"
+                      :class="[BADGE_BASE, BADGE.neutral, 'font-mono']"
+                      >você</span
+                    >
                   </span>
+                  <span class="truncate text-[12px] text-fg-muted">{{ member.email }}</span>
                 </span>
-              </td>
-              <td class="px-[18px] py-[12px]">
-                <span class="flex flex-wrap gap-[4px]">
-                  <span
-                    v-for="name in sectorNamesByUser[member.user_id] ?? []"
-                    :key="name"
-                    :class="[BADGE_BASE, BADGE.neutral]"
-                    >{{ name }}</span
-                  >
-                  <span
-                    v-if="!sectorNamesByUser[member.user_id]?.length"
-                    class="text-(--text-muted)"
-                    >—</span
-                  >
-                </span>
-              </td>
-              <td class="px-[18px] py-[12px]">
-                <span :class="[BADGE_BASE, roleTone[member.role]]">{{
-                  roleLabels[member.role]
-                }}</span>
-              </td>
-              <td class="px-[18px] py-[12px] font-mono">{{ openTasks[member.user_id] ?? 0 }}</td>
-              <td class="px-[18px] py-[12px]">
-                <span class="flex items-center gap-[6px]">
-                  <span
-                    :class="[
-                      'size-[7px] rounded-full',
-                      online.includes(member.user_id) ? 'bg-[#15924a]' : 'bg-(--text-muted)',
-                    ]"
-                    aria-hidden="true"
-                  ></span>
-                  {{ online.includes(member.user_id) ? 'Online' : 'Offline' }}
-                </span>
-              </td>
-            </tr>
-            <tr v-if="!organizations.members.length">
-              <td
-                :colspan="COLUMNS.length"
-                class="px-[18px] py-[28px] text-center text-[13px] text-(--text-muted)"
-              >
-                {{ loading ? 'Carregando equipe…' : 'Nenhum membro nesta organização.' }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </span>
+            </td>
+            <td class="px-[18px] py-[12px]">
+              <span class="flex flex-wrap gap-[4px]">
+                <span
+                  v-for="name in sectorNamesByUser[member.user_id] ?? []"
+                  :key="name"
+                  :class="[BADGE_BASE, BADGE.neutral]"
+                  >{{ name }}</span
+                >
+                <span v-if="!sectorNamesByUser[member.user_id]?.length" class="text-fg-muted"
+                  >—</span
+                >
+              </span>
+            </td>
+            <td class="px-[18px] py-[12px]">
+              <span :class="[BADGE_BASE, roleTone[member.role]]">{{
+                roleLabels[member.role]
+              }}</span>
+            </td>
+            <td class="px-[18px] py-[12px] font-mono">{{ openTasks[member.user_id] ?? 0 }}</td>
+            <td class="px-[18px] py-[12px]">
+              <span class="flex items-center gap-[6px]">
+                <span
+                  :class="[
+                    'size-[7px] rounded-full',
+                    online.includes(member.user_id) ? 'bg-[#15924a]' : 'bg-(--text-muted)',
+                  ]"
+                  aria-hidden="true"
+                ></span>
+                {{ online.includes(member.user_id) ? 'Online' : 'Offline' }}
+              </span>
+            </td>
+          </tr>
+          <tr v-if="!organizations.members.length">
+            <td
+              :colspan="COLUMNS.length"
+              class="px-[18px] py-[28px] text-center text-[13px] text-fg-muted"
+            >
+              {{ loading ? 'Carregando equipe…' : 'Nenhum membro nesta organização.' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
-        <table v-else class="w-full min-w-[620px] border-collapse text-left">
-          <thead>
-            <tr
-              class="border-b border-(--border-default) bg-(--bg-subtle) dark:border-(--border-inverse) dark:bg-black/20"
+      <table v-else class="w-full min-w-[620px] border-collapse text-left">
+        <thead>
+          <tr class="border-b border-border bg-surface-2 dark:bg-black/20">
+            <th
+              v-for="column in ['E-mail', 'Papel', 'Enviado', 'Expira']"
+              :key="column"
+              scope="col"
+              class="px-[18px] py-[9px] text-[12px] leading-normal font-normal text-fg-muted"
             >
-              <th
-                v-for="column in ['E-mail', 'Papel', 'Enviado', 'Expira']"
-                :key="column"
-                scope="col"
-                class="px-[18px] py-[9px] text-[12px] leading-normal font-normal text-(--text-secondary) dark:text-(--text-inverse-muted)"
-              >
-                {{ column }}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="invite in pending"
-              :key="invite.id"
-              class="border-b border-(--border-default) text-[13px] leading-normal last:border-b-0 dark:border-(--border-inverse)"
-            >
-              <td class="px-[18px] py-[12px] font-semibold">{{ invite.email }}</td>
-              <td class="px-[18px] py-[12px]">
-                <span :class="[BADGE_BASE, roleTone[invite.role]]">{{
-                  roleLabels[invite.role]
-                }}</span>
-              </td>
-              <td class="px-[18px] py-[12px] text-(--text-secondary)">
-                {{ relativeTime(invite.created_at) }}
-              </td>
-              <td class="px-[18px] py-[12px] text-(--text-secondary)">
-                {{ new Date(invite.expires_at).toLocaleDateString('pt-BR') }}
-              </td>
-            </tr>
-            <tr v-if="!pending.length">
-              <td
-                colspan="4"
-                class="px-[18px] py-[28px] text-center text-[13px] text-(--text-muted)"
-              >
-                {{ loading ? 'Carregando convites…' : 'Nenhum convite pendente.' }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
+              {{ column }}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="invite in pending"
+            :key="invite.id"
+            class="border-b border-border text-[13px] leading-normal last:border-b-0"
+          >
+            <td class="px-[18px] py-[12px] font-semibold">{{ invite.email }}</td>
+            <td class="px-[18px] py-[12px]">
+              <span :class="[BADGE_BASE, roleTone[invite.role]]">{{
+                roleLabels[invite.role]
+              }}</span>
+            </td>
+            <td class="px-[18px] py-[12px] text-fg-muted">
+              {{ relativeTime(invite.created_at) }}
+            </td>
+            <td class="px-[18px] py-[12px] text-fg-muted">
+              {{ new Date(invite.expires_at).toLocaleDateString('pt-BR') }}
+            </td>
+          </tr>
+          <tr v-if="!pending.length">
+            <td colspan="4" class="px-[18px] py-[28px] text-center text-[13px] text-fg-muted">
+              {{ loading ? 'Carregando convites…' : 'Nenhum convite pendente.' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </section>
-  </div>
+  </PageLayout>
 </template>

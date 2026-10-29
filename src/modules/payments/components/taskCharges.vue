@@ -60,8 +60,7 @@ async function closed(paid: boolean) {
   else await load()
 }
 
-const field =
-  'h-9 rounded-lg border border-(--border-default) bg-transparent px-2 text-[13px] dark:border-(--border-inverse)'
+const field = 'h-9 rounded-lg border border-border bg-transparent px-2 text-[13px]'
 </script>
 
 <template>
@@ -69,7 +68,7 @@ const field =
     <button
       v-if="canEdit"
       type="button"
-      class="flex w-fit cursor-pointer items-center gap-2 rounded-xl border border-(--border-default) px-3 py-2 text-[13px] font-medium hover:bg-(--bg-subtle) dark:border-(--border-inverse) dark:hover:bg-white/10"
+      class="flex w-fit cursor-pointer items-center gap-2 rounded-xl border border-border px-3 py-2 text-[13px] font-medium hover:bg-surface-2 dark:hover:bg-white/10"
       :aria-expanded="creating"
       @click="creating = !creating"
     >
@@ -115,7 +114,7 @@ const field =
       <li
         v-for="charge in charges"
         :key="charge.id"
-        class="flex items-center gap-3 rounded-xl border border-(--border-default) p-3.5 dark:border-(--border-inverse)"
+        class="flex items-center gap-3 rounded-xl border border-border p-3.5"
       >
         <span
           class="material-symbols-outlined grid size-8 shrink-0 place-items-center rounded-lg bg-[#ff67001f] text-[18px]! text-[#e8590c]"
@@ -124,7 +123,7 @@ const field =
         >
         <span class="min-w-0 flex-1">
           <span class="block truncate text-[13.5px] font-medium">{{ charge.title }}</span>
-          <span class="block text-[12px] text-(--text-muted)"
+          <span class="block text-[12px] text-fg-muted"
             >{{ formatCurrency(charge.goal_amount) }}
             <template v-if="charge.deadline">· vence {{ due(charge.deadline) }}</template>
             <template v-if="!charge.paid && Number(charge.raised) > 0">
@@ -138,7 +137,7 @@ const field =
             charge.paid
               ? 'bg-(--sucess)/10 text-(--sucess)'
               : charge.status === 'closed'
-                ? 'bg-(--bg-muted) text-(--text-muted)'
+                ? 'bg-surface-2 text-fg-muted'
                 : 'bg-[#fdf1dc] text-[#a35a00] dark:bg-[#d97706]/20 dark:text-[#f5b14c]',
           ]"
           >{{ charge.paid ? 'Pago' : charge.status === 'closed' ? 'Encerrada' : 'Pendente' }}</span

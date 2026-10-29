@@ -22,7 +22,7 @@ function handleKeydown(event: KeyboardEvent) {
   <div
     role="tablist"
     aria-label="Seções das configurações"
-    class="flex items-end gap-[22px] overflow-x-auto overflow-y-hidden border-b border-(--border-default) dark:border-(--border-inverse)"
+    class="flex items-end gap-[22px] overflow-x-auto overflow-y-hidden border-b border-border"
     @keydown="handleKeydown"
   >
     <button
@@ -37,8 +37,8 @@ function handleKeydown(event: KeyboardEvent) {
       :class="[
         '-mb-px shrink-0 cursor-pointer border-b-2 py-[10px] text-[14px] leading-normal font-medium whitespace-nowrap transition-colors',
         active === tab.id
-          ? 'border-(--text-primary) text-(--text-primary) dark:border-(--text-inverse) dark:text-(--text-inverse)'
-          : 'border-transparent text-(--text-muted) hover:text-(--text-secondary) dark:hover:text-(--text-inverse-muted)',
+          ? 'border-(--text-primary) text-fg dark:border-(--text-inverse)'
+          : 'border-transparent text-fg-muted hover:text-fg-muted dark:hover:text-(--text-inverse-muted)',
       ]"
       @click="active = tab.id"
     >

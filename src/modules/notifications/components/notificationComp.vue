@@ -14,7 +14,7 @@ import {
 import { computed, onMounted, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import {
-  TopbarComp,
+  PageLayout,
   UiAvatar,
   UiButton,
   UiEmptyState,
@@ -138,147 +138,139 @@ async function markAll(): Promise<void> {
 </script>
 
 <template>
-  <div class="flex min-h-dvh w-full min-w-0 flex-col bg-bg">
-    <TopbarComp :crumbs="['Notificações']" />
+  <PageLayout :crumbs="['Notificações']" title="Notificações" width="narrow">
+    <template #description>
+      <span aria-live="polite">
+        {{
+          notifications.unreadCount
+            ? `${notifications.unreadCount} não ${notifications.unreadCount === 1 ? 'lida' : 'lidas'}`
+            : 'Tudo em dia'
+        }}
+      </span>
+    </template>
+    <template #actions>
+      <UiButton :icon="CheckCheck" :disabled="!notifications.unreadCount" @click="markAll">
+        Marcar todas como lidas
+      </UiButton>
+    </template>
 
-    <main class="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 pt-6 pb-10 sm:px-8">
-      <header class="flex flex-wrap items-end justify-between gap-4">
-        <div class="min-w-0">
-          <h1 class="text-24 leading-tight font-semibold tracking-[-0.01em] text-fg">
-            Notificações
-          </h1>
-          <p class="mt-1 text-14 text-fg-muted" aria-live="polite">
-            {{
-              notifications.unreadCount
-                ? `${notifications.unreadCount} não ${notifications.unreadCount === 1 ? 'lida' : 'lidas'}`
-                : 'Tudo em dia'
-            }}
-          </p>
-        </div>
-        <UiButton :icon="CheckCheck" :disabled="!notifications.unreadCount" @click="markAll">
-          Marcar todas como lidas
-        </UiButton>
-      </header>
+    <div class="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+      <UiTabs v-model="tab" :tabs="TABS" label="Tipo de notificação" />
+      <UiSwitch v-model="unreadOnly" label="Só não lidas" class="pb-2" />
+    </div>
 
-      <div class="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
-        <UiTabs v-model="tab" :tabs="TABS" label="Tipo de notificação" />
-        <UiSwitch v-model="unreadOnly" label="Só não lidas" class="pb-2" />
-      </div>
-
-      <div v-if="firstLoad" class="grid gap-3" aria-label="Carregando notificações">
-        <div v-for="n in 5" :key="n" class="flex items-center gap-3">
-          <UiSkeleton circle class="size-8" />
-          <div class="grid flex-1 gap-1.5">
-            <UiSkeleton class="h-4 w-2/3" />
-            <UiSkeleton class="h-3 w-1/3" />
-          </div>
+    <div v-if="firstLoad" class="grid gap-3" aria-label="Carregando notificações">
+      <div v-for="n in 5" :key="n" class="flex items-center gap-3">
+        <UiSkeleton circle class="size-8" />
+        <div class="grid flex-1 gap-1.5">
+          <UiSkeleton class="h-4 w-2/3" />
+          <UiSkeleton class="h-3 w-1/3" />
         </div>
       </div>
+    </div>
 
-      <UiErrorState
-        v-else-if="failed"
-        title="Não foi possível carregar as notificações"
-        :description="notifications.error"
-        :retrying="notifications.isLoading"
-        @retry="notifications.load()"
-      />
+    <UiErrorState
+      v-else-if="failed"
+      title="Não foi possível carregar as notificações"
+      :description="notifications.error"
+      :retrying="notifications.isLoading"
+      @retry="notifications.load()"
+    />
 
-      <UiEmptyState
-        v-else-if="!notifications.items.length"
-        :icon="Bell"
-        :title="notifications.unreadOnly ? 'Nada pendente' : 'Nenhuma notificação'"
-        :description="emptyText"
-      />
+    <UiEmptyState
+      v-else-if="!notifications.items.length"
+      :icon="Bell"
+      :title="notifications.unreadOnly ? 'Nada pendente' : 'Nenhuma notificação'"
+      :description="emptyText"
+    />
 
-      <div v-else class="grid grid-cols-1 gap-6">
-        <p v-if="notifications.error" role="alert" class="text-13 text-danger">
-          {{ notifications.error }}
-        </p>
-        <section
-          v-for="[day, items] in groups"
-          :key="day"
-          :aria-label="day"
-          class="grid grid-cols-1 gap-2"
-        >
-          <h2 class="text-12 font-medium text-fg-muted">{{ day }}</h2>
-          <ul class="divide-y divide-border rounded-card border border-border bg-surface-1">
-            <li
-              v-for="item in items"
-              :key="item.id"
-              class="relative flex items-center gap-3 px-4 py-3 transition-colors duration-(--dur-fast) ease-out hover:bg-surface-2"
-            >
-              <UiAvatar
-                v-if="notificationActor(item.title)"
-                :name="notificationActor(item.title)!"
-                size="sm"
-              />
-              <span
-                v-else
-                class="grid size-8 shrink-0 place-items-center rounded-control border border-border bg-surface-2 text-fg-muted"
-                aria-hidden="true"
-              >
-                <component :is="ICONS[notificationKind(item)]" :size="16" />
-              </span>
-
-              <span class="flex min-w-0 flex-1 flex-col">
-                <button
-                  type="button"
-                  class="cursor-pointer truncate text-left text-14 text-fg after:absolute after:inset-0 focus-visible:outline-none after:focus-visible:rounded-card after:focus-visible:outline-2 after:focus-visible:outline-accent"
-                  :class="item.is_read ? 'font-normal' : 'font-semibold'"
-                  @click="openNotification(item)"
-                >
-                  {{ notificationTitle(item.title) }}
-                  <span v-if="!item.is_read" class="sr-only">(não lida)</span>
-                </button>
-                <span class="truncate text-12 text-fg-muted">
-                  {{ item.message }}{{ item.message ? ' · ' : ''
-                  }}{{ relativeTime(item.created_at) }}
-                </span>
-              </span>
-              <UiIconButton
-                v-if="!item.is_read"
-                :icon="Check"
-                label="Marcar como lida"
-                size="sm"
-                class="relative"
-                @click="notifications.markAsRead(item.id)"
-              />
-            </li>
-          </ul>
-        </section>
-
-        <UiButton
-          v-if="notifications.hasMore"
-          class="self-center"
-          :loading="notifications.isLoading"
-          @click="notifications.loadMore()"
-        >
-          Carregar mais
-        </UiButton>
-      </div>
-
-      <UiPanel
-        title="Avisos neste navegador"
-        :description="
-          alertsOn
-            ? 'Mensagens, atribuições e menções aparecem no seu computador quando você não está na aba.'
-            : 'Ative para ver mensagens, atribuições e menções no seu computador quando você não está na aba.'
-        "
+    <div v-else class="grid grid-cols-1 gap-6">
+      <p v-if="notifications.error" role="alert" class="text-13 text-danger">
+        {{ notifications.error }}
+      </p>
+      <section
+        v-for="[day, items] in groups"
+        :key="day"
+        :aria-label="day"
+        class="grid grid-cols-1 gap-2"
       >
-        <div class="flex flex-wrap gap-2">
-          <UiButton
-            :icon="BellRing"
-            :variant="alertsOn ? 'secondary' : 'primary'"
-            :loading="isChangingPush"
-            @click="togglePush"
+        <h2 class="text-12 font-medium text-fg-muted">{{ day }}</h2>
+        <ul class="divide-y divide-border rounded-card border border-border bg-surface-1">
+          <li
+            v-for="item in items"
+            :key="item.id"
+            class="relative flex items-center gap-3 px-4 py-3 transition-colors duration-(--dur-fast) ease-out hover:bg-surface-2"
           >
-            {{ alertsOn ? 'Desativar avisos' : 'Ativar avisos' }}
-          </UiButton>
-          <UiButton v-if="alertsOn" variant="ghost" :loading="isSending" @click="sendTest">
-            Enviar teste
-          </UiButton>
-        </div>
-      </UiPanel>
-    </main>
-  </div>
+            <UiAvatar
+              v-if="notificationActor(item.title)"
+              :name="notificationActor(item.title)!"
+              size="sm"
+            />
+            <span
+              v-else
+              class="grid size-8 shrink-0 place-items-center rounded-control border border-border bg-surface-2 text-fg-muted"
+              aria-hidden="true"
+            >
+              <component :is="ICONS[notificationKind(item)]" :size="16" />
+            </span>
+
+            <span class="flex min-w-0 flex-1 flex-col">
+              <button
+                type="button"
+                class="cursor-pointer truncate text-left text-14 text-fg after:absolute after:inset-0 focus-visible:outline-none after:focus-visible:rounded-card after:focus-visible:outline-2 after:focus-visible:outline-accent"
+                :class="item.is_read ? 'font-normal' : 'font-semibold'"
+                @click="openNotification(item)"
+              >
+                {{ notificationTitle(item.title) }}
+                <span v-if="!item.is_read" class="sr-only">(não lida)</span>
+              </button>
+              <span class="truncate text-12 text-fg-muted">
+                {{ item.message }}{{ item.message ? ' · ' : '' }}{{ relativeTime(item.created_at) }}
+              </span>
+            </span>
+            <UiIconButton
+              v-if="!item.is_read"
+              :icon="Check"
+              label="Marcar como lida"
+              size="sm"
+              class="relative"
+              @click="notifications.markAsRead(item.id)"
+            />
+          </li>
+        </ul>
+      </section>
+
+      <UiButton
+        v-if="notifications.hasMore"
+        class="self-center"
+        :loading="notifications.isLoading"
+        @click="notifications.loadMore()"
+      >
+        Carregar mais
+      </UiButton>
+    </div>
+
+    <UiPanel
+      title="Avisos neste navegador"
+      :description="
+        alertsOn
+          ? 'Mensagens, atribuições e menções aparecem no seu computador quando você não está na aba.'
+          : 'Ative para ver mensagens, atribuições e menções no seu computador quando você não está na aba.'
+      "
+    >
+      <div class="flex flex-wrap gap-2">
+        <UiButton
+          :icon="BellRing"
+          :variant="alertsOn ? 'secondary' : 'primary'"
+          :loading="isChangingPush"
+          @click="togglePush"
+        >
+          {{ alertsOn ? 'Desativar avisos' : 'Ativar avisos' }}
+        </UiButton>
+        <UiButton v-if="alertsOn" variant="ghost" :loading="isSending" @click="sendTest">
+          Enviar teste
+        </UiButton>
+      </div>
+    </UiPanel>
+  </PageLayout>
 </template>

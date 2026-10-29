@@ -16,13 +16,12 @@ const isCurrentLabel = (index: number) => isActive(index) || (props.completed &&
 
 const circleClasses = (index: number) => {
   if (isDone(index) || isActive(index)) {
-    return 'bg-(--bg-orange) text-accent-fg'
+    return 'bg-accent text-accent-fg'
   }
-  return 'border border-(--border-default) text-(--text-muted) dark:border-(--border-inverse)'
+  return 'border border-border text-fg-muted'
 }
 
-const lineClasses = (index: number) =>
-  isDone(index) ? 'bg-(--bg-orange)' : 'bg-(--border-default) dark:bg-(--border-inverse)'
+const lineClasses = (index: number) => (isDone(index) ? 'bg-accent' : 'bg-border')
 </script>
 
 <template>
@@ -47,11 +46,7 @@ const lineClasses = (index: number) =>
         <span
           :class="[
             'whitespace-nowrap text-[12px] leading-normal font-medium sm:text-[13px]',
-            isCurrentLabel(index)
-              ? 'text-(--bg-orange)'
-              : isDone(index)
-                ? ''
-                : 'text-(--text-muted)',
+            isCurrentLabel(index) ? 'text-accent' : isDone(index) ? '' : 'text-fg-muted',
             !isCurrentLabel(index) ? 'max-sm:sr-only' : '',
           ]"
         >

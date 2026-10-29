@@ -29,25 +29,21 @@ async function copyCode(): Promise<void> {
 <template>
   <div class="flex flex-col items-center">
     <div
-      class="flex size-[220px] items-center justify-center rounded-[16px] border border-(--border-default) bg-(--surface) text-(--text-primary) dark:border-(--border-inverse) dark:bg-(--surface-inverse) dark:text-(--text-inverse)"
+      class="flex size-[220px] items-center justify-center rounded-card border border-border bg-surface-1 text-fg"
       role="img"
       aria-label="QR Code Pix para pagamento"
     >
       <img
         :src="`data:image/png;base64,${qrCodeBase64}`"
         alt="QR Code Pix para pagamento"
-        class="h-full w-full rounded-[16px] object-contain"
+        class="h-full w-full rounded-card object-contain"
       />
     </div>
 
     <div class="mt-[20px] flex w-full flex-col gap-[8px]">
+      <p class="text-[12px] leading-normal font-semibold text-fg-muted">Pix copia e cola</p>
       <p
-        class="text-[12px] leading-normal font-semibold text-(--text-secondary) dark:text-(--text-inverse-muted)"
-      >
-        Pix copia e cola
-      </p>
-      <p
-        class="rounded-[10px] border border-(--border-default) bg-(--bg-subtle) px-[12px] py-[10px] font-mono text-[12px] leading-5 text-(--text-secondary) dark:border-(--border-inverse) dark:bg-(--bg-subtle)/10 dark:text-(--text-inverse-muted)"
+        class="rounded-[10px] border border-border bg-surface-2 px-[12px] py-[10px] font-mono text-[12px] leading-5 text-fg-muted dark:bg-surface-2/10"
       >
         <span class="line-clamp-2 break-all select-all">{{ qrCode }}</span>
       </p>

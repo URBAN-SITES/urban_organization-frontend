@@ -73,15 +73,14 @@ onBeforeUnmount(() => {
   dialog.value?.close()
 })
 
-const input =
-  'h-10 w-full rounded-lg border border-(--border-default) bg-transparent px-3 text-[14px] dark:border-(--border-inverse)'
+const input = 'h-10 w-full rounded-lg border border-border bg-transparent px-3 text-[14px]'
 </script>
 
 <template>
   <dialog
     ref="dialog"
     aria-labelledby="charge-title"
-    class="m-auto max-h-[calc(100dvh_-_1.5rem)] w-[calc(100%_-_1.5rem)] max-w-md overflow-y-auto rounded-2xl border border-(--border-default) bg-(--surface) p-5 text-(--text-primary) shadow-xl backdrop:bg-black/70 dark:border-(--border-inverse) dark:bg-(--surface-inverse) dark:text-(--text-inverse)"
+    class="m-auto max-h-[calc(100dvh_-_1.5rem)] w-[calc(100%_-_1.5rem)] max-w-md overflow-y-auto rounded-2xl border border-border bg-surface-1 p-5 text-fg shadow-xl backdrop:bg-black/70"
     @cancel.prevent="emit('close', stage === 'approved')"
   >
     <header class="mb-4 flex items-start justify-between gap-3">
@@ -91,7 +90,7 @@ const input =
           <template v-else-if="stage === 'rejected'">Pagamento recusado</template>
           <template v-else>{{ charge.title }}</template>
         </h2>
-        <p v-if="stage === 'form' || stage === 'qr'" class="text-sm text-(--text-muted)">
+        <p v-if="stage === 'form' || stage === 'qr'" class="text-sm text-fg-muted">
           {{ stage === 'qr' ? 'Pague com Pix' : 'Pagar com Pix' }} ·
           {{ formatCurrency(stage === 'qr' ? amount : remaining) }}
         </p>
@@ -99,7 +98,7 @@ const input =
       <button
         type="button"
         aria-label="Fechar"
-        class="grid size-9 shrink-0 cursor-pointer place-items-center rounded-full hover:bg-(--bg-subtle) dark:hover:bg-black/30"
+        class="grid size-9 shrink-0 cursor-pointer place-items-center rounded-full hover:bg-surface-2 dark:hover:bg-black/30"
         @click="emit('close', stage === 'approved')"
       >
         <span class="material-symbols-outlined" aria-hidden="true">close</span>
@@ -140,10 +139,7 @@ const input =
 
     <div v-else-if="stage === 'qr' && pix" class="grid gap-3">
       <PixCode :qr-code="pix.qr_code" :qr-code-base64="pix.qr_code_base64" />
-      <p
-        class="flex items-center justify-center gap-2 text-[13px] text-(--text-muted)"
-        role="status"
-      >
+      <p class="flex items-center justify-center gap-2 text-[13px] text-fg-muted" role="status">
         <UiSpinner :size="16" label="Aguardando pagamento" />
         Aguardando a confirmação do pagamento…
       </p>

@@ -30,7 +30,7 @@ const toggle = () => {
       class="size-3.5 cursor-pointer accent-(--accent-orange) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--accent-orange)"
     />
 
-    <span class="text-(--text-primary) dark:text-(--text-inverse)">
+    <span class="text-fg">
       {{ label }}
     </span>
   </label>

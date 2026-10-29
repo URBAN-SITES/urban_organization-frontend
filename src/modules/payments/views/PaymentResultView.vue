@@ -102,7 +102,7 @@ onBeforeUnmount(() => {
           <PaymentStatusBadge :status="payment.status" />
         </div>
 
-        <div class="border-t border-(--border-default) pt-[16px] dark:border-(--border-inverse)">
+        <div class="border-t border-border pt-[16px]">
           <PaymentSummary
             :title="payment.title"
             :amount="payment.amount"

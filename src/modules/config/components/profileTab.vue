@@ -38,11 +38,11 @@ function selectAvatar(event: Event): void {
   <div class="flex flex-col items-start gap-[16px] xl:flex-row">
     <ConfigCard title="Informações pessoais" class="w-full">
       <div
-        class="flex flex-col gap-4 border-b border-(--border-default) pb-5 sm:flex-row sm:items-center dark:border-(--border-inverse)"
+        class="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-center"
         :aria-busy="uploading"
       >
         <div
-          class="grid size-20 shrink-0 place-items-center overflow-hidden rounded-full border border-(--border-default) bg-(--bg-subtle) dark:border-(--border-inverse) dark:bg-black/30"
+          class="grid size-20 shrink-0 place-items-center overflow-hidden rounded-full border border-border bg-surface-2 dark:bg-black/30"
         >
           <img
             v-if="(avatarPreview || form.avatar_url) && !imageFailed"
@@ -52,16 +52,13 @@ function selectAvatar(event: Event): void {
             referrerpolicy="no-referrer"
             @error="imageFailed = true"
           />
-          <span
-            v-else
-            class="material-symbols-outlined text-4xl! text-(--text-muted)"
-            aria-hidden="true"
+          <span v-else class="material-symbols-outlined text-4xl! text-fg-muted" aria-hidden="true"
             >person</span
           >
         </div>
         <div class="flex min-w-0 flex-col gap-2">
           <p class="text-sm font-medium">Foto de perfil</p>
-          <p id="avatar-help" class="text-xs text-(--text-muted)">
+          <p id="avatar-help" class="text-xs text-fg-muted">
             JPG, PNG ou WebP de até 10 MB. Recorte e confirme em Salvar alterações.
           </p>
           <input
@@ -97,8 +94,8 @@ function selectAvatar(event: Event): void {
               @click="emit('openCamera')"
             />
           </div>
-          <p v-if="uploading" role="status" class="text-xs text-(--text-muted)">Enviando foto…</p>
-          <p v-else-if="pendingAvatar" role="status" class="text-xs text-(--text-muted)">
+          <p v-if="uploading" role="status" class="text-xs text-fg-muted">Enviando foto…</p>
+          <p v-else-if="pendingAvatar" role="status" class="text-xs text-fg-muted">
             Foto preparada. Salve as alterações para enviar.
           </p>
           <p v-if="uploadError" role="alert" class="auth-error">{{ uploadError }}</p>

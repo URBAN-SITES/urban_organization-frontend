@@ -22,7 +22,7 @@ const details = computed(() => {
     :href="file.url"
     target="_blank"
     rel="noopener noreferrer"
-    class="flex w-fit max-w-full items-center gap-[10px] rounded-[10px] border border-(--border-default) bg-(--surface) py-[8px] pr-[14px] pl-[8px] transition-colors hover:border-(--bg-orange)/45 hover:bg-(--bg-orange)/[0.03] dark:border-(--border-inverse) dark:bg-black/20 dark:hover:bg-(--bg-orange)/[0.06]"
+    class="flex w-fit max-w-full items-center gap-[10px] rounded-[10px] border border-border bg-surface-1 py-[8px] pr-[14px] pl-[8px] transition-colors hover:border-border-strong hover:bg-surface-2 dark:bg-black/20 dark:hover:bg-surface-2"
   >
     <span
       class="grid size-[32px] shrink-0 place-items-center rounded-[8px] bg-[#e8efff] text-[#2563eb] dark:bg-[#2563eb]/20 dark:text-[#8fb1ff]"
@@ -33,7 +33,7 @@ const details = computed(() => {
       <span class="truncate text-[13px] font-medium">{{
         file.file_name.replace(/\.\w+$/, '')
       }}</span>
-      <span class="text-[11.5px] text-(--text-muted)">{{ details }}</span>
+      <span class="text-[11.5px] text-fg-muted">{{ details }}</span>
     </span>
   </a>
 </template>

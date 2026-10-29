@@ -126,8 +126,7 @@ const size = (bytes: number | null) =>
       ? `${(bytes / 1_048_576).toFixed(1)} MB`
       : `${Math.max(1, Math.round(bytes / 1024))} KB`
 
-const card =
-  'grid gap-3 rounded-xl border border-(--border-default) p-3.5 dark:border-(--border-inverse)'
+const card = 'grid gap-3 rounded-xl border border-border p-3.5'
 </script>
 
 <template>
@@ -142,7 +141,7 @@ const card =
         >
         <div class="min-w-0 flex-1">
           <p class="text-[13.5px] font-medium">Google Agenda</p>
-          <p class="text-[12px] text-(--text-muted)" role="status">
+          <p class="text-[12px] text-fg-muted" role="status">
             <template v-if="!google.status.connected"
               >Conecte para levar a entrega para a sua agenda.</template
             >
@@ -198,7 +197,7 @@ const card =
         >
         <div class="min-w-0 flex-1">
           <p class="text-[13.5px] font-medium">Google Drive</p>
-          <p class="text-[12px] text-(--text-muted)">
+          <p class="text-[12px] text-fg-muted">
             {{
               google.status.drive
                 ? 'Anexe arquivos e imagens do seu Drive ou envie um novo.'
@@ -250,7 +249,7 @@ const card =
             type="search"
             placeholder="Buscar no Drive"
             aria-label="Buscar no Drive"
-            class="h-9 flex-1 rounded-lg border border-(--border-default) bg-transparent px-2 text-[13px] dark:border-(--border-inverse)"
+            class="h-9 flex-1 rounded-lg border border-border bg-transparent px-2 text-[13px]"
           />
           <BaseButton
             label="Buscar"
@@ -265,18 +264,14 @@ const card =
           <li
             v-for="file in google.files"
             :key="file.id"
-            class="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-(--bg-subtle) dark:hover:bg-white/5"
+            class="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-surface-2 dark:hover:bg-white/5"
           >
-            <span
-              class="material-symbols-outlined text-[20px]! text-(--text-muted)"
-              aria-hidden="true"
-              >{{ fileIcon(file.mime_type) }}</span
-            >
+            <span class="material-symbols-outlined text-[20px]! text-fg-muted" aria-hidden="true">{{
+              fileIcon(file.mime_type)
+            }}</span>
             <span class="min-w-0 flex-1">
               <span class="block truncate text-[13px]">{{ file.name }}</span>
-              <span class="block text-[11.5px] text-(--text-muted)">{{
-                size(file.size_bytes)
-              }}</span>
+              <span class="block text-[11.5px] text-fg-muted">{{ size(file.size_bytes) }}</span>
             </span>
             <BaseButton
               label="Anexar"
@@ -289,7 +284,7 @@ const card =
           </li>
           <li
             v-if="!google.files.length && busy !== 'files'"
-            class="px-2 py-3 text-center text-[13px] text-(--text-muted)"
+            class="px-2 py-3 text-center text-[13px] text-fg-muted"
           >
             Nenhum arquivo encontrado.
           </li>

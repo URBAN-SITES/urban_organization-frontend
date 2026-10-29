@@ -13,14 +13,14 @@
         Página não encontrada
       </h2>
 
-      <p class="w-full max-w-3xl text-sm text-(--text-muted)">
+      <p class="w-full max-w-3xl text-sm text-fg-muted">
         O endereço pode ter mudado ou a página não existe mais. Verifique o link ou volte para o
         início.
       </p>
 
       <RouterLink
         to="/"
-        class="mt-8 sm:mt-10 flex w-full text-sm font-semibold justify-center max-w-xs items-center gap-2 group rounded-lg bg-(--background-inverse) text-(--text-inverse) dark:bg-(--text-inverse) dark:text-(--text-primary) px-5 py-3 transition-all duration-300"
+        class="mt-8 sm:mt-10 flex w-full text-sm font-semibold justify-center max-w-xs items-center gap-2 group rounded-lg bg-(--background-inverse) text-(--text-inverse) dark:bg-(--text-inverse) dark:text-fg px-5 py-3 transition-all duration-300"
       >
         Voltar ao início
         <span

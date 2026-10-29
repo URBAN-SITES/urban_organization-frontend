@@ -39,15 +39,15 @@ const chartOptions = {
 
 <template>
   <div
-    class="group relative grid min-w-0 w-full gap-2 overflow-hidden rounded-[16px] border border-(--border-default) bg-(--surface) px-[18px] py-[16px] transition-all duration-300 before:absolute before:top-0 before:left-[18px] before:h-[2px] before:w-6 before:rounded-full before:bg-(--bg-orange)/55 before:transition-all before:duration-300 hover:border-(--bg-orange)/50 hover:shadow-[0_8px_24px_rgba(255,103,0,0.1)] hover:before:w-12 hover:before:bg-(--bg-orange) dark:border-(--border-inverse) dark:bg-(--surface-inverse)"
+    class="group relative grid min-w-0 w-full gap-2 overflow-hidden rounded-card border border-border bg-surface-1 px-[18px] py-[16px] hover:border-border-strong"
   >
     <h3 class="text-[15px] font-semibold">{{ title }}</h3>
     <p v-if="headline" class="flex items-baseline gap-2">
       <span class="text-[28px] leading-none font-semibold tracking-[-0.02em]">{{ headline }}</span>
-      <span v-if="note" class="text-[13px] text-(--text-muted)">{{ note }}</span>
+      <span v-if="note" class="text-[13px] text-fg-muted">{{ note }}</span>
     </p>
 
-    <p v-if="empty && !chartData.labels?.length" class="py-[24px] text-[13px] text-(--text-muted)">
+    <p v-if="empty && !chartData.labels?.length" class="py-[24px] text-[13px] text-fg-muted">
       {{ empty }}
     </p>
     <div v-else class="relative h-[200px] min-w-0">

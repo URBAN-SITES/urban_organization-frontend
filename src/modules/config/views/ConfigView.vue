@@ -8,13 +8,7 @@ import { useAuthStore } from '@/modules/auth'
 import { useOrganizationsStore } from '@/modules/organizations'
 import { profilePayload, notificationSettings, validateAvatar } from '../utils'
 import { fetchSettings, updateSettings, uploadAvatar } from '../services'
-import {
-  BaseButton,
-  SubheaderComp,
-  TopbarComp,
-  UiErrorState,
-  UiSkeleton,
-} from '@/shared/components'
+import { BaseButton, PageLayout, UiErrorState, UiSkeleton } from '@/shared/components'
 import {
   ConfigTabs,
   NotificationsTab,
@@ -367,126 +361,121 @@ function handleCancel() {
 </script>
 
 <template>
-  <div
-    class="flex min-h-dvh w-full min-w-0 flex-col bg-(--background) dark:bg-(--background-inverse)"
+  <PageLayout
+    :crumbs="['Configurações', current.label]"
+    :title="current.title"
+    :description="current.description"
+    width="wide"
   >
-    <TopbarComp :crumbs="['Configurações', current.label]" />
-
-    <section
-      class="flex flex-1 flex-col gap-[16px] px-[20px] pt-[24px] pb-[28px] sm:px-[36px] xl:px-[44px]"
-    >
-      <SubheaderComp
-        :title="current.title"
-        :description="current.description"
-        class="mb-0! flex-col items-start! gap-[16px] sm:flex-row sm:items-end!"
-      >
-        <div class="flex shrink-0 items-center gap-[8px]">
-          <BaseButton
-            variant="ghost"
-            label="Cancelar"
-            :full-width="false"
-            class="mt-0!"
-            :disabled="isSaving || isLoading || isUploadingAvatar"
-            @click="handleCancel"
-          />
-          <BaseButton
-            label="Salvar alterações"
-            :full-width="false"
-            class="mt-0!"
-            :loading="isSaving"
-            :disabled="
-              activeTab === 'security' ||
-              activeTab === 'organization' ||
-              isLoading ||
-              isUploadingAvatar ||
-              !!loadError
-            "
-            @click="handleSave"
-          />
-        </div>
-      </SubheaderComp>
-
-      <ConfigTabs v-model="activeTab" :tabs="TABS" />
-
-      <div v-if="isLoading" role="status" aria-label="Carregando perfil" class="grid gap-4 py-2">
-        <div class="flex items-center gap-4">
-          <UiSkeleton circle class="size-16" />
-          <div class="grid gap-2">
-            <UiSkeleton class="h-4 w-44" />
-            <UiSkeleton class="h-3 w-60 max-w-full" />
-          </div>
-        </div>
-        <UiSkeleton v-for="row in 3" :key="row" class="h-10 w-full max-w-xl" />
-      </div>
-      <UiErrorState
-        v-else-if="loadError"
-        title="Não foi possível carregar seu perfil"
-        :description="loadError"
-        @retry="loadProfile"
-      />
-
-      <div
-        v-if="!isLoading && !loadError"
-        :id="`config-panel-${activeTab}`"
-        role="tabpanel"
-        :aria-labelledby="`config-tab-${activeTab}`"
-        tabindex="0"
-        class="outline-none"
-      >
-        <form v-if="activeTab === 'profile'" @submit.prevent="handleSave">
-          <fieldset :disabled="isSaving" class="min-w-0">
-            <ProfileTab
-              v-model="profile"
-              :timezones="timezones"
-              :languages="languages"
-              :uploading="isUploadingAvatar"
-              :upload-error="avatarUploadError"
-              :avatar-preview="avatarPreview"
-              :pending-avatar="!!pendingAvatar"
-              @select-avatar="selectAvatar"
-              @open-camera="cameraOpen = true"
-              @change-email="$router.push({ name: 'ChangeEmail' })"
-            />
-          </fieldset>
-        </form>
-        <fieldset v-else-if="activeTab === 'notifications'" :disabled="isSaving" class="min-w-0">
-          <NotificationsTab v-model="notifications" />
-        </fieldset>
-        <SecurityTab
-          v-else-if="activeTab === 'security'"
-          :sessions="sessions"
-          :loading="isLoadingSessions"
-          :error="sessionsError"
-          :ending-session="endingSession"
-          @end-session="endSession"
-          @retry="loadSessions"
+    <template #actions>
+      <div class="flex shrink-0 items-center gap-[8px]">
+        <BaseButton
+          variant="ghost"
+          label="Cancelar"
+          :full-width="false"
+          size="sm"
+          class="mt-0!"
+          :disabled="isSaving || isLoading || isUploadingAvatar"
+          @click="handleCancel"
         />
-        <div v-else-if="activeTab === 'organization'" class="grid max-w-[480px] gap-[12px]">
-          <template v-if="organizations.current">
-            <p>
-              Você está em <strong>{{ organizations.current.name }}</strong
-              >. Edite nome, endereço, logo e descrição na página da organização.
-            </p>
-            <BaseButton
-              label="Editar organização"
-              icon="edit"
-              icon-position="left"
-              :full-width="false"
-              @click="
-                $router.push({
-                  name: 'OrganizationSettings',
-                  params: { organizationId: organizations.current.id },
-                })
-              "
-            />
-          </template>
-          <p v-else>Nenhuma organização selecionada.</p>
-        </div>
-        <fieldset v-else :disabled="isSaving" class="min-w-0">
-          <PreferencesTab v-model="preferences" />
-        </fieldset>
+        <BaseButton
+          label="Salvar alterações"
+          :full-width="false"
+          size="sm"
+          class="mt-0!"
+          :loading="isSaving"
+          :disabled="
+            activeTab === 'security' ||
+            activeTab === 'organization' ||
+            isLoading ||
+            isUploadingAvatar ||
+            !!loadError
+          "
+          @click="handleSave"
+        />
       </div>
-    </section>
+    </template>
+
+    <ConfigTabs v-model="activeTab" :tabs="TABS" />
+
+    <div v-if="isLoading" role="status" aria-label="Carregando perfil" class="grid gap-4 py-2">
+      <div class="flex items-center gap-4">
+        <UiSkeleton circle class="size-16" />
+        <div class="grid gap-2">
+          <UiSkeleton class="h-4 w-44" />
+          <UiSkeleton class="h-3 w-60 max-w-full" />
+        </div>
+      </div>
+      <UiSkeleton v-for="row in 3" :key="row" class="h-10 w-full max-w-xl" />
+    </div>
+    <UiErrorState
+      v-else-if="loadError"
+      title="Não foi possível carregar seu perfil"
+      :description="loadError"
+      @retry="loadProfile"
+    />
+
+    <div
+      v-if="!isLoading && !loadError"
+      :id="`config-panel-${activeTab}`"
+      role="tabpanel"
+      :aria-labelledby="`config-tab-${activeTab}`"
+      tabindex="0"
+      class="outline-none"
+    >
+      <form v-if="activeTab === 'profile'" @submit.prevent="handleSave">
+        <fieldset :disabled="isSaving" class="min-w-0">
+          <ProfileTab
+            v-model="profile"
+            :timezones="timezones"
+            :languages="languages"
+            :uploading="isUploadingAvatar"
+            :upload-error="avatarUploadError"
+            :avatar-preview="avatarPreview"
+            :pending-avatar="!!pendingAvatar"
+            @select-avatar="selectAvatar"
+            @open-camera="cameraOpen = true"
+            @change-email="$router.push({ name: 'ChangeEmail' })"
+          />
+        </fieldset>
+      </form>
+      <fieldset v-else-if="activeTab === 'notifications'" :disabled="isSaving" class="min-w-0">
+        <NotificationsTab v-model="notifications" />
+      </fieldset>
+      <SecurityTab
+        v-else-if="activeTab === 'security'"
+        :sessions="sessions"
+        :loading="isLoadingSessions"
+        :error="sessionsError"
+        :ending-session="endingSession"
+        @end-session="endSession"
+        @retry="loadSessions"
+      />
+      <div v-else-if="activeTab === 'organization'" class="grid max-w-[480px] gap-[12px]">
+        <template v-if="organizations.current">
+          <p>
+            Você está em <strong>{{ organizations.current.name }}</strong
+            >. Edite nome, endereço, logo e descrição na página da organização.
+          </p>
+          <BaseButton
+            label="Editar organização"
+            icon="edit"
+            icon-position="left"
+            :full-width="false"
+            @click="
+              $router.push({
+                name: 'OrganizationSettings',
+                params: { organizationId: organizations.current.id },
+              })
+            "
+          />
+        </template>
+        <p v-else>Nenhuma organização selecionada.</p>
+      </div>
+      <fieldset v-else :disabled="isSaving" class="min-w-0">
+        <PreferencesTab v-model="preferences" />
+      </fieldset>
+    </div>
     <AvatarCameraDialog v-if="cameraOpen" @cancel="cameraOpen = false" @confirm="cameraPhoto" />
     <AvatarCropDialog
       v-if="cropSource"
@@ -494,5 +483,5 @@ function handleCancel() {
       @cancel="cropSource = null"
       @confirm="confirmCrop"
     />
-  </div>
+  </PageLayout>
 </template>

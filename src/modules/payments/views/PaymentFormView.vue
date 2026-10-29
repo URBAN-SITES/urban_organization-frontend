@@ -219,7 +219,7 @@ async function handleSubmit(): Promise<void> {
               <template #suffix>
                 <span
                   v-if="brand !== 'unknown'"
-                  class="shrink-0 text-[12px] font-semibold text-(--text-secondary) dark:text-(--text-inverse-muted)"
+                  class="shrink-0 text-[12px] font-semibold text-fg-muted"
                 >
                   {{ CARD_BRAND_LABELS[brand] }}
                 </span>
@@ -273,7 +273,7 @@ async function handleSubmit(): Promise<void> {
                 <select
                   id="card-installments"
                   v-model.number="installments"
-                  class="h-[44px] w-full appearance-none rounded-[10px] border border-(--border-default) bg-(--surface) pr-[36px] pl-[12px] text-[14px] outline-none focus:border-(--bg-orange) focus:ring-2 focus:ring-(--bg-orange)/15 dark:border-(--border-inverse) dark:bg-black/30"
+                  class="h-[44px] w-full appearance-none rounded-[10px] border border-border bg-surface-1 pr-[36px] pl-[12px] text-[14px] outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 dark:bg-black/30"
                 >
                   <option
                     v-for="option in installmentOptions"
@@ -284,7 +284,7 @@ async function handleSubmit(): Promise<void> {
                   </option>
                 </select>
                 <span
-                  class="material-symbols-outlined pointer-events-none absolute top-1/2 right-[10px] -translate-y-1/2 text-[18px]! text-(--text-muted)"
+                  class="material-symbols-outlined pointer-events-none absolute top-1/2 right-[10px] -translate-y-1/2 text-[18px]! text-fg-muted"
                   aria-hidden="true"
                   >unfold_more</span
                 >
@@ -293,9 +293,7 @@ async function handleSubmit(): Promise<void> {
           </div>
 
           <div v-else class="flex flex-col gap-[14px] pt-[4px]">
-            <p
-              class="text-[13px] leading-[20px] text-(--text-secondary) dark:text-(--text-inverse-muted)"
-            >
+            <p class="text-[13px] leading-[20px] text-fg-muted">
               Vamos gerar um QR Code Pix para você pagar pelo app do seu banco.
             </p>
             <div class="flex flex-col gap-[14px] sm:flex-row">
@@ -341,11 +339,9 @@ async function handleSubmit(): Promise<void> {
           />
 
           <p
-            class="flex items-center justify-center gap-[4px] text-[12px] leading-normal text-(--text-muted)"
+            class="flex items-center justify-center gap-[4px] text-[12px] leading-normal text-fg-muted"
           >
-            <span
-              class="material-symbols-outlined text-[15px]! text-(--bg-orange)"
-              aria-hidden="true"
+            <span class="material-symbols-outlined text-[15px]! text-accent" aria-hidden="true"
               >verified_user</span
             >
             {{

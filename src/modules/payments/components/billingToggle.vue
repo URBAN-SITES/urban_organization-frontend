@@ -14,7 +14,7 @@ const OPTIONS: { value: BillingCycle; label: string }[] = [
   <div
     role="radiogroup"
     aria-label="Ciclo de cobrança"
-    class="inline-flex rounded-[12px] bg-(--bg-muted) p-[4px] dark:bg-black/40"
+    class="inline-flex rounded-[12px] bg-surface-2 p-[4px] dark:bg-black/40"
   >
     <label
       v-for="option in OPTIONS"
@@ -22,8 +22,8 @@ const OPTIONS: { value: BillingCycle; label: string }[] = [
       :class="[
         'flex cursor-pointer items-center gap-[6px] rounded-[9px] px-[14px] py-[6px] text-[13px] leading-normal font-medium transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2',
         cycle === option.value
-          ? 'bg-(--surface) shadow-[0_1px_3px_rgb(0_0_0/0.1)] dark:bg-(--surface-inverse)'
-          : 'text-(--text-secondary) hover:text-(--text-primary) dark:text-(--text-inverse-muted) dark:hover:text-(--text-inverse)',
+          ? 'bg-surface-1 shadow-[0_1px_3px_rgb(0_0_0/0.1)]'
+          : 'text-fg-muted hover:text-fg dark:hover:text-(--text-inverse)',
       ]"
     >
       <input

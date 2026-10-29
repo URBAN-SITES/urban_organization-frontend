@@ -224,9 +224,7 @@ watch(() => [chat.activeId, items.value.length], scrollToEnd, { immediate: true 
 </script>
 
 <template>
-  <div
-    class="flex h-[calc(100dvh-3.75rem)] md:h-dvh w-full min-w-0 flex-col bg-(--background) dark:bg-(--background-inverse)"
-  >
+  <div class="flex h-[calc(100dvh-3.75rem)] md:h-dvh w-full min-w-0 flex-col bg-bg">
     <TopbarComp
       :crumbs="['Mensagens', active.kind === 'direct' ? active.name : `#${active.name}`]"
     />
@@ -244,11 +242,7 @@ watch(() => [chat.activeId, items.value.length], scrollToEnd, { immediate: true 
       />
       <ChatPanelLayout v-else>
         <template #aside>
-          <h2
-            class="px-[18px] pt-[18px] text-[17px]! leading-normal! font-semibold! tracking-normal!"
-          >
-            Mensagens
-          </h2>
+          <h2 class="px-[18px] pt-[18px] text-16 font-semibold text-fg">Mensagens</h2>
 
           <ChatSectionTitle>Canais por setor</ChatSectionTitle>
           <nav aria-label="Canais por setor" class="flex flex-col gap-[2px]">
@@ -276,16 +270,16 @@ watch(() => [chat.activeId, items.value.length], scrollToEnd, { immediate: true 
         <template #header>
           <span
             v-if="active.kind !== 'direct'"
-            class="grid size-[32px] shrink-0 place-items-center rounded-[9px] border border-(--bg-orange)/25 bg-(--bg-orange)/[0.08] text-(--bg-orange) dark:bg-(--bg-orange)/15"
+            class="grid size-[32px] shrink-0 place-items-center rounded-[9px] border border-accent/25 bg-accent/[0.08] text-accent dark:bg-accent/15"
             aria-hidden="true"
           >
             <span class="material-symbols-outlined text-[18px]!">tag</span>
           </span>
           <div class="flex min-w-0 flex-1 flex-col leading-normal">
-            <h1 class="truncate text-[15px]! leading-normal! font-semibold! tracking-normal!">
+            <h1 class="truncate text-16 font-semibold text-fg">
               {{ active.name }}
             </h1>
-            <p class="truncate text-[12px] text-(--text-muted)">{{ subtitle }}</p>
+            <p class="truncate text-[12px] text-fg-muted">{{ subtitle }}</p>
           </div>
           <BaseButton
             variant="primary"
@@ -299,7 +293,7 @@ watch(() => [chat.activeId, items.value.length], scrollToEnd, { immediate: true 
           />
           <button
             type="button"
-            class="grid size-[34px] shrink-0 cursor-pointer place-items-center rounded-[10px] border border-(--border-default) transition-all duration-200 hover:-translate-y-0.5 hover:border-(--bg-orange)/35 hover:bg-(--bg-orange)/5 hover:text-(--bg-orange) active:translate-y-0 dark:border-(--border-inverse) dark:hover:bg-(--bg-orange)/10"
+            class="grid size-[34px] shrink-0 cursor-pointer place-items-center rounded-[10px] border border-border transition-all duration-200 hover:-translate-y-0.5 hover:border-border-strong hover:bg-surface-2 hover:text-fg active:translate-y-0 dark:hover:bg-surface-2"
             aria-label="Mais opções do canal"
           >
             <span class="material-symbols-outlined text-[18px]!" aria-hidden="true"
@@ -309,7 +303,7 @@ watch(() => [chat.activeId, items.value.length], scrollToEnd, { immediate: true 
           <select
             :value="activeId"
             aria-label="Selecionar canal ou mensagem direta"
-            class="h-[36px] w-full basis-full min-w-0 rounded-[9px] border border-(--border-default) bg-(--surface) px-[10px] text-[13px] text-(--text-primary) outline-none focus:border-(--bg-orange) md:hidden dark:border-(--border-inverse) dark:bg-(--surface-inverse) dark:text-(--text-inverse)"
+            class="h-[36px] w-full basis-full min-w-0 rounded-[9px] border border-border bg-surface-1 px-[10px] text-[13px] text-fg outline-none focus:border-accent md:hidden"
             @change="selectFromPicker"
           >
             <option value="" disabled>Selecionar conversa</option>
@@ -336,7 +330,7 @@ watch(() => [chat.activeId, items.value.length], scrollToEnd, { immediate: true 
               :own="item.author_id === me"
             />
           </template>
-          <p v-if="!groups.length" class="py-[40px] text-center text-[13px] text-(--text-muted)">
+          <p v-if="!groups.length" class="py-[40px] text-center text-[13px] text-fg-muted">
             Nenhuma mensagem ainda. Comece a conversa!
           </p>
           <ChatTyping v-if="typing" :name="typing" />
@@ -345,14 +339,14 @@ watch(() => [chat.activeId, items.value.length], scrollToEnd, { immediate: true 
         <template #footer>
           <ul
             v-if="mentionOptions.length"
-            class="mb-[6px] grid gap-[2px] rounded-[10px] border border-(--border-default) bg-(--surface) p-[4px] dark:border-(--border-inverse) dark:bg-(--surface-inverse)"
+            class="mb-[6px] grid gap-[2px] rounded-[10px] border border-border bg-surface-1 p-[4px]"
             role="listbox"
             aria-label="Mencionar membro"
           >
             <li v-for="member in mentionOptions" :key="member.user_id" role="option">
               <button
                 type="button"
-                class="flex w-full cursor-pointer items-center gap-[8px] rounded-[7px] px-[8px] py-[6px] text-left text-[13px] transition-colors hover:bg-(--bg-orange)/5 hover:text-(--bg-orange) dark:hover:bg-(--bg-orange)/10"
+                class="flex w-full cursor-pointer items-center gap-[8px] rounded-[7px] px-[8px] py-[6px] text-left text-[13px] transition-colors hover:bg-surface-2 hover:text-fg dark:hover:bg-surface-2"
                 @click="pickMention(member)"
               >
                 <ChatAvatar :name="member.name" :size="24" />
@@ -385,7 +379,7 @@ watch(() => [chat.activeId, items.value.length], scrollToEnd, { immediate: true 
               <span
                 v-for="(file, index) in files"
                 :key="index"
-                class="flex max-w-[160px] items-center gap-[4px] rounded-[6px] bg-(--bg-subtle) py-[2px] pr-[2px] pl-[8px] text-[12px] dark:bg-white/10"
+                class="flex max-w-[160px] items-center gap-[4px] rounded-[6px] bg-surface-2 py-[2px] pr-[2px] pl-[8px] text-[12px] dark:bg-white/10"
               >
                 <span class="truncate">{{ file.name }}</span>
                 <button
@@ -406,7 +400,7 @@ watch(() => [chat.activeId, items.value.length], scrollToEnd, { immediate: true 
               />
               <button
                 type="button"
-                class="grid size-[30px] cursor-pointer place-items-center rounded-[8px] text-(--text-muted) transition-all duration-200 hover:bg-(--bg-orange)/10 hover:text-(--bg-orange)"
+                class="grid size-[30px] cursor-pointer place-items-center rounded-[8px] text-fg-muted transition-all duration-200 hover:bg-surface-2 hover:text-fg"
                 aria-label="Criar tarefas com IA"
                 title="Criar tarefas com IA"
                 @click="router.hasRoute('Assistant') && router.push({ name: 'Assistant' })"

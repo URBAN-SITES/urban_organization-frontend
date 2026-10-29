@@ -163,21 +163,20 @@ onMounted(async () => {
 
 const chip =
   'h-[26px] cursor-pointer rounded-full border px-[10px] text-[12px] transition-colors disabled:cursor-not-allowed disabled:opacity-50'
-const idle =
-  'border-(--border-default) hover:border-(--chat-ai) hover:text-(--chat-ai) dark:border-(--border-inverse)'
+const idle = 'border-border hover:border-(--chat-ai) hover:text-(--chat-ai)'
 const active = 'border-(--chat-ai) bg-(--chat-ai) text-white'
 const field =
-  'min-w-0 flex-1 rounded-[8px] border border-(--border-default) bg-transparent px-[10px] py-[5px] text-[12.5px] outline-none focus:border-(--chat-ai) disabled:opacity-60 dark:border-(--border-inverse)'
+  'min-w-0 flex-1 rounded-[8px] border border-border bg-transparent px-[10px] py-[5px] text-[12.5px] outline-none focus:border-(--chat-ai) disabled:opacity-60'
 </script>
 
 <template>
   <div
-    class="flex min-w-0 items-start gap-[12px] rounded-[12px] border border-(--border-default) bg-(--surface) px-[12px] py-[12px] dark:border-(--border-inverse) dark:bg-black/20"
+    class="flex min-w-0 items-start gap-[12px] rounded-[12px] border border-border bg-surface-1 px-[12px] py-[12px] dark:bg-black/20"
   >
     <span
       :class="[
         'material-symbols-outlined text-[20px]!',
-        done ? 'text-(--chat-ai)' : 'text-(--text-muted)',
+        done ? 'text-(--chat-ai)' : 'text-fg-muted',
       ]"
       aria-hidden="true"
       >{{ done ? 'task_alt' : 'radio_button_unchecked' }}</span
@@ -186,9 +185,7 @@ const field =
       <p :class="['text-[13.5px] font-semibold', done ? 'line-through opacity-70' : '']">
         {{ current.title }}
       </p>
-      <p
-        class="flex flex-wrap items-center gap-x-[8px] gap-y-[4px] text-[12px] text-(--text-muted)"
-      >
+      <p class="flex flex-wrap items-center gap-x-[8px] gap-y-[4px] text-[12px] text-fg-muted">
         <span class="flex items-center gap-[6px]">
           <ChatAvatar :name="current.assignee_name ?? 'Sem responsável'" :size="18" />
           {{ current.assignee_name ?? 'Sem responsável' }}
@@ -391,13 +388,13 @@ const field =
               type="button"
               :disabled="locked"
               :aria-label="`Remover ${item.content}`"
-              class="cursor-pointer text-(--text-muted) hover:text-(--destructive)"
+              class="cursor-pointer text-fg-muted hover:text-(--destructive)"
               @click.prevent="removeItem(item)"
             >
               ×
             </button>
           </label>
-          <p v-if="!checklist.length" class="text-[12px] text-(--text-muted)">Nenhum item ainda.</p>
+          <p v-if="!checklist.length" class="text-[12px] text-fg-muted">Nenhum item ainda.</p>
           <form class="flex gap-[6px]" @submit.prevent="addItem">
             <input
               v-model="draft.item"
@@ -419,7 +416,7 @@ const field =
             :key="comment.id"
             class="flex flex-col gap-[2px] text-[12.5px]"
           >
-            <p class="text-[11.5px] text-(--text-muted)">
+            <p class="text-[11.5px] text-fg-muted">
               {{ comment.author_name }} · {{ new Date(comment.created_at).toLocaleString('pt-BR') }}
               <button
                 v-if="comment.id === justPosted"
@@ -433,9 +430,7 @@ const field =
             </p>
             <p class="whitespace-pre-wrap break-words">{{ comment.content }}</p>
           </div>
-          <p v-if="!comments.length" class="text-[12px] text-(--text-muted)">
-            Nenhum comentário ainda.
-          </p>
+          <p v-if="!comments.length" class="text-[12px] text-fg-muted">Nenhum comentário ainda.</p>
           <form class="flex gap-[6px]" @submit.prevent="postComment">
             <input
               v-model="draft.comment"
@@ -457,7 +452,7 @@ const field =
       </div>
 
       <p v-if="error" role="alert" class="text-[12px] text-(--destructive)">{{ error }}</p>
-      <p class="break-all font-mono text-[10px] text-(--text-muted)" :title="current.id">
+      <p class="break-all font-mono text-[10px] text-fg-muted" :title="current.id">
         ID: {{ current.id }}
       </p>
     </div>
