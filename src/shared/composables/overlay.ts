@@ -32,7 +32,9 @@ export function useModalLayer(
   useFocusTrap(panel, open, options)
 
   useEventListener(document, 'keydown', (event: KeyboardEvent) => {
-    if (event.key !== 'Escape' || !open.value || stack[stack.length - 1] !== id) return
+    // um menu ou popover aberto por cima já tratou o Esc (preventDefault)
+    if (event.key !== 'Escape' || event.defaultPrevented) return
+    if (!open.value || stack[stack.length - 1] !== id) return
     event.preventDefault()
     close()
   })

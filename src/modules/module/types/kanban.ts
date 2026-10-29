@@ -1,7 +1,37 @@
 import type { UUID, ISODate, ISODateTime, ITasks } from '@/shared/types'
 
 export type { TaskPriority } from '@/shared/types'
-export type Task = ITasks
+export interface Label {
+  id: UUID
+  name: string
+  color: string
+}
+export interface CreateLabelRequest {
+  name: string
+  color?: string
+}
+/** Tarefa do quadro: o contrato comum (ITasks) mais etiquetas e subtarefas. */
+export interface Task extends ITasks {
+  labels: Label[]
+  subtask_total: number
+  subtask_done: number
+}
+/** Quem pode ver o projeto: opções de responsável e de @menção. */
+export interface Person {
+  id: UUID
+  name: string
+  email: string
+}
+export type TaskActivityAction = 'created' | 'updated' | 'moved' | 'commented' | 'deleted'
+export interface TaskActivity {
+  id: UUID
+  action: TaskActivityAction
+  /** campo → [antes, depois]; em comentários, { comment: trecho } */
+  changes: Record<string, [string | null, string | null] | string>
+  actor_id: UUID | null
+  actor_name: string | null
+  created_at: ISODateTime
+}
 export type SectorRole = 'manager' | 'editor' | 'viewer'
 export type StatusCategory = 'todo' | 'in_progress' | 'done'
 
@@ -88,6 +118,7 @@ export interface CreateTaskRequest {
   assignee?: UUID | null
   status?: UUID
   parent?: UUID
+  label_ids?: UUID[]
 }
 export type UpdateTaskRequest = Partial<Omit<CreateTaskRequest, 'status' | 'parent'>>
 export interface MoveTaskRequest {
@@ -111,10 +142,12 @@ export interface Comment {
   author_id: UUID
   author_name: string
   content: string
+  mentions: { id: UUID; name: string }[]
   created_at: ISODateTime
 }
 export interface WriteCommentRequest {
   content: string
+  mentions?: UUID[]
 }
 export interface ResourceLink {
   id: UUID
@@ -133,7 +166,12 @@ export type UpdateResourceLinkRequest = Partial<CreateResourceLinkRequest>
 export interface TaskFilters {
   status?: string
   assignee?: string
+  assignee__isnull?: boolean
   priority?: Task['priority']
+  /** várias prioridades separadas por vírgula */
+  priority__in?: string
+  label?: string
+  due_date__isnull?: boolean
   parent?: string
   parent__isnull?: boolean
   due_before?: string
