@@ -7,7 +7,7 @@ defineProps<{ title: string; description?: string; icon?: Component }>()
 </script>
 
 <template>
-  <div class="flex flex-col items-center justify-center gap-3 px-6 py-12 text-center">
+  <div class="ui-rise flex flex-col items-center justify-center gap-3 px-6 py-12 text-center">
     <span
       v-if="icon"
       class="grid size-10 place-items-center rounded-card border border-border bg-surface-2 text-fg-muted"

@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { watch } from 'vue'
+import { ref, watch } from 'vue'
 import { Toaster, toast } from 'vue-sonner'
 import { useRoute, useRouter } from 'vue-router'
+import { bootFailed } from '@/app/boot'
+import ConnectionStatus from '@/app/components/ConnectionStatus.vue'
+import RouteProgress from '@/app/components/RouteProgress.vue'
 import { useTheme } from '@/app/composables/useTheme'
 
 // o tema do Toaster acompanha o tema da aplicação
@@ -9,27 +12,47 @@ const { isDark } = useTheme()
 import { AuthTransitionOverlay, useAuthStore } from '@/modules/auth'
 import { finishGoogleConnect } from '@/modules/calendar_sync'
 import { useNotificationSession } from '@/modules/notifications'
-import { UiConfirmHost } from '@/shared/components'
+import { UiConfirmHost, UiErrorState } from '@/shared/components'
 
 const auth = useAuthStore()
 const route = useRoute()
 useNotificationSession(() => auth.user?.id)
 
+// Entrar ou sair troca o contexto inteiro (área de acesso <-> app): transição um pouco mais marcada.
+const transition = ref('page')
+watch(
+  () => route.meta.transitionGroup,
+  (group, previous) => {
+    transition.value = group === 'auth' || previous === 'auth' ? 'page-context' : 'page'
+  },
+)
+
+// A capa de saída só some depois que a sessão foi encerrada e a tela de entrada já está montada.
+// O mínimo curto evita um piscar quando o servidor responde rápido; não antecipa nada.
+const MIN_SIGN_OUT_COVER_MS = 450
 watch(
   () => route.meta.transitionGroup,
   (group) => {
     if (group !== 'auth' || !auth.isSigningOut) return
-
-    // Mantém o wipe visível tempo suficiente para completar antes de revelar a tela de entrada.
-    const elapsed = Date.now() - auth.signOutStartedAt
-    const remaining = Math.max(0, 1100 - elapsed)
-    if (remaining) window.setTimeout(auth.finishSignOut, remaining)
-    else auth.finishSignOut()
+    const remaining = Math.max(0, MIN_SIGN_OUT_COVER_MS - (Date.now() - auth.signOutStartedAt))
+    window.setTimeout(auth.finishSignOut, remaining)
   },
 )
 
-// volta do consentimento do Google (Meet, Drive...)
+// a primeira navegação falhou (sem rede ao checar a sessão): oferece tentar de novo
 const router = useRouter()
+const retrying = ref(false)
+async function retryBoot() {
+  retrying.value = true
+  try {
+    await router.replace(window.location.pathname + window.location.search + window.location.hash)
+    bootFailed.value = router.currentRoute.value.matched.length === 0
+  } finally {
+    retrying.value = false
+  }
+}
+
+// volta do consentimento do Google (Meet, Drive...)
 finishGoogleConnect()
   .then(async (returnTo) => {
     if (returnTo === null) return
@@ -42,9 +65,19 @@ finishGoogleConnect()
 </script>
 
 <template>
-  <RouterView v-slot="{ Component, route }">
-    <Transition name="page" mode="out-in" appear>
-      <component :is="Component" :key="route.meta.transitionGroup ?? route.path" />
+  <RouteProgress />
+  <ConnectionStatus />
+  <main v-if="bootFailed" class="grid min-h-dvh place-items-center bg-bg">
+    <UiErrorState
+      title="Não foi possível abrir o Inceptum"
+      description="Não conseguimos confirmar sua sessão. Confira a conexão e tente de novo."
+      :retrying="retrying"
+      @retry="retryBoot"
+    />
+  </main>
+  <RouterView v-slot="{ Component, route: current }">
+    <Transition :name="transition" mode="out-in" appear>
+      <component :is="Component" :key="current.meta.transitionGroup ?? current.path" />
     </Transition>
   </RouterView>
   <!-- até 3 toasts visíveis; os seguintes esperam na fila do vue-sonner -->
@@ -58,9 +91,7 @@ finishGoogleConnect()
   <UiConfirmHost />
   <AuthTransitionOverlay
     :visible="auth.isSigningOut"
-    eyebrow="Sessão segura"
-    title="Encerrando sua"
-    highlight="sessão"
-    description="Estamos finalizando sua saída e protegendo seus dados. Até a próxima!"
+    title="Saindo da sua conta..."
+    description="Encerrando a sessão neste dispositivo."
   />
 </template>

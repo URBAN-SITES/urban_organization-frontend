@@ -39,6 +39,8 @@ function validate() {
 }
 
 async function handleSubmit() {
+  // Enter repetido no campo não dispara um segundo envio
+  if (isSubmitting.value || isGoogleSubmitting.value) return
   formError.value = ''
   if (!validate()) return
   isSubmitting.value = true
@@ -181,6 +183,7 @@ async function handleGoogleCredential(credential: string) {
         block
         :icon-right="ArrowRight"
         :loading="isSubmitting"
+        loading-text="Enviando código..."
         :disabled="isGoogleSubmitting"
         class="mt-2"
       >

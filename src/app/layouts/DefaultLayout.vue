@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, provide, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { toast } from 'vue-sonner'
 import AppSidebar from './components/AppSidebar.vue'
 import CommandPalette from './components/CommandPalette.vue'
 import MobileNav from './components/MobileNav.vue'
@@ -30,8 +31,15 @@ watch(
 
 const paletteOpen = ref(false)
 
+// a capa de saída (App.vue) fica visível do clique até a tela de entrada estar montada
 async function signOut() {
-  await auth.signOut()
+  if (auth.isSigningOut) return
+  try {
+    await auth.signOut()
+  } catch {
+    toast.error('Não foi possível sair agora. Confira a conexão e tente de novo.')
+    return
+  }
   organizations.organizations = []
   await router.push('/entrar')
 }
@@ -59,10 +67,17 @@ provide(ShellKey, {
     <div class="flex min-h-dvh items-start bg-bg">
       <AppSidebar />
       <main class="min-w-0 flex-1 pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
-        <slot><RouterView /></slot>
+        <slot>
+          <!-- sem key: só anima quando a tela muda, não quando muda só o parâmetro ou a query -->
+          <RouterView v-slot="{ Component }">
+            <Transition name="page" mode="out-in">
+              <component :is="Component" />
+            </Transition>
+          </RouterView>
+        </slot>
       </main>
     </div>
-    <MobileNav @sign-out="signOut" />
+    <MobileNav />
     <CommandPalette v-if="auth.user" v-model:open="paletteOpen" @sign-out="signOut" />
   </div>
 </template>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import UiSpinner from '../ui/UiSpinner.vue'
 
 interface Props {
   variant?: 'primary' | 'secondary' | 'ghost' | 'destructive' | 'success'
@@ -72,9 +73,7 @@ const buttonClasses = computed(() => [
 
 <template>
   <button :type="type" :disabled="disabled || loading" :class="['mt-5 group', buttonClasses]">
-    <span v-if="loading" class="material-symbols-outlined animate-spin text-[18px]">
-      progress_activity
-    </span>
+    <UiSpinner v-if="loading" :size="16" />
 
     <span
       v-else-if="icon && iconPosition === 'left'"

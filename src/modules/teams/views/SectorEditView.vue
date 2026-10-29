@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { getErrorMessage } from '@/app/plugins/axios'
-import { BaseButton, SubheaderComp, TopbarComp } from '@/shared/components'
+import { BaseButton, SubheaderComp, TopbarComp, UiSpinner } from '@/shared/components'
 import { avatar } from '@/shared/utils/people'
 import { categoryColors } from '@/shared/utils/chartColors'
 import {
@@ -207,8 +207,9 @@ const field =
         Esse setor não existe, foi arquivado ou você não tem acesso a ele.
         <RouterLink to="/equipe" class="underline">Voltar para Equipe e setores</RouterLink>
       </p>
-      <p v-else-if="loading && !sector" role="status" class="text-[14px] text-(--text-muted)">
-        Carregando setor…
+      <p v-else-if="loading && !sector" class="flex items-center gap-2 text-14 text-fg-muted">
+        <UiSpinner :size="16" label="Carregando projeto" />
+        Carregando projeto...
       </p>
 
       <template v-else-if="sector">

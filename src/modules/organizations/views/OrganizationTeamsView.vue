@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useAuthStore } from '@/modules/auth'
-import { BaseButton } from '@/shared/components'
+import { BaseButton, UiSpinner } from '@/shared/components'
 import { getErrorMessage } from '@/app/plugins/axios'
 import {
   listTeams,
@@ -203,7 +203,10 @@ onBeforeUnmount(() => {
         @click="newTeam"
       />
     </div>
-    <p v-if="loading || busy" role="status">Carregando…</p>
+    <p v-if="loading || busy" class="flex items-center gap-2 text-13 text-fg-muted">
+      <UiSpinner :size="14" />
+      Carregando...
+    </p>
     <div v-if="error" class="workspace-error" role="alert">
       {{ error }} <button :disabled="saving" @click="initialize">Tentar novamente</button>
     </div>
