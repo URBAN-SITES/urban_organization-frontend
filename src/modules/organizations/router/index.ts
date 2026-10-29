@@ -8,10 +8,15 @@ export const organizationRoutes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
   },
   {
-    path: '/organizacoes/:organizationId/setores',
+    path: '/organizacoes/:organizationId/projetos',
     name: 'OrganizationSectors',
-    component: () => import('../views/OrganizationSectorsView.vue'),
+    component: () => import('../views/OrganizationProjectsView.vue'),
     meta: { requiresAuth: true },
+  },
+  // endereço antigo (links salvos e e-mails já enviados)
+  {
+    path: '/organizacoes/:organizationId/setores',
+    redirect: (to) => ({ name: 'OrganizationSectors', params: to.params }),
   },
   {
     path: '/organizacoes/:organizationId/configuracoes',

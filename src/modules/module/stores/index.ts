@@ -40,7 +40,9 @@ export const useSectorsStore = defineStore('sectors', () => {
     if (organizationId.value !== orgId) sectors.value = []
     organizationId.value = orgId
     const items = await fetchAllPages((page) => listSectors(orgId, page))
-    if (organizationId.value === orgId) sectors.value = items
+    // fixados primeiro (a lista já vem por nome do servidor; sort é estável)
+    if (organizationId.value === orgId)
+      sectors.value = items.sort((a, b) => Number(!!b.is_favorite) - Number(!!a.is_favorite))
   }
 
   async function create(orgId: string, payload: CreateSectorRequest): Promise<Sector> {
