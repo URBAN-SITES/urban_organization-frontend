@@ -174,3 +174,20 @@ test('failed unregister preserves token so logout can be retried after reload', 
   assert.deepEqual(removed, ['saved'])
   assert.equal(localStorage.getItem('resenha.pushToken'), null)
 })
+
+test('the kind filter goes to the server and does not overwrite the unread badge', async () => {
+  const store = useNotificationsStore()
+  const calls: unknown[] = []
+  api.listNotifications = async (params: unknown) => {
+    calls.push(params)
+    const unreadTotal = (params as { kind?: string }).kind ? 1 : 4
+    return { count: unreadTotal, next: '/?page=2', results: [item(calls.length)] }
+  }
+  await store.setFilter({ unread: true, kind: 'mention' })
+  await store.loadMore()
+  assert.deepEqual(calls.slice(0, 2), [{ unread: true, kind: 'mention' }, { unread: true }])
+  assert.deepEqual(calls.at(-1), { unread: true, kind: 'mention', page: 2 })
+  assert.equal(store.unreadCount, 4)
+  store.reset()
+  assert.equal(store.kind, null)
+})
