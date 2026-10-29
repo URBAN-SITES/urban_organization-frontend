@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ArrowRight, Lock, Mail, User } from '@lucide/vue'
-import { reactive, ref } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { GitHubLoginButton } from '@/modules/github'
 import { UiButton, UiCheckbox, UiInput } from '@/shared/components'
@@ -23,6 +23,9 @@ const name = ref(authFlow.name)
 const email = ref(
   authFlow.email || (typeof route.query.email === 'string' ? route.query.email : ''),
 )
+// mantém nome e e-mail ao alternar entre cadastro e login (a senha não)
+watch(name, (value) => (authFlow.name = value))
+watch(email, (value) => (authFlow.email = value))
 const password = ref(authFlow.password)
 const acceptedTerms = ref(false)
 const errors = reactive({ name: '', email: '', password: '', terms: '' })
