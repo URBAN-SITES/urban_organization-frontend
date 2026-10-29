@@ -1,10 +1,23 @@
 <script setup lang="ts">
 import { ChartNoAxesColumn, Moon, Sun, Users, Zap } from '@lucide/vue'
+import { ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useTheme } from '@/app/composables/useTheme'
 import { UiIcon, UiIconButton } from '@/shared/components'
 
 /** Moldura das telas de acesso e do onboarding: painel de imagem fixo à esquerda, conteúdo à direita. */
 const { isDark, toggleTheme } = useTheme()
+const route = useRoute()
+
+// avançar no fluxo (entrar -> criar conta -> código) desliza para a esquerda; voltar, para a direita
+const direction = ref(1)
+watch(
+  () => route.meta.authStep,
+  (to, from) => (direction.value = (to ?? 0) >= (from ?? 0) ? 1 : -1),
+)
+
+// entrar e criar conta ficam em cache: alternar entre elas não apaga o que já foi digitado
+const KEEP = ['LoginView', 'RegisterView']
 const image = `${import.meta.env.BASE_URL}aside-direita.webp`
 
 const FEATURES = [
@@ -33,7 +46,7 @@ const FEATURES = [
 
       <img src="/wordmark-inverse.svg" alt="Inceptum" class="relative w-36" />
 
-      <div class="relative max-w-lg">
+      <div class="auth-aside-copy relative max-w-lg">
         <span class="mb-6 block h-0.5 w-8 bg-accent" aria-hidden="true" />
         <p class="text-32 leading-tight font-semibold tracking-[-0.02em]">
           Grandes projetos começam com <span class="text-accent">organização.</span>
@@ -58,7 +71,8 @@ const FEATURES = [
       </div>
     </aside>
 
-    <main class="flex min-h-dvh min-w-0 flex-col px-4 py-5 sm:px-10">
+    <!-- overflow-x-clip: o formulário que sai desliza para fora sem criar rolagem horizontal -->
+    <main class="flex min-h-dvh min-w-0 flex-col overflow-x-clip px-4 py-5 sm:px-10">
       <div class="flex items-center justify-between">
         <span class="lg:invisible">
           <img src="/wordmark.svg" alt="Inceptum" class="w-28 dark:hidden" />
@@ -71,13 +85,16 @@ const FEATURES = [
         />
       </div>
 
-      <div class="flex flex-1 items-center justify-center py-10">
-        <div class="w-full max-w-100">
+      <!-- alinhado ao topo: formulários de alturas diferentes trocam sem o conteúdo pular -->
+      <div class="flex flex-1 justify-center pt-8 pb-10 sm:pt-[max(2.5rem,10vh)]">
+        <div class="auth-stage w-full max-w-100" :style="{ '--auth-dir': direction }">
           <!-- telas de acesso usam as rotas filhas; o onboarding passa o próprio conteúdo -->
           <slot>
-            <RouterView v-slot="{ Component, route }">
-              <Transition name="page" mode="out-in" appear>
-                <component :is="Component" :key="route.path" />
+            <RouterView v-slot="{ Component, route: current }">
+              <Transition name="auth-slide" appear>
+                <KeepAlive :include="KEEP">
+                  <component :is="Component" :key="current.path" class="auth-view" />
+                </KeepAlive>
               </Transition>
             </RouterView>
           </slot>
@@ -88,3 +105,84 @@ const FEATURES = [
     </main>
   </div>
 </template>
+
+<style>
+/* Troca entre telas de acesso: a que sai e a que entra ocupam a mesma célula e deslizam juntas. */
+.auth-stage {
+  display: grid;
+}
+
+.auth-stage > * {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
+.auth-slide-enter-active {
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out);
+}
+
+.auth-slide-leave-active {
+  pointer-events: none;
+  transition:
+    opacity var(--dur-base-exit) var(--ease-in),
+    transform var(--dur-slow-exit) var(--ease-in);
+}
+
+.auth-slide-enter-from {
+  opacity: 0;
+  transform: translate3d(calc(var(--auth-dir, 1) * var(--motion-slide)), 0, 0);
+}
+
+.auth-slide-leave-to {
+  opacity: 0;
+  transform: translate3d(calc(var(--auth-dir, 1) * var(--motion-slide) * -1), 0, 0)
+    scale(var(--motion-scale));
+}
+
+/* Título, botões sociais, campos e links entram em sequência curta (reaplicado ao voltar do cache). */
+@keyframes auth-item-in {
+  from {
+    opacity: 0;
+    transform: translate3d(calc(var(--auth-dir, 1) * var(--motion-slide) / 3), 0, 0);
+  }
+}
+
+.auth-view > :not(form),
+.auth-view form > * {
+  animation: auth-item-in var(--dur-slow) var(--ease-out) both;
+}
+
+.auth-view > :nth-child(2),
+.auth-view form > :nth-child(1) {
+  animation-delay: 40ms;
+}
+.auth-view form > :nth-child(2) {
+  animation-delay: 70ms;
+}
+.auth-view form > :nth-child(3) {
+  animation-delay: 100ms;
+}
+.auth-view form > :nth-child(4) {
+  animation-delay: 130ms;
+}
+.auth-view form > :nth-child(n + 5),
+.auth-view > :nth-child(n + 3) {
+  animation-delay: 160ms;
+}
+
+/* painel decorativo: a frase e os destaques aparecem uma vez, ao abrir a área de acesso */
+.auth-aside-copy > * {
+  animation: ui-rise var(--dur-slow) var(--ease-out) both;
+}
+.auth-aside-copy > :nth-child(2) {
+  animation-delay: 60ms;
+}
+.auth-aside-copy > :nth-child(3) {
+  animation-delay: 120ms;
+}
+.auth-aside-copy > :nth-child(4) {
+  animation-delay: 180ms;
+}
+</style>

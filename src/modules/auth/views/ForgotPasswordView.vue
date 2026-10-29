@@ -70,6 +70,7 @@ async function handleSubmit() {
         size="xl"
         block
         :loading="isSubmitting"
+        loading-text="Enviando código..."
         class="mt-2"
       >
         Enviar código

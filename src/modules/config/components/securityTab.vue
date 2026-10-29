@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { BaseButton } from '@/shared/components'
+import { BaseButton, UiErrorState, UiSkeleton } from '@/shared/components'
 import type { ActiveSession } from '../types'
 import ConfigCard from './configCard.vue'
 import ConfigListItem from './configListItem.vue'
@@ -41,11 +41,21 @@ const router = useRouter()
         />
       </ConfigCard>
       <ConfigCard title="Sessões ativas" class="gap-[6px]!">
-        <p v-if="loading" role="status">Carregando sessões…</p>
-        <div v-else-if="error" role="alert">
-          <p>{{ error }}</p>
-          <button type="button" class="underline" @click="$emit('retry')">Tentar novamente</button>
+        <div v-if="loading" role="status" aria-label="Carregando sessões" class="grid gap-3 py-1">
+          <div v-for="row in 2" :key="row" class="flex items-center gap-3">
+            <UiSkeleton class="size-9 shrink-0" />
+            <div class="grid flex-1 gap-1.5">
+              <UiSkeleton class="h-3.5 w-40" />
+              <UiSkeleton class="h-3 w-56 max-w-full" />
+            </div>
+          </div>
         </div>
+        <UiErrorState
+          v-else-if="error"
+          title="Não foi possível carregar as sessões"
+          :description="error"
+          @retry="$emit('retry')"
+        />
         <fieldset v-else :disabled="endingSession !== null">
           <ConfigListItem
             v-for="session in sessions"

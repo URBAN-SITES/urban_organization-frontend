@@ -13,7 +13,10 @@ const emit = defineEmits<{ retry: [] }>()
 </script>
 
 <template>
-  <div role="alert" class="flex flex-col items-center justify-center gap-3 px-6 py-12 text-center">
+  <div
+    role="alert"
+    class="ui-rise flex flex-col items-center justify-center gap-3 px-6 py-12 text-center"
+  >
     <span
       class="grid size-10 place-items-center rounded-card border border-border bg-danger-soft text-danger"
     >

@@ -127,6 +127,7 @@ onBeforeUnmount(() => clearInterval(timer))
         size="xl"
         block
         :loading="isSubmitting"
+        :loading-text="props.flow === 'register' ? 'Criando conta...' : 'Verificando...'"
         class="mt-2"
       >
         {{ props.flow === 'register' ? 'Confirmar e criar conta' : 'Verificar código' }}

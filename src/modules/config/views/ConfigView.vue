@@ -8,7 +8,13 @@ import { useAuthStore } from '@/modules/auth'
 import { useOrganizationsStore } from '@/modules/organizations'
 import { profilePayload, notificationSettings, validateAvatar } from '../utils'
 import { fetchSettings, updateSettings, uploadAvatar } from '../services'
-import { BaseButton, SubheaderComp, TopbarComp } from '@/shared/components'
+import {
+  BaseButton,
+  SubheaderComp,
+  TopbarComp,
+  UiErrorState,
+  UiSkeleton,
+} from '@/shared/components'
 import {
   ConfigTabs,
   NotificationsTab,
@@ -402,11 +408,22 @@ function handleCancel() {
 
       <ConfigTabs v-model="activeTab" :tabs="TABS" />
 
-      <p v-if="isLoading" role="status">Carregando perfil…</p>
-      <div v-else-if="loadError" role="alert">
-        <p>{{ loadError }}</p>
-        <BaseButton label="Tentar novamente" :full-width="false" @click="loadProfile" />
+      <div v-if="isLoading" role="status" aria-label="Carregando perfil" class="grid gap-4 py-2">
+        <div class="flex items-center gap-4">
+          <UiSkeleton circle class="size-16" />
+          <div class="grid gap-2">
+            <UiSkeleton class="h-4 w-44" />
+            <UiSkeleton class="h-3 w-60 max-w-full" />
+          </div>
+        </div>
+        <UiSkeleton v-for="row in 3" :key="row" class="h-10 w-full max-w-xl" />
       </div>
+      <UiErrorState
+        v-else-if="loadError"
+        title="Não foi possível carregar seu perfil"
+        :description="loadError"
+        @retry="loadProfile"
+      />
 
       <div
         v-if="!isLoading && !loadError"

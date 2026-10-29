@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { BaseButton } from '@/shared/components'
+import { BaseButton, UiSpinner } from '@/shared/components'
 import { useChargesStore } from '../stores'
 import type { Charge, PayChargeResponse } from '../types'
 import { formatCurrency } from '../utils'
@@ -144,9 +144,7 @@ const input =
         class="flex items-center justify-center gap-2 text-[13px] text-(--text-muted)"
         role="status"
       >
-        <span class="material-symbols-outlined animate-spin text-[18px]!" aria-hidden="true"
-          >progress_activity</span
-        >
+        <UiSpinner :size="16" label="Aguardando pagamento" />
         Aguardando a confirmação do pagamento…
       </p>
     </div>

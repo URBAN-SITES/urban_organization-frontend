@@ -6,6 +6,7 @@ import UiSpinner from './UiSpinner.vue'
 /**
  * Botão do sistema. `primary` é a única ação laranja da tela.
  * Em loading o rótulo fica invisível (sem mudar a largura) e o spinner aparece por cima.
+ * Com `loadingText` o rótulo troca pelo texto de progresso ("Entrando...") ao lado do spinner.
  * Com `href` vira um link com a mesma aparência (ex.: abrir uma página externa).
  */
 const {
@@ -22,6 +23,7 @@ const {
   icon?: Component
   iconRight?: Component
   loading?: boolean
+  loadingText?: string
   disabled?: boolean
   block?: boolean
   href?: string
@@ -63,13 +65,35 @@ const SIZES = {
       SIZES[size],
     ]"
   >
-    <span :class="['inline-flex items-center gap-[inherit]', loading ? 'invisible' : '']">
-      <UiIcon v-if="icon" :icon="icon" :size="size === 'lg' ? 16 : 14" />
-      <slot />
-      <UiIcon v-if="iconRight" :icon="iconRight" :size="size === 'lg' ? 16 : 14" />
+    <span
+      v-if="loading && loadingText"
+      class="ui-button-swap inline-flex items-center gap-[inherit]"
+    >
+      <UiSpinner :size="size === 'lg' ? 16 : 14" :label="loadingText" />
+      {{ loadingText }}
     </span>
-    <span v-if="loading" class="absolute inset-0 grid place-items-center">
-      <UiSpinner :size="size === 'lg' ? 16 : 14" />
-    </span>
+    <template v-else>
+      <span :class="['inline-flex items-center gap-[inherit]', loading ? 'invisible' : '']">
+        <UiIcon v-if="icon" :icon="icon" :size="size === 'lg' ? 16 : 14" />
+        <slot />
+        <UiIcon v-if="iconRight" :icon="iconRight" :size="size === 'lg' ? 16 : 14" />
+      </span>
+      <span v-if="loading" class="ui-button-swap absolute inset-0 grid place-items-center">
+        <UiSpinner :size="size === 'lg' ? 16 : 14" />
+      </span>
+    </template>
   </component>
 </template>
+
+<style>
+/* o conteúdo de carregamento entra com um fade curto, sem mexer no tamanho do botão */
+.ui-button-swap {
+  animation: ui-button-swap var(--dur-fast) var(--ease-out);
+}
+
+@keyframes ui-button-swap {
+  from {
+    opacity: 0;
+  }
+}
+</style>

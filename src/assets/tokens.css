@@ -4,6 +4,11 @@
  * Use as utilidades geradas pelo Tailwind: bg-surface-1, text-fg-muted, border-border,
  * rounded-control, text-13, shadow-float, duration-(--dur-fast), ease-out...
  * Constantes equivalentes para JS ficam em src/shared/motion.
+ *
+ * Durações por papel:
+ *   --dur-instant / --dur-fast  hover, press, tooltip, feedback de botão
+ *   --dur-base                  menus, popovers, listas, abas, estados que trocam no lugar
+ *   --dur-slow                  modais, drawers, páginas e troca de contexto (teto: 320ms)
  */
 
 :root,
@@ -45,6 +50,8 @@
   /* deslocamento das entradas; zera com prefers-reduced-motion */
   --motion-distance: 6px;
   --motion-scale: 0.98;
+  /* troca horizontal de contexto (ex.: entrar <-> criar conta) */
+  --motion-slide: 32px;
   /* 1 com movimento, 0 com prefers-reduced-motion (ex.: drawer entra só com fade) */
   --motion-on: 1;
 
@@ -80,6 +87,7 @@
 @media (prefers-reduced-motion: reduce) {
   :root {
     --motion-distance: 0px;
+    --motion-slide: 0px;
     --motion-scale: 1;
     --motion-on: 0;
     --dur-base: 150ms;

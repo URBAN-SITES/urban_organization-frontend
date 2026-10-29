@@ -101,6 +101,7 @@ async function handleSubmit() {
         size="xl"
         block
         :loading="isSubmitting"
+        loading-text="Salvando..."
         class="mt-2"
       >
         Redefinir senha

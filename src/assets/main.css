@@ -116,6 +116,26 @@
   opacity: 0;
 }
 
+/* Troca de contexto (entrar, sair): a área nova cresce levemente a partir do centro. */
+.page-context-enter-active {
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out);
+}
+
+.page-context-leave-active {
+  transition: opacity var(--dur-slow-exit) var(--ease-in);
+}
+
+.page-context-enter-from {
+  opacity: 0;
+  transform: scale(var(--motion-scale));
+}
+
+.page-context-leave-to {
+  opacity: 0;
+}
+
 /*
  * Movimento reduzido: só fades curtos. Transform muda sem animar; animações de
  * keyframes param, exceto as marcadas com .motion-keep (ex.: spinner).
