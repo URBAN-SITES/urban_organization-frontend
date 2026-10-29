@@ -16,7 +16,6 @@
   },
   "dependencies": {
     "@lucide/vue": "1.56.0",
-    "@mapbox/mapbox-gl-draw": "^1.5.2",
     "@mapbox/mapbox-gl-geocoder": "^5.1.2",
     "@tailwindcss/vite": "^4.3.3",
     "@vueuse/core": "^15.0.0",

@@ -54,6 +54,9 @@ export default defineConfig(({ mode }) => {
         filename: 'sw.ts',
         injectManifest: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+          // the map (~1.9 MB) and the meeting room (~0.5 MB) need the network anyway; they load on
+          // demand instead of being downloaded by every install
+          globIgnores: ['**/mapboxComp-*.js', '**/MeetingRoomView-*.js'],
           maximumFileSizeToCacheInBytes: 5000000,
         },
         manifest: {

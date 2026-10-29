@@ -1,9 +1,11 @@
-import { getToken, onMessage, type MessagePayload } from 'firebase/messaging'
-import { getFirebaseMessaging } from '@/firebase'
+import type { MessagePayload, Messaging } from 'firebase/messaging'
+
+// Firebase only loads when someone turns push on, keeping it out of the first page load.
+let messagingSdk: typeof import('firebase/messaging') | undefined
 
 export async function requestDeviceFcmToken(): Promise<{
   token: string
-  messaging: Awaited<ReturnType<typeof getFirebaseMessaging>>
+  messaging: Messaging
 }> {
   if (!('Notification' in window)) {
     throw new Error('Este navegador não oferece suporte a notificações.')
@@ -33,9 +35,14 @@ export async function requestDeviceFcmToken(): Promise<{
     throw new Error('A permissão para notificações não foi concedida.')
   }
 
+  const [{ getFirebaseMessaging }, sdk] = await Promise.all([
+    import('@/firebase'),
+    import('firebase/messaging'),
+  ])
+  messagingSdk = sdk
   const messaging = await getFirebaseMessaging()
   if (!serviceWorkerRegistration.active) await navigator.serviceWorker.ready
-  const token = await getToken(messaging, {
+  const token = await sdk.getToken(messaging, {
     vapidKey: import.meta.env.VITE_VAPID_KEY,
     serviceWorkerRegistration,
   })
@@ -47,9 +54,11 @@ export async function requestDeviceFcmToken(): Promise<{
   return { token, messaging }
 }
 
+/** Needs the `messaging` returned by requestDeviceFcmToken, which already loaded the SDK. */
 export function listenForForegroundMessages(
-  messaging: Awaited<ReturnType<typeof getFirebaseMessaging>>,
+  messaging: Messaging,
   onNotification: (payload: MessagePayload) => void,
 ): () => void {
-  return onMessage(messaging, onNotification)
+  if (!messagingSdk) throw new Error('Ative o push antes de ouvir as mensagens.')
+  return messagingSdk.onMessage(messaging, onNotification)
 }
