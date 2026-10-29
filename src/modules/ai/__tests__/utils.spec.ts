@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { aiActionNotes, aiVisibleActions, aiActionDeleted, aiActionLabel, aiActionTasks, aiActionTone } from '../utils/index.ts'
+import {
+  aiActionNotes,
+  aiVisibleActions,
+  aiActionDeleted,
+  aiActionLabel,
+  aiActionTasks,
+  aiActionTone,
+} from '../utils/index.ts'
 import type { AiAction } from '../types/index.ts'
 
 const task = { id: 't1', title: 'Revisar', priority: 'high' }
@@ -19,7 +26,10 @@ test('labels receipts from the real action name', () => {
 
 test('extracts tasks only from successful task receipts', () => {
   assert.equal(aiActionTasks(receipt({ result: task })).length, 1)
-  assert.equal(aiActionTasks(receipt({ action: 'task_list', result: { results: [task, {}] } })).length, 1)
+  assert.equal(
+    aiActionTasks(receipt({ action: 'task_list', result: { results: [task, {}] } })).length,
+    1,
+  )
   assert.equal(aiActionTasks(receipt({ status: 'failed', result: task })).length, 0)
   assert.equal(aiActionTasks(receipt({ action: 'sector_get', result: task })).length, 0)
 })
@@ -28,7 +38,10 @@ test('tone and deletion reflect the receipt status, not the model text', () => {
   assert.equal(aiActionTone(receipt({ status: 'confirmation_required' })), 'pending')
   assert.equal(aiActionTone(receipt({ status: 'uncertain' })), 'error')
   assert.equal(aiActionDeleted(receipt({ action: 'task_delete' })), true)
-  assert.equal(aiActionDeleted(receipt({ action: 'task_delete', status: 'confirmation_required' })), false)
+  assert.equal(
+    aiActionDeleted(receipt({ action: 'task_delete', status: 'confirmation_required' })),
+    false,
+  )
 })
 
 test('hides failed reads but keeps failed writes visible', () => {
@@ -48,8 +61,14 @@ test('reads server notes only from successful receipts', () => {
 test('recognizes a task draft receipt only when it succeeded', async () => {
   const { aiActionDraft } = await import('../utils/index.ts')
   const draft = { kind: 'task_draft', title: 'Fix' }
-  assert.equal(aiActionDraft(receipt({ action: 'task_draft', writes: false, result: draft }))?.title, 'Fix')
-  assert.equal(aiActionDraft(receipt({ action: 'task_draft', status: 'failed', result: draft })), null)
+  assert.equal(
+    aiActionDraft(receipt({ action: 'task_draft', writes: false, result: draft }))?.title,
+    'Fix',
+  )
+  assert.equal(
+    aiActionDraft(receipt({ action: 'task_draft', status: 'failed', result: draft })),
+    null,
+  )
   assert.equal(aiActionDraft(receipt({ result: draft })), null)
 })
 
@@ -60,8 +79,17 @@ test('matches people by name words, ignoring accents and "usuário"', async () =
     { id: '2', name: 'Nicole Souza' },
     { id: '3', name: 'Matheus Silva' },
   ]
-  assert.deepEqual(matchPeople('usuário NICOLÉ', people).map((p) => p.id), ['2'])
-  assert.deepEqual(matchPeople('matheus', people).map((p) => p.id), ['1', '3'])
-  assert.deepEqual(matchPeople('matheus silva', people).map((p) => p.id), ['3'])
+  assert.deepEqual(
+    matchPeople('usuário NICOLÉ', people).map((p) => p.id),
+    ['2'],
+  )
+  assert.deepEqual(
+    matchPeople('matheus', people).map((p) => p.id),
+    ['1', '3'],
+  )
+  assert.deepEqual(
+    matchPeople('matheus silva', people).map((p) => p.id),
+    ['3'],
+  )
   assert.deepEqual(matchPeople('zeca', people), [])
 })

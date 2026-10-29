@@ -16,7 +16,7 @@ const isCurrentLabel = (index: number) => isActive(index) || (props.completed &&
 
 const circleClasses = (index: number) => {
   if (isDone(index) || isActive(index)) {
-    return 'bg-(--bg-orange) text-white'
+    return 'bg-(--bg-orange) text-accent-fg'
   }
   return 'border border-(--border-default) text-(--text-muted) dark:border-(--border-inverse)'
 }

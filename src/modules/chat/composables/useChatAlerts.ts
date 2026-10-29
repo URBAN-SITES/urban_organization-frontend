@@ -1,4 +1,4 @@
-import { watch } from 'vue'
+import { onScopeDispose, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { useAuthStore } from '@/modules/auth'
@@ -18,9 +18,21 @@ export function useChatAlerts(): void {
   const route = useRoute()
   const router = useRouter()
 
-  useChatSocket((event) => {
-    if (auth.user) void chat.handleEvent(event, auth.user.id)
-  })
+  // Only signed-in users get a socket; logged-out pages (e.g. an invite link) would be refused.
+  let socket: ReturnType<typeof useChatSocket> | undefined
+  watch(
+    () => auth.user?.id,
+    (id) => {
+      socket?.close()
+      socket = id
+        ? useChatSocket((event) => {
+            if (auth.user) void chat.handleEvent(event, auth.user.id)
+          })
+        : undefined
+    },
+    { immediate: true },
+  )
+  onScopeDispose(() => socket?.close())
 
   watch(
     () => [auth.user?.id, organizations.current?.id] as const,

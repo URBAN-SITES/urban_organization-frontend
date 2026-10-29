@@ -2,7 +2,8 @@
 import { computed, nextTick, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
-import { BaseButton, TopbarComp } from '@/shared/components'
+import { BaseButton, TopbarComp, UiErrorState } from '@/shared/components'
+import { getErrorMessage } from '@/app/plugins/axios'
 import { useAuthStore } from '@/modules/auth'
 import { ensureGoogleConnected } from '@/modules/calendar_sync'
 import { useOrganizationsStore } from '@/modules/organizations'
@@ -185,15 +186,28 @@ watch(draft, (value) => {
   sendTyping(chat.activeId)
 })
 
+const loadError = ref('')
+const loading = ref(false)
+// the store keeps chat.error after a failed channel list; without channels there is nothing to show
+const failure = computed(() => loadError.value || (chat.channels.length ? '' : chat.error))
+
 async function init() {
-  if (!auth.user) await auth.loadUser() // a full reload on /chat has no user yet
-  if (!organizations.organizations.length) await organizations.load()
-  const org = organization.value
-  if (!org || !me.value) return
-  chat.reset() // never show another account's conversations
-  await organizations.loadMembers(org.id)
-  const others = organizations.members.map((m) => m.user_id).filter((id) => id !== me.value)
-  await chat.load(org.id, others)
+  loadError.value = ''
+  loading.value = true
+  try {
+    if (!auth.user) await auth.loadUser() // a full reload on /chat has no user yet
+    if (!organizations.organizations.length) await organizations.load()
+    const org = organization.value
+    if (!org || !me.value) return
+    chat.reset() // never show another account's conversations
+    await organizations.loadMembers(org.id)
+    const others = organizations.members.map((m) => m.user_id).filter((id) => id !== me.value)
+    await chat.load(org.id, others)
+  } catch (e) {
+    loadError.value = getErrorMessage(e, 'Tente de novo em instantes.')
+  } finally {
+    loading.value = false
+  }
 }
 
 onMounted(init)
@@ -220,7 +234,15 @@ watch(() => [chat.activeId, items.value.length], scrollToEnd, { immediate: true 
     <div
       class="flex min-h-0 flex-1 flex-col px-[20px] py-[12px] sm:px-[32px] sm:py-[20px] lg:px-[40px] lg:py-[28px]"
     >
-      <ChatPanelLayout>
+      <UiErrorState
+        v-if="failure"
+        title="Não foi possível abrir as mensagens"
+        :description="failure"
+        :retrying="loading"
+        class="my-auto"
+        @retry="init"
+      />
+      <ChatPanelLayout v-else>
         <template #aside>
           <h2
             class="px-[18px] pt-[18px] text-[17px]! leading-normal! font-semibold! tracking-normal!"

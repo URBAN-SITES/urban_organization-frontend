@@ -17,6 +17,8 @@ async function requireAssistantAccess() {
 export const chatRoutes: RouteRecordRaw[] = [
   {
     path: '/mensagens',
+    // the screen lives at /chat; without this the bare /mensagens URL rendered an empty layout
+    redirect: { name: 'Chat' },
     meta: { transitionGroup: 'default' },
     component: () => import('@/app/layouts/DefaultLayout.vue'),
     children: [

@@ -35,7 +35,7 @@ const SIZES = {
 <template>
   <span
     :class="[
-      'inline-grid shrink-0 place-items-center overflow-hidden rounded-full border border-border bg-surface-3 font-medium text-fg-muted select-none',
+      'inline-grid shrink-0 place-items-center overflow-hidden rounded-full border border-border bg-surface-3 font-medium text-fg select-none',
       SIZES[size],
     ]"
   >

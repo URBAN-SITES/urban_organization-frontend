@@ -169,7 +169,9 @@ async function handleSubmit(): Promise<void> {
       <PaymentSteps :current="1" />
     </template>
 
-    <div class="grid items-start gap-[20px] lg:grid-cols-[minmax(0,1fr)_360px]">
+    <div
+      class="grid grid-cols-[minmax(0,1fr)] items-start gap-[20px] lg:grid-cols-[minmax(0,1fr)_360px]"
+    >
       <form
         id="payment-form"
         class="flex flex-col gap-[16px]"

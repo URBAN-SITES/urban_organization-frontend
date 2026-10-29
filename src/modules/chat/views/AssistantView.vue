@@ -393,7 +393,7 @@ async function analyze() {
                   v-if="entry.report"
                   :href="entry.report.url"
                   :download="entry.report.file_name"
-                  class="flex w-fit items-center gap-[6px] rounded-[9px] bg-(--bg-orange) px-[12px] py-[8px] text-[13px] font-medium text-white transition-colors hover:bg-[#e85d00] dark:text-white"
+                  class="flex w-fit items-center gap-[6px] rounded-[9px] bg-(--bg-orange) px-[12px] py-[8px] text-[13px] font-medium text-accent-fg transition-colors hover:bg-accent-hover dark:text-accent-fg"
                 >
                   <span class="material-symbols-outlined text-[17px]!" aria-hidden="true"
                     >download</span

@@ -181,10 +181,7 @@ watch(token, load, { immediate: true })
             :full-width="false"
             @click="preview ? accept() : load()"
           />
-          <RouterLink
-            v-else-if="auth.user"
-            to="/"
-            class="workspace-link-button secondary"
+          <RouterLink v-else-if="auth.user" to="/" class="workspace-link-button secondary"
             >Ir para o início</RouterLink
           >
           <RouterLink v-else :to="{ name: 'Login' }" class="workspace-link-button secondary"

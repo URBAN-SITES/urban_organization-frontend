@@ -39,7 +39,7 @@ const buttonClasses = computed(() => [
   // VARIANTS
   {
     /* PRIMARY */
-    'bg-(--bg-orange) text-white hover:brightness-105': props.variant === 'primary',
+    'bg-(--bg-orange) text-accent-fg hover:brightness-105': props.variant === 'primary',
 
     /* SECONDARY */
     'dark:bg-(--surface-inverse) dark:text-(--text-inverse) bg-(--surface) text-(--text-primary) border border-(--border-default) dark:border-(--border-inverse) hover:border-(--bg-orange)/35 hover:bg-(--bg-orange)/5':

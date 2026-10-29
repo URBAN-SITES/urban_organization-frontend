@@ -266,7 +266,7 @@ const percent = (done: number, total: number) => (total ? Math.round((done * 100
                   <RouterLink
                     v-if="item.action !== 'deleted'"
                     :to="{ path: `/setores/${item.sector_id}`, query: { task: item.task_id } }"
-                    class="text-fg underline-offset-4 hover:underline"
+                    class="text-fg underline decoration-border-strong underline-offset-4 hover:decoration-fg"
                     >{{ item.task_title }}</RouterLink
                   >
                   <span v-else class="text-fg">{{ item.task_title }}</span>

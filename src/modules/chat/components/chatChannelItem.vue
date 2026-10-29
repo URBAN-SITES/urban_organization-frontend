@@ -55,10 +55,10 @@ const preview = computed(() => {
         </span>
       </span>
       <span class="flex items-center gap-[8px]">
-        <span class="flex-1 truncate text-[12px] text-(--text-muted)">{{ preview }}</span>
+        <span class="flex-1 truncate text-[12px] text-(--text-secondary) dark:text-(--text-muted)">{{ preview }}</span>
         <span
           v-if="channel.unread_count"
-          class="grid h-[16px] min-w-[16px] shrink-0 place-items-center rounded-full bg-(--bg-orange) px-[4px] text-[10px] leading-none font-semibold text-white"
+          class="grid h-[16px] min-w-[16px] shrink-0 place-items-center rounded-full bg-(--bg-orange) px-[4px] text-[10px] leading-none font-semibold text-accent-fg"
           :aria-label="`${channel.unread_count} não lidas`"
         >
           {{ channel.unread_count }}

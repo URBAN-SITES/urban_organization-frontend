@@ -71,11 +71,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <PaymentPage
-    :crumbs="['Pagamentos', 'Confirmação']"
-    :title="heading"
-    :description="message"
-  >
+  <PaymentPage :crumbs="['Pagamentos', 'Confirmação']" :title="heading" :description="message">
     <template #top>
       <PaymentSteps :current="3" :completed="approved" />
     </template>

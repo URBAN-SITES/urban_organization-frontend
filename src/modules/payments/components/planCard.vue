@@ -33,7 +33,7 @@ const FEATURE_ICONS: Record<PlanFeature['icon'], { icon: string; class: string }
   >
     <span
       v-if="plan.highlighted"
-      class="absolute top-4 right-4 rounded-full bg-(--bg-orange)/10 px-2 py-0.5 text-[11px] leading-normal font-medium text-(--bg-orange) dark:bg-(--bg-orange)/15"
+      class="absolute top-4 right-4 rounded-full bg-accent-soft px-2 py-0.5 text-[11px] leading-normal font-medium text-(--bg-orange) dark:bg-(--bg-orange)/15"
     >
       Recomendado
     </span>
@@ -77,10 +77,10 @@ const FEATURE_ICONS: Record<PlanFeature['icon'], { icon: string; class: string }
       :class="[
         'no-site-hover flex h-[42px] w-full cursor-pointer items-center justify-center gap-[6px] rounded-[10px] text-[14px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--bg-orange) disabled:cursor-default disabled:opacity-60',
         plan.highlighted
-          ? 'bg-(--bg-orange) text-white hover:bg-[#e85d00]'
+          ? 'bg-(--bg-orange) text-accent-fg hover:bg-accent-hover'
           : current || plan.id === 'free'
             ? 'border border-(--border-default) bg-(--bg-subtle) text-(--text-secondary) dark:border-(--border-inverse) dark:bg-white/5 dark:text-(--text-inverse-muted)'
-            : 'bg-(--bg-orange) text-white',
+            : 'bg-(--bg-orange) text-accent-fg',
       ]"
       @click="$emit('select')"
     >

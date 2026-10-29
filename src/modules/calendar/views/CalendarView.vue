@@ -31,7 +31,7 @@ const CHIP: Record<CalendarState, string> = {
   late: 'bg-[#fde8e8] text-[#c42b2b] dark:bg-[#dc2626]/20 dark:text-[#ff8a8a]',
   in_progress:
     'bg-(--bg-orange)/10 text-(--bg-orange) dark:bg-(--bg-orange)/20 dark:text-(--bg-orange)',
-  todo: 'bg-(--bg-muted) text-(--text-secondary) dark:bg-white/10 dark:text-(--text-inverse-muted)',
+  todo: 'bg-(--bg-muted) text-(--text-secondary) dark:bg-white/10 dark:text-fg',
 }
 
 const organizations = useOrganizationsStore()
@@ -218,7 +218,7 @@ const dayLabel = (date: string, count: number) =>
                 :class="[
                   'text-[13px] leading-none',
                   day.date === today
-                    ? 'grid size-[26px] place-items-center rounded-full bg-(--bg-orange) font-semibold text-white shadow-[0_2px_8px_rgba(255,103,0,0.3)]'
+                    ? 'grid size-[26px] place-items-center rounded-full bg-(--bg-orange) font-semibold text-accent-fg shadow-[0_2px_8px_rgba(255,103,0,0.3)]'
                     : day.inMonth
                       ? ''
                       : 'text-(--text-muted)',

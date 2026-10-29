@@ -51,7 +51,7 @@ const chartOptions = {
       {{ empty }}
     </p>
     <div v-else class="relative h-[200px] min-w-0">
-      <Bar :data="chartData" :options="chartOptions" />
+      <Bar :data="chartData" :options="chartOptions" :aria-label="`Gráfico: ${title}`" />
     </div>
   </div>
 </template>
