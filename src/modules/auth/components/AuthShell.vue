@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { ChartNoAxesColumn, Moon, Sun, Users, Zap } from '@lucide/vue'
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useTheme } from '@/app/composables/useTheme'
 import { UiIcon, UiIconButton } from '@/shared/components'
 
-/** Moldura das telas de acesso e do onboarding: painel de imagem fixo à esquerda, conteúdo à direita. */
+/**
+ * Moldura das telas de acesso e do onboarding: painel de imagem de um lado, conteúdo do outro.
+ * No cadastro o painel troca de lado (desliza para a direita) e o formulário passa para a esquerda.
+ */
 const { isDark, toggleTheme } = useTheme()
 const route = useRoute()
 
@@ -15,6 +18,8 @@ watch(
   () => route.meta.authStep,
   (to, from) => (direction.value = (to ?? 0) >= (from ?? 0) ? 1 : -1),
 )
+
+const asideRight = computed(() => Boolean(route.meta.authAsideRight))
 
 // entrar e criar conta ficam em cache: alternar entre elas não apaga o que já foi digitado
 const KEEP = ['LoginView', 'RegisterView']
@@ -28,10 +33,13 @@ const FEATURES = [
 </script>
 
 <template>
-  <div class="grid min-h-dvh bg-bg text-fg lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+  <div
+    :data-aside="asideRight ? 'right' : 'left'"
+    class="auth-shell grid min-h-dvh overflow-x-clip bg-bg text-fg lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]"
+  >
     <!-- o painel é sempre escuro, independente do tema -->
     <aside
-      class="dark sticky top-0 hidden h-dvh flex-col justify-between overflow-hidden bg-black p-10 text-fg lg:flex xl:p-12"
+      class="auth-aside dark sticky top-0 hidden h-dvh flex-col justify-between overflow-hidden bg-black p-10 text-fg lg:flex xl:p-12"
     >
       <img
         :src="image"
@@ -72,7 +80,7 @@ const FEATURES = [
     </aside>
 
     <!-- overflow-x-clip: o formulário que sai desliza para fora sem criar rolagem horizontal -->
-    <main class="flex min-h-dvh min-w-0 flex-col overflow-x-clip px-4 py-5 sm:px-10">
+    <main class="auth-main flex min-h-dvh min-w-0 flex-col overflow-x-clip px-4 py-5 sm:px-10">
       <div class="flex items-center justify-between">
         <span class="lg:invisible">
           <img src="/wordmark.svg" alt="Inceptum" class="w-28 dark:hidden" />
@@ -107,6 +115,26 @@ const FEATURES = [
 </template>
 
 <style>
+/*
+ * Troca de lado do painel (só no desktop, onde ele aparece). As colunas são 1,1fr e 1fr:
+ * o painel anda a largura do conteúdo (1/1,1 da própria largura) e o conteúdo anda a do painel
+ * (1,1 da própria). Só transform, então nada é recalculado no layout durante a troca.
+ */
+@media (min-width: 64rem) {
+  .auth-aside,
+  .auth-main {
+    transition: transform var(--dur-slow) var(--ease-in-out);
+  }
+
+  .auth-shell[data-aside='right'] .auth-aside {
+    transform: translate3d(calc(100% / 1.1), 0, 0);
+  }
+
+  .auth-shell[data-aside='right'] .auth-main {
+    transform: translate3d(-110%, 0, 0);
+  }
+}
+
 /* Troca entre telas de acesso: a que sai e a que entra ocupam a mesma célula e deslizam juntas. */
 .auth-stage {
   display: grid;
@@ -151,7 +179,7 @@ const FEATURES = [
 
 .auth-view > :not(form),
 .auth-view form > * {
-  animation: auth-item-in var(--dur-slow) var(--ease-out) both;
+  animation: auth-item-in var(--dur-slow) var(--ease-out) backwards;
 }
 
 .auth-view > :nth-child(2),
@@ -174,7 +202,7 @@ const FEATURES = [
 
 /* painel decorativo: a frase e os destaques aparecem uma vez, ao abrir a área de acesso */
 .auth-aside-copy > * {
-  animation: ui-rise var(--dur-slow) var(--ease-out) both;
+  animation: ui-rise var(--dur-slow) var(--ease-out) backwards;
 }
 .auth-aside-copy > :nth-child(2) {
   animation-delay: 60ms;
