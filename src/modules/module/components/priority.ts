@@ -1,14 +1,28 @@
+import { ChevronDown, ChevronsUp, ChevronUp, Equal } from '@lucide/vue'
+import type { Component } from 'vue'
 import type { TaskPriority } from '@/shared/types'
 
-// barras de prioridade como no design (1 a 3); "urgente" usa as 3 em vermelho
-export const PRIORITIES: { value: TaskPriority; label: string; bars: number; color: string }[] = [
-  { value: 'low', label: 'Baixa', bars: 1, color: '#8a857d' },
-  { value: 'medium', label: 'Média', bars: 2, color: '#c9720a' },
-  { value: 'high', label: 'Alta', bars: 3, color: '#c9720a' },
-  { value: 'urgent', label: 'Urgente', bars: 3, color: '#d02b1f' },
+/** Prioridade: ícone + texto; só alta e urgente ganham cor (aviso e perigo). */
+export const PRIORITIES: {
+  value: TaskPriority
+  label: string
+  icon: Component
+  tone: 'neutral' | 'warning' | 'danger'
+}[] = [
+  { value: 'low', label: 'Baixa', icon: ChevronDown, tone: 'neutral' },
+  { value: 'medium', label: 'Média', icon: Equal, tone: 'neutral' },
+  { value: 'high', label: 'Alta', icon: ChevronUp, tone: 'warning' },
+  { value: 'urgent', label: 'Urgente', icon: ChevronsUp, tone: 'danger' },
 ]
 
-export const priorityOf = (value: TaskPriority) => PRIORITIES.find((p) => p.value === value)!
+export const priorityOf = (value: TaskPriority) =>
+  PRIORITIES.find((p) => p.value === value) ?? PRIORITIES[1]!
+
+export const PRIORITY_TEXT = {
+  neutral: 'text-fg-muted',
+  warning: 'text-warning',
+  danger: 'text-danger',
+}
 
 /** "2026-10-27" → "27 out" */
 export function shortDate(iso: string): string {

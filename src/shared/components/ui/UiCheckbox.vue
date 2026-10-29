@@ -10,6 +10,8 @@ const props = defineProps<{
   indeterminate?: boolean
   disabled?: boolean
   id?: string
+  /** nome acessível quando não há rótulo visível (ex.: item de lista) */
+  ariaLabel?: string
 }>()
 const fallbackId = useId()
 const inputId = props.id ?? fallbackId
@@ -25,6 +27,7 @@ const inputId = props.id ?? fallbackId
         :disabled="disabled"
         :indeterminate="indeterminate"
         :aria-describedby="description ? `${inputId}-desc` : undefined"
+        :aria-label="ariaLabel"
         class="peer size-4 cursor-pointer appearance-none rounded-[4px] border border-border-strong bg-surface-1 transition-colors duration-(--dur-fast) ease-out checked:border-fg checked:bg-fg indeterminate:border-fg indeterminate:bg-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50"
       />
       <Check

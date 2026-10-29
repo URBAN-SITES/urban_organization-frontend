@@ -37,9 +37,17 @@ function close(returnFocus = true) {
 }
 
 onClickOutside(panel, () => open.value && close(false), { ignore: [anchor] })
-useEventListener(document, 'keydown', (event: KeyboardEvent) => {
-  if (event.key === 'Escape' && open.value) close()
-})
+// captura: fecha antes do Dialog/Drawer por baixo, que ignora o Esc já tratado
+useEventListener(
+  document,
+  'keydown',
+  (event: KeyboardEvent) => {
+    if (event.key !== 'Escape' || !open.value) return
+    event.preventDefault()
+    close()
+  },
+  { capture: true },
+)
 </script>
 
 <template>

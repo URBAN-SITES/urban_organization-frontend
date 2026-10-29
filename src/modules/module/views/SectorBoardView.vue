@@ -1,93 +1,149 @@
 <script setup lang="ts">
+import { ArrowRight, FolderKanban, Plus, Search, Settings2, Star, X } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { getErrorMessage } from '@/app/plugins/axios'
-import { BaseButton, SubheaderComp, TopbarComp } from '@/shared/components'
-import { avatar } from '@/shared/utils/people'
 import { useAuthStore } from '@/modules/auth'
-import { BoardColumn, TaskPanel } from '../components'
-import { getSector } from '../services'
-import { useKanbanStore } from '../stores'
-import { useSectorAccessStore } from '../stores/access'
-import type { CreateTaskRequest, Sector, SectorRole } from '../types'
-import { NO_FILTERS, activeFilters, filterTasks, type BoardFilters } from '../utils/board'
-import { TOOLBAR_BUTTON } from '../utils/ui'
+import {
+  TopbarComp,
+  UiAvatar,
+  UiButton,
+  UiEmptyState,
+  UiErrorState,
+  UiIconButton,
+  UiInput,
+  UiProgress,
+  UiSelect,
+  UiSkeleton,
+  UiTabs,
+  type MenuItem,
+} from '@/shared/components'
+import { fetchAllPages } from '@/shared/utils'
+import BoardColumn from '../components/boardColumn.vue'
+import ProjectIcon from '../components/projectIcon.vue'
+import TaskDetail from '../components/taskDetail.vue'
+import TaskListView from '../components/taskListView.vue'
+import TaskTableView from '../components/taskTableView.vue'
+import { getSector, listLabels, listSectorPeople, setSectorFavorite } from '../services'
+import { useKanbanStore, useSectorsStore } from '../stores'
+import type { Label, Person, Sector, SectorRole, Task } from '../types'
+import {
+  NO_FILTERS,
+  activeFilters,
+  filterTasks,
+  serverFilters,
+  type BoardFilters,
+} from '../utils/board'
+
+type View = 'board' | 'list' | 'table'
 
 const props = defineProps<{ sectorId: string }>()
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
 const kanban = useKanbanStore()
-const access = useSectorAccessStore()
+const sidebar = useSectorsStore()
 
 const sector = ref<(Sector & { my_role: SectorRole }) | null>(null)
-const missing = ref(false)
-const loading = ref(false)
-const saving = ref(false)
+const people = ref<Person[]>([])
+const labels = ref<Label[]>([])
+const loading = ref(true)
+const error = ref('')
 const search = ref('')
 const filters = ref<BoardFilters>({ ...NO_FILTERS })
 const panelOpen = ref(false)
 const openTaskId = ref<string | null>(null)
 const newStatus = ref('')
+const tableVersion = ref(0)
 
-const canEdit = computed(() => sector.value?.my_role !== 'viewer' && !!sector.value)
-const canManage = computed(() => sector.value?.my_role === 'manager')
-const openTask = computed(() => kanban.tasks.find((t) => t.id === openTaskId.value) ?? null)
-const visible = computed(() =>
-  filterTasks(kanban.tasks, filters.value, search.value, auth.user?.id ?? null),
-)
-const byStatus = (statusId: string) => visible.value.filter((t) => t.status_id === statusId)
-
-const done = computed(() => kanban.tasks.filter((t) => t.completed_at).length)
-const percent = computed(() =>
-  kanban.tasks.length ? Math.round((done.value / kanban.tasks.length) * 100) : 0,
-)
-const description = computed(() => {
-  const people = access.members.length
-  const tasks = kanban.tasks.length
-  return `${people} ${people === 1 ? 'pessoa' : 'pessoas'} · ${tasks} ${tasks === 1 ? 'tarefa' : 'tarefas'} · ${percent.value}% concluído`
+const VIEWS = [
+  { value: 'board', label: 'Quadro' },
+  { value: 'list', label: 'Lista' },
+  { value: 'table', label: 'Tabela' },
+]
+const view = computed<View>({
+  get: () =>
+    ['list', 'table'].includes(String(route.query.view)) ? (route.query.view as View) : 'board',
+  set: (value) =>
+    void router.replace({ query: { ...route.query, view: value === 'board' ? undefined : value } }),
 })
 
+const canEdit = computed(() => !!sector.value && sector.value.my_role !== 'viewer')
+const canManage = computed(() => sector.value?.my_role === 'manager')
+const topLevel = computed(() => kanban.tasks.filter((task) => !task.parent_id))
+const visible = computed(() =>
+  filterTasks(topLevel.value, filters.value, search.value, auth.user?.id ?? null),
+)
+const tasksOf = (statusId: string) =>
+  visible.value.filter((t) => t.status_id === statusId).sort((a, b) => a.position - b.position)
+const done = computed(() => topLevel.value.filter((t) => t.completed_at).length)
 const filtering = computed(() => activeFilters(filters.value) > 0 || !!search.value.trim())
-const clearFilters = () => {
-  filters.value = { ...NO_FILTERS }
-  search.value = ''
-}
+const tableFilters = computed(() =>
+  serverFilters(filters.value, search.value, auth.user?.id ?? null),
+)
 
-// atalhos de um clique para os filtros mais usados
-const QUICK = [
-  { label: 'Minhas', icon: 'person', key: 'assignee', value: 'me' },
-  { label: 'Atrasadas', icon: 'schedule', key: 'due', value: 'overdue' },
-  { label: 'Prioridade alta', icon: 'flag', key: 'priority', value: 'high+' },
-] as const
-const toggleQuick = (q: (typeof QUICK)[number]) =>
-  (filters.value = { ...filters.value, [q.key]: filters.value[q.key] === q.value ? '' : q.value })
-
-const selectClass =
-  'h-9 rounded-full border border-(--border-default) bg-transparent px-3 text-[13px] dark:border-(--border-inverse)'
+const assigneeOptions = computed(() => [
+  { value: '', label: 'Responsável: todos' },
+  { value: 'me', label: 'Minhas tarefas' },
+  { value: 'none', label: 'Sem responsável' },
+  ...people.value.map((p) => ({ value: p.id, label: p.name || p.email })),
+])
+const PRIORITY_OPTIONS = [
+  { value: '', label: 'Prioridade: todas' },
+  { value: 'high+', label: 'Alta ou urgente' },
+  { value: 'urgent', label: 'Urgente' },
+  { value: 'high', label: 'Alta' },
+  { value: 'medium', label: 'Média' },
+  { value: 'low', label: 'Baixa' },
+]
+const DUE_OPTIONS = [
+  { value: '', label: 'Prazo: qualquer' },
+  { value: 'overdue', label: 'Atrasadas' },
+  { value: 'today', label: 'Vence hoje' },
+  { value: 'week', label: 'Próximos 7 dias' },
+  { value: 'none', label: 'Sem prazo' },
+]
+const labelOptions = computed(() => [
+  { value: '', label: 'Etiqueta: todas' },
+  ...labels.value.map((label) => ({ value: label.id, label: label.name })),
+])
 
 async function load(id: string) {
   loading.value = true
-  missing.value = false
+  error.value = ''
   sector.value = null
+  panelOpen.value = false
   filters.value = { ...NO_FILTERS }
   search.value = ''
-  panelOpen.value = false
   try {
-    sector.value = await getSector(id)
-    await Promise.all([kanban.load(id), access.load(id)])
-    // link vindo do calendário: /setores/:id?task=<id>
+    const [detail, peopleRows, labelRows] = await Promise.all([
+      getSector(id),
+      fetchAllPages((page) => listSectorPeople(id, page)),
+      fetchAllPages((page) => listLabels(id, page)),
+      kanban.load(id),
+    ])
+    if (id !== props.sectorId) return
+    sector.value = detail
+    people.value = peopleRows
+    labels.value = labelRows
+    // link direto (dashboard, calendário, notificações): /setores/:id?task=<id>
     const task = route.query.task
     if (typeof task === 'string' && kanban.tasks.some((t) => t.id === task)) openDetails(task)
-  } catch (error) {
-    missing.value = true
-    toast.error(getErrorMessage(error, 'Não foi possível abrir este setor.'))
+  } catch (cause) {
+    if (id === props.sectorId)
+      error.value = getErrorMessage(cause, 'Confira se o projeto existe e se você tem acesso.')
   } finally {
-    loading.value = false
+    if (id === props.sectorId) loading.value = false
   }
 }
 watch(() => props.sectorId, load, { immediate: true })
+
+watch(panelOpen, (open) => {
+  if (open) return
+  tableVersion.value++
+  if (route.query.task) void router.replace({ query: { ...route.query, task: undefined } })
+})
 
 function openCreate(statusId = '') {
   openTaskId.value = null
@@ -100,212 +156,253 @@ function openDetails(id: string) {
   panelOpen.value = true
 }
 
-async function attempt(action: () => Promise<unknown>, failure: string) {
-  saving.value = true
-  try {
-    await action()
-    return true
-  } catch (error) {
-    toast.error(getErrorMessage(error, failure))
-    return false
-  } finally {
-    saving.value = false
-  }
-}
-
-async function create(payload: CreateTaskRequest) {
-  if (await attempt(() => kanban.addTask(payload), 'Não foi possível criar a tarefa.')) {
-    panelOpen.value = false
-    toast.success('Tarefa criada.')
-  }
-}
-
-async function save(id: string, { status, ...fields }: CreateTaskRequest) {
-  const ok = await attempt(async () => {
-    await kanban.editTask(id, fields)
-    if (status && status !== openTask.value?.status_id) await kanban.move(id, status)
-  }, 'Não foi possível salvar a tarefa.')
-  if (ok) {
-    panelOpen.value = false
-    toast.success('Tarefa salva.')
-  }
-}
-
-async function remove(id: string) {
-  if (!window.confirm('Excluir esta tarefa? Isso não pode ser desfeito.')) return
-  if (await attempt(() => kanban.removeTask(id), 'Não foi possível excluir a tarefa.')) {
-    panelOpen.value = false
-    toast.success('Tarefa excluída.')
-  }
-}
-
-async function move(taskId: string, statusId: string, position: number) {
+async function move(taskId: string, statusId: string, position?: number) {
   try {
     await kanban.move(taskId, statusId, position)
-  } catch (error) {
-    toast.error(getErrorMessage(error, 'Não foi possível mover a tarefa.'))
+    tableVersion.value++
+  } catch (cause) {
+    toast.error(getErrorMessage(cause, 'Não foi possível mover a tarefa.'))
   }
+}
+
+function moveItems(task: Task): MenuItem[] {
+  const items: MenuItem[] = [
+    { label: 'Abrir', icon: ArrowRight, onSelect: () => openDetails(task.id) },
+  ]
+  if (!canEdit.value) return items
+  const others = kanban.statuses.filter((status) => status.id !== task.status_id)
+  return [
+    ...items,
+    ...others.map((status, index) => ({
+      label: `Mover para ${status.name}`,
+      separatorBefore: index === 0,
+      onSelect: () => void move(task.id, status.id),
+    })),
+  ]
+}
+
+async function toggleFavorite() {
+  const current = sector.value
+  if (!current) return
+  const next = !current.is_favorite
+  try {
+    await setSectorFavorite(current.id, next)
+    current.is_favorite = next
+    toast.success(next ? 'Projeto fixado.' : 'Projeto desafixado.')
+    void sidebar.load(current.organization_id).catch(() => undefined)
+  } catch (cause) {
+    toast.error(getErrorMessage(cause, 'Não foi possível fixar o projeto.'))
+  }
+}
+
+function clearFilters() {
+  filters.value = { ...NO_FILTERS }
+  search.value = ''
 }
 </script>
 
 <template>
-  <div
-    class="flex h-[calc(100dvh-3.75rem)] min-h-0 w-full min-w-0 flex-col bg-(--background) md:h-dvh dark:bg-(--background-inverse)"
-  >
-    <TopbarComp
-      v-model:search="search"
-      :crumbs="[sector?.name ?? 'Setor']"
-      show-search
-      search-placeholder="Buscar nesta lista"
-    />
+  <div class="flex h-[calc(100dvh-3.75rem)] min-h-0 w-full min-w-0 flex-col bg-bg md:h-dvh">
+    <TopbarComp :crumbs="['Projetos', sector?.name ?? 'Projeto']" />
 
-    <section class="flex min-h-0 flex-1 flex-col gap-4 px-5 pt-6 pb-4 sm:px-9 xl:px-11">
-      <p v-if="missing" role="alert" class="text-sm">
-        Setor não encontrado ou sem acesso.
-        <RouterLink class="underline" :to="{ name: 'Team' }">Ver equipe e setores</RouterLink>
-      </p>
+    <main class="flex min-h-0 flex-1 flex-col gap-4 px-4 pt-6 pb-4 sm:px-8">
+      <UiErrorState
+        v-if="error"
+        title="Não foi possível abrir este projeto"
+        :description="error"
+        @retry="load(sectorId)"
+      />
 
       <template v-else>
-        <SubheaderComp
-          :title="sector?.name ?? 'Carregando…'"
-          :description="sector?.description || description"
-          class="mb-0! flex-wrap gap-3"
-        >
-          <div class="flex flex-wrap items-center gap-2">
-            <span
-              v-if="access.members.length"
-              class="mr-2 hidden items-center sm:flex"
-              :title="access.members.map((m) => m.name).join(', ')"
-            >
-              <span
-                v-for="m in access.members.slice(0, 5)"
-                :key="m.user_id"
-                class="-ml-1.5 grid size-7 place-items-center rounded-full border-2 border-(--background) text-[10px] font-semibold text-white first:ml-0 dark:border-(--background-inverse)"
-                :style="{ backgroundColor: avatar(m.name).color }"
-                aria-hidden="true"
-                >{{ avatar(m.name).initials }}</span
+        <header class="flex flex-wrap items-start justify-between gap-4">
+          <div class="flex min-w-0 items-start gap-3">
+            <UiSkeleton v-if="!sector" class="size-10" />
+            <ProjectIcon v-else :icon="sector.icon" :color="sector.color" size="lg" />
+            <div class="min-w-0">
+              <UiSkeleton v-if="!sector" class="mt-1 h-6 w-48" />
+              <h1
+                v-else
+                class="truncate text-24 leading-tight font-semibold tracking-[-0.01em] text-fg"
               >
+                {{ sector.name }}
+              </h1>
+              <p
+                v-if="sector?.description"
+                class="mt-1 line-clamp-2 max-w-2xl text-14 text-fg-muted"
+              >
+                {{ sector.description }}
+              </p>
+              <div v-if="sector && topLevel.length" class="mt-2 flex w-64 items-center gap-2">
+                <UiProgress
+                  :value="done"
+                  :max="topLevel.length"
+                  tone="neutral"
+                  label="Progresso do projeto"
+                />
+                <span class="shrink-0 text-12 text-fg-muted tabular-nums">
+                  {{ done }} de {{ topLevel.length }}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div v-if="sector" class="flex items-center gap-2">
+            <span
+              class="mr-1 hidden items-center sm:flex"
+              :title="people.map((p) => p.name).join(', ')"
+            >
+              <UiAvatar
+                v-for="person in people.slice(0, 4)"
+                :key="person.id"
+                :name="person.name || person.email"
+                size="sm"
+                class="-ml-1.5 ring-2 ring-bg first:ml-0"
+              />
+              <span v-if="people.length > 4" class="ml-1.5 text-12 text-fg-muted"
+                >+{{ people.length - 4 }}</span
+              >
+              <span class="sr-only">{{ people.length }} pessoas com acesso</span>
             </span>
-            <BaseButton
-              v-if="canManage && sector"
-              variant="ghost"
-              icon="tune"
-              icon-position="left"
-              label="Editar setor"
-              :full-width="false"
-              :class="TOOLBAR_BUTTON"
+            <UiIconButton
+              :icon="Star"
+              :label="sector.is_favorite ? 'Desafixar projeto' : 'Fixar projeto'"
+              :pressed="!!sector.is_favorite"
+              :class="
+                sector.is_favorite
+                  ? 'aria-pressed:bg-transparent! aria-pressed:text-fg! [&_svg]:fill-current'
+                  : ''
+              "
+              @click="toggleFavorite"
+            />
+            <UiIconButton
+              v-if="canManage"
+              :icon="Settings2"
+              label="Colunas e configurações do projeto"
               @click="router.push({ name: 'SectorEdit', params: { id: sector.id } })"
             />
-            <BaseButton
-              v-if="canEdit"
-              label="Nova tarefa"
-              icon="add"
-              icon-position="left"
-              :full-width="false"
-              :class="TOOLBAR_BUTTON"
-              @click="openCreate()"
-            />
+            <UiButton v-if="canEdit" variant="primary" :icon="Plus" @click="openCreate()">
+              Nova tarefa
+            </UiButton>
           </div>
-        </SubheaderComp>
+        </header>
 
-        <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Filtrar tarefas">
-          <button
-            v-for="q in QUICK"
-            :key="q.label"
-            type="button"
-            :aria-pressed="filters[q.key] === q.value"
-            :class="[
-              'flex h-9 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium transition-colors',
-              filters[q.key] === q.value
-                ? 'border-(--text-primary) bg-(--text-primary) text-white dark:border-(--text-inverse) dark:bg-(--text-inverse) dark:text-(--text-primary)'
-                : 'border-(--border-default) text-(--text-secondary) hover:bg-(--bg-subtle) dark:border-(--border-inverse)',
-            ]"
-            @click="toggleQuick(q)"
+        <div class="flex flex-wrap items-end gap-x-4 gap-y-3">
+          <UiTabs v-model="view" :tabs="VIEWS" label="Modo de visualização" />
+          <div
+            class="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:min-w-0 sm:flex-1 sm:flex-wrap sm:items-center sm:justify-end"
+            role="group"
+            aria-label="Filtrar tarefas"
           >
-            <span class="material-symbols-outlined text-[16px]!" aria-hidden="true">{{
-              q.icon
-            }}</span>
-            {{ q.label }}
-          </button>
+            <UiInput
+              v-model="search"
+              type="search"
+              :icon="Search"
+              placeholder="Buscar tarefas"
+              aria-label="Buscar tarefas"
+              class="col-span-2 sm:w-56"
+            />
+            <UiSelect
+              v-model="filters.assignee"
+              aria-label="Responsável"
+              :options="assigneeOptions"
+              class="sm:w-44"
+            />
+            <UiSelect
+              v-model="filters.priority"
+              aria-label="Prioridade"
+              :options="PRIORITY_OPTIONS"
+              class="sm:w-40"
+            />
+            <UiSelect
+              v-model="filters.due"
+              aria-label="Prazo"
+              :options="DUE_OPTIONS"
+              class="sm:w-40"
+            />
+            <UiSelect
+              v-if="labels.length"
+              v-model="filters.label"
+              aria-label="Etiqueta"
+              :options="labelOptions"
+              class="sm:w-40"
+            />
+            <UiButton v-if="filtering" variant="ghost" :icon="X" @click="clearFilters"
+              >Limpar</UiButton
+            >
+          </div>
+        </div>
+        <p v-if="filtering && view !== 'table'" class="-mt-2 text-12 text-fg-muted" role="status">
+          Mostrando {{ visible.length }} de {{ topLevel.length }} tarefas
+        </p>
 
-          <select v-model="filters.assignee" aria-label="Responsável" :class="selectClass">
-            <option value="">Responsável: todos</option>
-            <option value="me">Minhas</option>
-            <option value="none">Sem responsável</option>
-            <option v-for="m in access.members" :key="m.user_id" :value="m.user_id">
-              {{ m.name }}
-            </option>
-          </select>
-          <select v-model="filters.priority" aria-label="Prioridade" :class="selectClass">
-            <option value="">Prioridade: todas</option>
-            <option value="high+">Alta ou urgente</option>
-            <option value="urgent">Urgente</option>
-            <option value="high">Alta</option>
-            <option value="medium">Média</option>
-            <option value="low">Baixa</option>
-          </select>
-          <select v-model="filters.due" aria-label="Entrega" :class="selectClass">
-            <option value="">Entrega: qualquer</option>
-            <option value="overdue">Atrasadas</option>
-            <option value="today">Vence hoje</option>
-            <option value="week">Próximos 7 dias</option>
-            <option value="none">Sem data</option>
-          </select>
-
-          <button
-            v-if="filtering"
-            type="button"
-            class="h-9 rounded-full px-3 text-[13px] text-(--text-secondary) underline"
-            @click="clearFilters"
-          >
-            Limpar filtros
-          </button>
-          <span v-if="filtering" class="text-[13px] text-(--text-muted)" role="status">
-            {{ visible.length }} de {{ kanban.tasks.length }}
-            {{ kanban.tasks.length === 1 ? 'tarefa' : 'tarefas' }}
-          </span>
+        <div v-if="loading" class="flex gap-3 overflow-hidden" aria-label="Carregando o quadro">
+          <div v-for="n in 3" :key="n" class="grid w-72 shrink-0 content-start gap-2">
+            <UiSkeleton class="h-6 w-32" />
+            <UiSkeleton v-for="m in 3" :key="m" class="h-24 rounded-card" />
+          </div>
         </div>
 
-        <p v-if="loading" role="status" class="text-sm text-(--text-muted)">Carregando o quadro…</p>
-        <p v-else-if="!kanban.statuses.length" class="text-sm text-(--text-muted)">
-          Este setor ainda não tem colunas.
-          <RouterLink
-            v-if="canManage && sector"
-            class="underline"
-            :to="{ name: 'SectorEdit', params: { id: sector.id } }"
-            >Criar colunas</RouterLink
-          >
-        </p>
-        <div v-else class="flex min-h-0 flex-1 items-stretch gap-4 overflow-x-auto pb-2">
+        <UiEmptyState
+          v-else-if="!kanban.statuses.length"
+          :icon="FolderKanban"
+          title="Este projeto ainda não tem colunas"
+          :description="
+            canManage
+              ? 'Crie as colunas do fluxo para começar.'
+              : 'Peça a um gestor do projeto para criar as colunas.'
+          "
+        >
+          <template v-if="canManage && sector" #action>
+            <UiButton @click="router.push({ name: 'SectorEdit', params: { id: sector.id } })">
+              Criar colunas
+            </UiButton>
+          </template>
+        </UiEmptyState>
+
+        <div
+          v-else-if="view === 'board'"
+          class="-mx-4 flex min-h-0 flex-1 items-stretch gap-3 overflow-x-auto px-4 pb-2 sm:-mx-8 sm:px-8"
+        >
           <BoardColumn
             v-for="status in kanban.statuses"
             :key="status.id"
             :status="status"
-            :tasks="byStatus(status.id)"
+            :tasks="tasksOf(status.id)"
             :can-edit="canEdit"
+            :move-items="moveItems"
             @add="openCreate(status.id)"
             @open="openDetails"
             @drop="(taskId, position) => move(taskId, status.id, position)"
           />
         </div>
-      </template>
-    </section>
 
-    <TaskPanel
-      :open="panelOpen"
-      :sector-name="sector?.name ?? ''"
-      :statuses="kanban.statuses"
-      :members="access.members"
-      :task="openTask"
+        <div v-else-if="view === 'list'" class="min-h-0 flex-1 overflow-y-auto pb-4">
+          <TaskListView :statuses="kanban.statuses" :tasks-of="tasksOf" @open="openDetails" />
+        </div>
+
+        <div v-else class="min-h-0 flex-1 overflow-y-auto pb-4">
+          <TaskTableView
+            :sector-id="sectorId"
+            :statuses="kanban.statuses"
+            :filters="tableFilters"
+            :version="tableVersion"
+            @open="openDetails"
+          />
+        </div>
+      </template>
+    </main>
+
+    <TaskDetail
+      v-if="sector"
+      v-model:open="panelOpen"
+      v-model:task-id="openTaskId"
+      :sector-id="sector.id"
+      :sector-name="sector.name"
+      :people="people"
+      :labels="labels"
       :initial-status="newStatus"
       :can-edit="canEdit"
       :can-manage="canManage"
-      :saving="saving"
-      @close="panelOpen = false"
-      @create="create"
-      @save="save"
-      @remove="remove"
-      @changed="kanban.reload"
+      @label-created="labels = [...labels, $event].sort((a, b) => a.name.localeCompare(b.name))"
     />
   </div>
 </template>

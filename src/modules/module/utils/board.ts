@@ -1,5 +1,7 @@
+import { FileText, HardDrive, Link2, Paperclip, Video } from '@lucide/vue'
+import type { Component } from 'vue'
 import type { TaskPriority } from '@/shared/types'
-import type { Task } from '../types'
+import type { Task, TaskFilters } from '../types'
 
 export interface BoardFilters {
   /** '' todos · 'me' minhas · 'none' sem responsável · ou o id de uma pessoa */
@@ -7,9 +9,11 @@ export interface BoardFilters {
   /** 'high+' = alta ou urgente */
   priority: '' | TaskPriority | 'high+'
   due: '' | 'overdue' | 'today' | 'week' | 'none'
+  /** id de uma etiqueta */
+  label: string
 }
 
-export const NO_FILTERS: BoardFilters = { assignee: '', priority: '', due: '' }
+export const NO_FILTERS: BoardFilters = { assignee: '', priority: '', due: '', label: '' }
 
 export const activeFilters = (f: BoardFilters) => Object.values(f).filter(Boolean).length
 
@@ -43,7 +47,8 @@ export function filterTasks(
 ): Task[] {
   const needle = norm(search.trim())
   return tasks.filter((task) => {
-    const { assignee, priority, due } = filters
+    const { assignee, priority, due, label } = filters
+    if (label && !task.labels.some((item) => item.id === label)) return false
     if (assignee === 'me' && task.assignee_id !== userId) return false
     if (assignee === 'none' && task.assignee_id) return false
     if (assignee && assignee !== 'me' && assignee !== 'none' && task.assignee_id !== assignee)
@@ -59,18 +64,21 @@ export function filterTasks(
     }
     return (
       !needle ||
-      norm(`${task.title} ${task.description} ${task.assignee_name ?? ''}`).includes(needle)
+      norm(
+        `${task.title} ${task.description} ${task.assignee_name ?? ''} ${task.labels.map((item) => item.name).join(' ')}`,
+      ).includes(needle)
     )
   })
 }
 
-export type LinkOrigin = 'drive' | 'docs' | 'meet' | 'link'
+export type LinkOrigin = 'drive' | 'docs' | 'meet' | 'upload' | 'link'
 
-export const LINK_ORIGINS: Record<LinkOrigin, { label: string; icon: string; color: string }> = {
-  drive: { label: 'Google Drive', icon: 'folder', color: '#1e9e5a' },
-  docs: { label: 'Google Docs', icon: 'description', color: '#2563eb' },
-  meet: { label: 'Google Meet', icon: 'videocam', color: '#0e9488' },
-  link: { label: 'Link', icon: 'link', color: '#8a857d' },
+export const LINK_ORIGINS: Record<LinkOrigin, { label: string; icon: Component }> = {
+  drive: { label: 'Google Drive', icon: HardDrive },
+  docs: { label: 'Google Docs', icon: FileText },
+  meet: { label: 'Google Meet', icon: Video },
+  upload: { label: 'Arquivo', icon: Paperclip },
+  link: { label: 'Link', icon: Link2 },
 }
 
 export function linkOrigin(url: string): LinkOrigin {
@@ -79,8 +87,36 @@ export function linkOrigin(url: string): LinkOrigin {
     if (host === 'drive.google.com') return 'drive'
     if (host === 'docs.google.com') return 'docs'
     if (host === 'meet.google.com') return 'meet'
+    if (host.endsWith('cloudinary.com')) return 'upload'
   } catch {
     // url inválida cai em "link"
   }
   return 'link'
+}
+
+/** Os mesmos filtros do quadro como parâmetros da API (tabela paginada no servidor). */
+export function serverFilters(
+  filters: BoardFilters,
+  search: string,
+  userId: string | null,
+  now = new Date(),
+): TaskFilters {
+  const params: TaskFilters = { parent__isnull: true }
+  const { assignee, priority, due, label } = filters
+  if (assignee === 'me' && userId) params.assignee = userId
+  else if (assignee === 'none') params.assignee__isnull = true
+  else if (assignee && assignee !== 'me') params.assignee = assignee
+  if (priority === 'high+') params.priority__in = 'high,urgent'
+  else if (priority) params.priority = priority
+  if (due === 'overdue') params.overdue = true
+  else if (due === 'none') params.due_date__isnull = true
+  else if (due === 'today' || due === 'week') {
+    const end = new Date(now)
+    end.setDate(end.getDate() + (due === 'today' ? 0 : 6))
+    params.due_after = isoDay(now)
+    params.due_before = isoDay(end)
+  }
+  if (label) params.label = label
+  if (search.trim()) params.search = search.trim()
+  return params
 }

@@ -4,6 +4,11 @@ import type {
   AddSectorMemberRequest,
   ChecklistItem,
   Comment,
+  CreateLabelRequest,
+  Label,
+  Person,
+  TaskActivity,
+  WriteCommentRequest,
   AddSectorTeamRequest,
   CreateChecklistItemRequest,
   CreateResourceLinkRequest,
@@ -192,8 +197,38 @@ export async function listComments(taskId: string, page = 1): Promise<Page<Comme
     .data
 }
 
-export async function createComment(taskId: string, content: string): Promise<Comment> {
-  return (await api.post<Comment>(`/tasks/${enc(taskId)}/comments/`, { content })).data
+export async function createComment(
+  taskId: string,
+  content: string,
+  mentions: string[] = [],
+): Promise<Comment> {
+  const payload: WriteCommentRequest = { content, mentions }
+  return (await api.post<Comment>(`/tasks/${enc(taskId)}/comments/`, payload)).data
+}
+
+// ── Etiquetas, pessoas e histórico ─────────────────────────────────────────
+export async function listLabels(sectorId: string, page = 1): Promise<Page<Label>> {
+  return (await api.get<Page<Label>>(`/sectors/${enc(sectorId)}/labels/`, { params: { page } }))
+    .data
+}
+
+export async function createLabel(sectorId: string, payload: CreateLabelRequest): Promise<Label> {
+  return (await api.post<Label>(`/sectors/${enc(sectorId)}/labels/`, payload)).data
+}
+
+export async function deleteLabel(id: string): Promise<void> {
+  await api.delete(`/labels/${enc(id)}/`)
+}
+
+export async function listSectorPeople(sectorId: string, page = 1): Promise<Page<Person>> {
+  return (await api.get<Page<Person>>(`/sectors/${enc(sectorId)}/people/`, { params: { page } }))
+    .data
+}
+
+export async function listTaskActivity(taskId: string, page = 1): Promise<Page<TaskActivity>> {
+  return (
+    await api.get<Page<TaskActivity>>(`/tasks/${enc(taskId)}/activity/`, { params: { page } })
+  ).data
 }
 
 export async function deleteComment(taskId: string, commentId: string): Promise<void> {

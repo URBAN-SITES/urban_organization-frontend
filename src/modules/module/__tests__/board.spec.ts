@@ -6,6 +6,7 @@ import {
   dueLabel,
   filterTasks,
   linkOrigin,
+  serverFilters,
   type BoardFilters,
 } from '../utils/board.ts'
 import type { Task } from '../types/kanban.ts'
@@ -28,6 +29,9 @@ const task = (over: Partial<Task>): Task => ({
   checklist_total: 0,
   checklist_done: 0,
   comment_count: 0,
+  subtask_total: 0,
+  subtask_done: 0,
+  labels: [],
   created_at: '',
   ...over,
 })
@@ -90,4 +94,37 @@ test('link origin comes from the host', () => {
   assert.equal(linkOrigin('https://meet.google.com/abc'), 'meet')
   assert.equal(linkOrigin('https://exemplo.com'), 'link')
   assert.equal(linkOrigin('nao é url'), 'link')
+})
+
+test('filters and searches by label', () => {
+  const bug = { id: 'l1', name: 'Bug', color: '#ef4444' }
+  const rows = [task({ id: 'a', labels: [bug] }), task({ id: 'b' })]
+  const ids = (list: Task[]) => list.map((item) => item.id)
+  assert.deepEqual(ids(filterTasks(rows, { ...NO_FILTERS, label: 'l1' }, '', null)), ['a'])
+  assert.deepEqual(ids(filterTasks(rows, NO_FILTERS, 'bug', null)), ['a'])
+  assert.equal(activeFilters({ ...NO_FILTERS, label: 'l1' }), 1)
+})
+
+test('maps board filters to API params for the server-side table', () => {
+  const day = new Date(2026, 9, 24, 12)
+  assert.deepEqual(serverFilters(NO_FILTERS, '  bug ', 'u1', day), {
+    parent__isnull: true,
+    search: 'bug',
+  })
+  assert.deepEqual(
+    serverFilters({ assignee: 'me', priority: 'high+', due: 'week', label: 'l1' }, '', 'u1', day),
+    {
+      parent__isnull: true,
+      assignee: 'u1',
+      priority__in: 'high,urgent',
+      due_after: '2026-10-24',
+      due_before: '2026-10-30',
+      label: 'l1',
+    },
+  )
+  assert.deepEqual(serverFilters({ ...NO_FILTERS, assignee: 'none', due: 'none' }, '', null, day), {
+    parent__isnull: true,
+    assignee__isnull: true,
+    due_date__isnull: true,
+  })
 })
