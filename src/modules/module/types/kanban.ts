@@ -13,7 +13,21 @@ export interface Sector {
   icon: string
   color: string
   is_private: boolean
+  archived_at: ISODateTime | null
+  /** os campos abaixo vêm da listagem e do detalhe; ausentes em respostas de escrita antigas */
+  is_favorite?: boolean
+  task_total?: number | null
+  task_done?: number | null
+  /** o usuário é gestor (direto, por time ou admin da organização) */
+  can_manage?: boolean
   created_at: ISODateTime
+}
+/** Query params de GET /organizations/:id/sectors/ (filtros e ordenação no servidor). */
+export interface SectorListParams {
+  archived?: boolean
+  favorite?: boolean
+  search?: string
+  ordering?: 'name' | '-name' | 'created_at' | '-created_at'
 }
 export interface CreateSectorRequest {
   name: string

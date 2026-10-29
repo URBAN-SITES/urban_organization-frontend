@@ -3,6 +3,8 @@ export { useSectorsStore, useKanbanStore } from './stores'
 export {
   getDashboard,
   listSectors,
+  setSectorFavorite,
+  setSectorArchived,
   createSector,
   getSector,
   updateSector,
@@ -29,3 +31,5 @@ export {
 export { useSectorAccessStore } from './stores/access'
 export { useLinksStore } from './stores/links'
 export type { LinkTarget } from './services'
+export { ProjectIcon } from './components'
+export { PROJECT_COLORS, PROJECT_ICONS, projectPercent } from './utils/projectAppearance'

@@ -17,6 +17,7 @@ import type {
   SectorMember,
   SectorRole,
   SectorTeam,
+  SectorListParams,
   SectorProgress,
   Status,
   Task,
@@ -30,12 +31,26 @@ import type {
 const enc = encodeURIComponent
 
 // ── Setores ────────────────────────────────────────────────────────────────
-export async function listSectors(organizationId: string, page = 1): Promise<Page<Sector>> {
+export async function listSectors(
+  organizationId: string,
+  page = 1,
+  filters: SectorListParams = {},
+): Promise<Page<Sector>> {
   return (
     await api.get<Page<Sector>>(`/organizations/${enc(organizationId)}/sectors/`, {
-      params: { page },
+      params: { page, ...filters },
     })
   ).data
+}
+
+export async function setSectorFavorite(id: string, favorite: boolean): Promise<void> {
+  if (favorite) await api.put(`/sectors/${enc(id)}/favorite/`)
+  else await api.delete(`/sectors/${enc(id)}/favorite/`)
+}
+
+export async function setSectorArchived(id: string, archived: boolean): Promise<Sector> {
+  const url = `/sectors/${enc(id)}/archive/`
+  return (archived ? await api.put<Sector>(url) : await api.delete<Sector>(url)).data
 }
 
 export async function createSector(
