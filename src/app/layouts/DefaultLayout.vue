@@ -54,12 +54,15 @@ provide(ShellKey, {
 </script>
 
 <template>
-  <div class="flex min-h-dvh items-start bg-bg">
-    <AppSidebar />
-    <main class="min-w-0 flex-1 pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
-      <slot><RouterView /></slot>
-    </main>
+  <div>
+    <!-- raiz única: com várias raízes a <Transition> do App não sai do layout e a tela fica em branco -->
+    <div class="flex min-h-dvh items-start bg-bg">
+      <AppSidebar />
+      <main class="min-w-0 flex-1 pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
+        <slot><RouterView /></slot>
+      </main>
+    </div>
+    <MobileNav @sign-out="signOut" />
+    <CommandPalette v-if="auth.user" v-model:open="paletteOpen" @sign-out="signOut" />
   </div>
-  <MobileNav @sign-out="signOut" />
-  <CommandPalette v-if="auth.user" v-model:open="paletteOpen" @sign-out="signOut" />
 </template>

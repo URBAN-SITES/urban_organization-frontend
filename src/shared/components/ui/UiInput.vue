@@ -12,7 +12,7 @@ const props = withDefaults(
     label?: string
     hint?: string
     error?: string
-    type?: 'text' | 'email' | 'password' | 'search' | 'url' | 'tel' | 'number' | 'date'
+    type?: 'text' | 'email' | 'password' | 'search' | 'url' | 'tel' | 'number' | 'date' | 'time'
     icon?: Component
     required?: boolean
     disabled?: boolean

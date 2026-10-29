@@ -6,6 +6,7 @@ import { toast } from 'vue-sonner'
 import { getErrorMessage } from '@/app/plugins/axios'
 import { useAuthStore } from '@/modules/auth'
 import { ProjectGitHub } from '@/modules/github'
+import { ProjectMeetings } from '@/modules/meetings'
 import {
   TopbarComp,
   UiAvatar,
@@ -37,7 +38,9 @@ import {
   type BoardFilters,
 } from '../utils/board'
 
-type View = 'board' | 'list' | 'table' | 'github'
+type View = 'board' | 'list' | 'table' | 'meetings' | 'github'
+// abas que não mostram tarefas (sem filtros)
+const TASKLESS: View[] = ['meetings', 'github']
 
 const props = defineProps<{ sectorId: string }>()
 const router = useRouter()
@@ -62,11 +65,12 @@ const VIEWS = [
   { value: 'board', label: 'Quadro' },
   { value: 'list', label: 'Lista' },
   { value: 'table', label: 'Tabela' },
+  { value: 'meetings', label: 'Reuniões' },
   { value: 'github', label: 'GitHub' },
 ]
 const view = computed<View>({
   get: () =>
-    ['list', 'table', 'github'].includes(String(route.query.view))
+    ['list', 'table', 'meetings', 'github'].includes(String(route.query.view))
       ? (route.query.view as View)
       : 'board',
   set: (value) =>
@@ -300,7 +304,7 @@ function clearFilters() {
         <div class="flex flex-wrap items-end gap-x-4 gap-y-3">
           <UiTabs v-model="view" :tabs="VIEWS" label="Modo de visualização" />
           <div
-            v-if="view !== 'github'"
+            v-if="!TASKLESS.includes(view)"
             class="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:min-w-0 sm:flex-1 sm:flex-wrap sm:items-center sm:justify-end"
             role="group"
             aria-label="Filtrar tarefas"
@@ -344,7 +348,7 @@ function clearFilters() {
           </div>
         </div>
         <p
-          v-if="filtering && view !== 'table' && view !== 'github'"
+          v-if="filtering && view !== 'table' && !TASKLESS.includes(view)"
           class="-mt-2 text-12 text-fg-muted"
           role="status"
         >
@@ -352,7 +356,14 @@ function clearFilters() {
         </p>
 
         <div
-          v-if="view === 'github' && sector"
+          v-if="view === 'meetings' && sector"
+          class="-mx-4 min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:-mx-8 sm:px-8"
+        >
+          <ProjectMeetings :sector-id="sector.id" :can-edit="canEdit" :people="people" />
+        </div>
+
+        <div
+          v-else-if="view === 'github' && sector"
           class="-mx-4 min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:-mx-8 sm:px-8"
         >
           <ProjectGitHub :sector-id="sector.id" :can-manage="canManage" />
