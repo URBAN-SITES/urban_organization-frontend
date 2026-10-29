@@ -81,7 +81,9 @@ const controlAttrs = computed(() =>
           class="absolute top-1/2 right-1 grid size-8 -translate-y-1/2 cursor-pointer place-items-center rounded-control text-fg-muted transition-colors duration-(--dur-fast) ease-out hover:text-fg focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-not-allowed"
           @click="revealed = !revealed"
         >
-          <UiIcon :icon="revealed ? EyeOff : Eye" />
+          <Transition name="ui-icon-swap" mode="out-in">
+            <UiIcon :key="String(revealed)" :icon="revealed ? EyeOff : Eye" />
+          </Transition>
         </button>
       </div>
     </template>
