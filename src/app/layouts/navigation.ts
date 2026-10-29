@@ -60,7 +60,7 @@ export const workspaceGroups: NavGroup[] = [
     id: 'tools',
     label: 'Ferramentas',
     items: [
-      { to: '/assistente', label: 'Inceptum AI', icon: Sparkles, keywords: 'ia assistente gemini' },
+      { to: '/assistente', label: 'Urban AI', icon: Sparkles, keywords: 'ia assistente gemini' },
       { to: '/mapbox', label: 'Mapa', icon: MapIcon, keywords: 'localizacao' },
     ],
   },

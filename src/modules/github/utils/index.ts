@@ -11,7 +11,7 @@ const MESSAGES: Record<GitHubErrorCode, string> = {
   github_rate_limited: 'O GitHub limitou as consultas por enquanto.',
   github_not_connected: 'Sua conexão com o GitHub expirou ou foi revogada. Conecte de novo.',
   github_forbidden:
-    'O app do Inceptum não tem permissão para este repositório. Revise a instalação no GitHub.',
+    'O app do Urban Organization não tem permissão para este repositório. Revise a instalação no GitHub.',
   github_unavailable: 'O GitHub não respondeu. Tente de novo em instantes.',
   github_not_configured: 'A integração com o GitHub ainda não foi configurada no servidor.',
 }

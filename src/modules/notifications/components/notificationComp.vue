@@ -119,7 +119,7 @@ async function sendTest(): Promise<void> {
     if (notifications.pushEnabled) await notifications.sendTest()
     else
       showDesktopAlert({
-        title: 'Inceptum',
+        title: 'Urban Organization',
         body: 'Os avisos deste computador estão funcionando.',
         tag: 'inceptum-test',
       })

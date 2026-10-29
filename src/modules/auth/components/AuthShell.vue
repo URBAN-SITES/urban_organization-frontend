@@ -3,7 +3,7 @@ import { ChartNoAxesColumn, Moon, Sun, Users, Zap } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useTheme } from '@/app/composables/useTheme'
-import { UiIcon, UiIconButton } from '@/shared/components'
+import { BrandLogo, UiIcon, UiIconButton } from '@/shared/components'
 
 /**
  * Moldura das telas de acesso e do onboarding: painel de imagem de um lado, conteúdo do outro.
@@ -23,7 +23,7 @@ const asideRight = computed(() => Boolean(route.meta.authAsideRight))
 
 // entrar e criar conta ficam em cache: alternar entre elas não apaga o que já foi digitado
 const KEEP = ['LoginView', 'RegisterView']
-const image = `${import.meta.env.BASE_URL}aside-direita.webp`
+const image = `${import.meta.env.BASE_URL}images/office-executive.webp`
 
 const FEATURES = [
   { icon: Users, title: 'Equipes', text: 'mais produtivas' },
@@ -52,7 +52,7 @@ const FEATURES = [
         aria-hidden="true"
       />
 
-      <img src="/wordmark-inverse.svg" alt="Inceptum" class="relative w-36" />
+      <BrandLogo on="dark" class="relative w-32" />
 
       <div class="auth-aside-copy relative max-w-lg">
         <span class="mb-6 block h-0.5 w-8 bg-accent" aria-hidden="true" />
@@ -60,7 +60,7 @@ const FEATURES = [
           Grandes projetos começam com <span class="text-accent">organização.</span>
         </p>
         <p class="mt-3 text-16 text-fg-muted">
-          O Inceptum é o espaço onde equipes transformam ideias em resultados.
+          O Urban Organization é o espaço onde equipes transformam ideias em resultados.
         </p>
         <ul class="mt-10 grid grid-cols-3 gap-4">
           <li v-for="feature in FEATURES" :key="feature.title" class="flex items-center gap-3">
@@ -83,8 +83,7 @@ const FEATURES = [
     <main class="auth-main flex min-h-dvh min-w-0 flex-col overflow-x-clip px-4 py-5 sm:px-10">
       <div class="flex items-center justify-between">
         <span class="lg:invisible">
-          <img src="/wordmark.svg" alt="Inceptum" class="w-28 dark:hidden" />
-          <img src="/wordmark-inverse.svg" alt="Inceptum" class="hidden w-28 dark:block" />
+          <BrandLogo class="w-24" />
         </span>
         <UiIconButton
           :icon="isDark ? Sun : Moon"
@@ -109,7 +108,7 @@ const FEATURES = [
         </div>
       </div>
 
-      <footer class="text-12 text-fg-muted">© 2026 Inceptum</footer>
+      <footer class="text-12 text-fg-muted">© 2026 Urban Organization</footer>
     </main>
   </div>
 </template>
