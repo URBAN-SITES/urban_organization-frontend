@@ -1,14 +1,28 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { Trash2, Upload } from '@lucide/vue'
+import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { BaseButton } from '@/shared/components'
+import {
+  UiAvatar,
+  UiButton,
+  UiErrorState,
+  UiInput,
+  UiPanel,
+  UiSelect,
+  UiSkeleton,
+  UiTextarea,
+} from '@/shared/components'
+import { useConfirm } from '@/shared/composables/confirm'
 import OrganizationLayout from '../components/organizationLayout.vue'
 import { useOrganizationAdmin } from '../composables/useOrganizationAdmin'
 import { deleteOrganization, updateOrganization, uploadOrganizationLogo } from '../services'
 import type { Organization } from '../types'
+import { slugProblem, TEAM_SIZES } from '../utils'
 
+const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp']
 const { id, organization, loading, saving, error, canAdmin, load, mutate } = useOrganizationAdmin()
 const router = useRouter()
+const confirm = useConfirm()
 const name = ref('')
 const slug = ref('')
 const description = ref('')
@@ -17,8 +31,9 @@ const logoUrl = ref('')
 const logoFile = ref<File | null>(null)
 const ready = ref(false)
 const logoPreview = ref('')
+const fieldErrors = reactive({ name: '', slug: '', logo: '' })
 const shownLogo = computed(() => logoPreview.value || logoUrl.value)
-const initials = computed(() => (name.value.trim()[0] ?? '?').toUpperCase())
+const teamSizes = [{ value: '', label: 'Não informado' }, ...TEAM_SIZES]
 const revokePreview = () => logoPreview.value && URL.revokeObjectURL(logoPreview.value)
 onBeforeUnmount(revokePreview)
 
@@ -28,6 +43,7 @@ async function initialize() {
   logoFile.value = null
   revokePreview()
   logoPreview.value = ''
+  Object.assign(fieldErrors, { name: '', slug: '', logo: '' })
   await load()
   if (!organization.value || organizationId !== id.value) return
   name.value = organization.value.name
@@ -39,9 +55,14 @@ async function initialize() {
 }
 
 function selectLogo(event: Event) {
-  const file = (event.target as HTMLInputElement).files?.[0] ?? null
-  if (file && !['image/png', 'image/jpeg', 'image/webp'].includes(file.type))
-    return void ((event.target as HTMLInputElement).value = '')
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0] ?? null
+  fieldErrors.logo = ''
+  if (file && !LOGO_TYPES.includes(file.type)) {
+    fieldErrors.logo = 'Escolha uma imagem PNG, JPG ou WebP.'
+    input.value = ''
+    return
+  }
   logoFile.value = file
   revokePreview()
   logoPreview.value = file ? URL.createObjectURL(file) : ''
@@ -54,7 +75,14 @@ function removeLogo() {
   logoPreview.value = ''
 }
 
+function validate() {
+  fieldErrors.name = name.value.trim() ? '' : 'Dê um nome para a organização.'
+  fieldErrors.slug = slugProblem(slug.value.trim())
+  return !fieldErrors.name && !fieldErrors.slug
+}
+
 async function save() {
+  if (!validate()) return
   const organizationId = id.value
   const file = logoFile.value
   const payload = {
@@ -73,12 +101,14 @@ async function save() {
 async function removeOrganization() {
   const current = organization.value
   if (!current || current.is_personal || current.current_role !== 'owner') return
-  if (
-    !window.confirm(
-      `Desativar a organização “${current.name}”? Todos perderão o acesso a seus setores. A restauração ainda não está disponível nesta interface.`,
-    )
-  )
-    return
+  const confirmed = await confirm({
+    title: `Desativar “${current.name}”?`,
+    description:
+      'Todos os integrantes perdem o acesso aos projetos e tarefas. A restauração ainda não está disponível pela interface.',
+    confirmLabel: 'Desativar organização',
+    danger: true,
+  })
+  if (!confirmed) return
   await mutate(
     () => deleteOrganization(current.id),
     async () => {
@@ -91,114 +121,122 @@ watch(id, initialize, { immediate: true })
 </script>
 
 <template>
-  <OrganizationLayout title="Configurações" :organization-id="organization?.id">
-    <div class="workspace-heading">
-      <div>
-        <h1>Configurações da organização</h1>
-        <p>Identidade e dados do seu espaço.</p>
-      </div>
+  <OrganizationLayout
+    title="Configurações"
+    :description="organization ? `Identidade e dados de ${organization.name}.` : undefined"
+    :organization-id="organization?.id"
+  >
+    <div v-if="loading && !ready" class="grid gap-4" aria-label="Carregando">
+      <UiSkeleton class="h-72 rounded-card" />
+      <UiSkeleton class="h-28 rounded-card" />
     </div>
-    <p v-if="loading" role="status">Carregando…</p>
-    <div v-if="error" class="workspace-error" role="alert">
-      {{ error }} <button :disabled="saving" @click="initialize">Recarregar</button>
-    </div>
-    <section v-if="organization && ready" class="workspace-card create-organization">
-      <p v-if="!canAdmin" class="mb-3 text-[13px] text-(--text-muted)">
-        Somente proprietários e administradores podem alterar estes dados.
-      </p>
-      <form @submit.prevent="save">
-        <fieldset :disabled="!canAdmin || saving || loading" class="grid min-w-0 gap-5">
-          <div class="flex flex-wrap items-center gap-4">
-            <img
-              v-if="shownLogo"
-              :src="shownLogo"
-              alt="Logomarca da organização"
-              class="size-20 rounded-2xl border border-(--border-default) object-cover dark:border-(--border-inverse)"
-            />
-            <span
-              v-else
-              class="grid size-20 place-items-center rounded-2xl bg-(--bg-muted) text-[28px] font-semibold text-(--text-secondary) dark:bg-white/10"
-              aria-hidden="true"
-              >{{ initials }}</span
-            >
-            <div class="grid gap-2">
-              <label
-                class="inline-flex h-9 w-fit cursor-pointer items-center gap-2 rounded-lg border border-(--border-default) px-3 text-[13px] font-medium hover:bg-(--bg-subtle) dark:border-(--border-inverse) dark:hover:bg-white/10"
-              >
-                <span class="material-symbols-outlined text-[18px]!" aria-hidden="true"
-                  >upload</span
-                >
-                {{ shownLogo ? 'Trocar logomarca' : 'Enviar logomarca' }}
-                <input
-                  :key="id"
-                  type="file"
-                  class="sr-only"
-                  accept="image/png,image/jpeg,image/webp"
-                  @change="selectLogo"
-                />
-              </label>
-              <button
+
+    <UiErrorState
+      v-else-if="error && !ready"
+      title="Não foi possível carregar as configurações"
+      :description="error"
+      @retry="initialize"
+    />
+
+    <template v-else-if="organization && ready">
+      <UiPanel
+        title="Dados da organização"
+        :description="
+          canAdmin
+            ? undefined
+            : 'Somente proprietários e administradores podem alterar estes dados.'
+        "
+        heading-id="settings-general"
+      >
+        <form novalidate @submit.prevent="save">
+          <fieldset :disabled="!canAdmin || saving" class="grid min-w-0 gap-5">
+            <div class="flex flex-wrap items-center gap-4">
+              <img
                 v-if="shownLogo"
-                type="button"
-                class="w-fit cursor-pointer text-[12.5px] text-(--text-muted) underline"
-                @click="removeLogo"
-              >
-                Remover logomarca
-              </button>
-              <p class="text-[12px] text-(--text-muted)">PNG, JPG ou WebP.</p>
+                :src="shownLogo"
+                alt="Logomarca da organização"
+                class="size-16 rounded-card border border-border object-cover"
+              />
+              <UiAvatar
+                v-else
+                :name="name || '?'"
+                size="lg"
+                class="size-16! rounded-card! text-20!"
+              />
+              <div class="grid gap-1.5">
+                <span class="flex flex-wrap gap-2">
+                  <label
+                    class="inline-flex h-9 cursor-pointer items-center gap-2 rounded-control border border-border bg-surface-1 px-3 text-13 font-medium text-fg transition-colors duration-(--dur-fast) ease-out focus-within:outline-2 focus-within:outline-accent hover:bg-surface-2"
+                  >
+                    <Upload :size="16" aria-hidden="true" />
+                    {{ shownLogo ? 'Trocar logomarca' : 'Enviar logomarca' }}
+                    <input
+                      :key="id"
+                      type="file"
+                      class="sr-only"
+                      :accept="LOGO_TYPES.join(',')"
+                      @change="selectLogo"
+                    />
+                  </label>
+                  <UiButton v-if="shownLogo" variant="ghost" @click="removeLogo">Remover</UiButton>
+                </span>
+                <p
+                  :class="['text-12', fieldErrors.logo ? 'text-danger' : 'text-fg-muted']"
+                  :role="fieldErrors.logo ? 'alert' : undefined"
+                >
+                  {{ fieldErrors.logo || 'PNG, JPG ou WebP.' }}
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div class="workspace-form grid gap-4 sm:grid-cols-2">
-            <label>Nome<input v-model="name" required maxlength="255" /></label>
-            <label
-              >Endereço da organização<input
-                v-model="slug"
+            <div class="grid gap-4 sm:grid-cols-2">
+              <UiInput
+                v-model="name"
+                label="Nome"
+                maxlength="255"
                 required
+                :error="fieldErrors.name"
+              />
+              <UiInput
+                v-model="slug"
+                label="Endereço"
                 maxlength="63"
-                pattern="[a-z0-9]+(-[a-z0-9]+)*"
-            /></label>
-            <p class="text-[12px] text-(--text-muted) sm:col-span-2">
-              Endereço: /w/{{ slug }}. Alterar o endereço pode invalidar links antigos.
-            </p>
-            <label class="sm:col-span-2"
-              >Descrição<textarea v-model="description" rows="4" />
-            </label>
-            <label
-              >Tamanho da equipe<select v-model="teamSize">
-                <option value="">Não informado</option>
-                <option value="1">Só eu</option>
-                <option value="2-10">2–10 pessoas</option>
-                <option value="11-50">11–50 pessoas</option>
-                <option value="51-200">51–200 pessoas</option>
-                <option value="201+">201 ou mais pessoas</option>
-              </select></label
-            >
-          </div>
+                required
+                :hint="`/w/${slug || 'endereco'} · alterar pode invalidar links antigos.`"
+                :error="fieldErrors.slug"
+              />
+              <UiTextarea v-model="description" label="Descrição" class="sm:col-span-2" />
+              <UiSelect v-model="teamSize" label="Tamanho da equipe" :options="teamSizes" />
+            </div>
 
-          <BaseButton
-            v-if="canAdmin"
-            type="submit"
-            label="Salvar alterações"
-            :loading="saving"
-            :full-width="false"
-          />
-        </fieldset>
-      </form>
-    </section>
-    <section
-      v-if="organization?.current_role === 'owner' && !organization.is_personal"
-      class="workspace-card create-organization workspace-form"
-    >
-      <h2>Desativar organização</h2>
-      <p>Esta ação interrompe o acesso de todos os integrantes.</p>
-      <BaseButton
-        label="Desativar organização"
-        variant="secondary"
-        :disabled="saving"
-        :full-width="false"
-        @click="removeOrganization"
-      />
-    </section>
+            <p v-if="error" role="alert" class="text-13 text-danger">{{ error }}</p>
+
+            <div v-if="canAdmin" class="flex justify-end">
+              <UiButton type="submit" variant="primary" :loading="saving">
+                Salvar alterações
+              </UiButton>
+            </div>
+          </fieldset>
+        </form>
+      </UiPanel>
+
+      <UiPanel
+        v-if="organization.current_role === 'owner' && !organization.is_personal"
+        title="Desativar organização"
+        description="Interrompe o acesso de todos os integrantes a projetos e tarefas."
+        heading-id="settings-danger"
+        class="border-danger/40"
+      >
+        <UiButton
+          variant="danger"
+          :icon="Trash2"
+          :disabled="saving"
+          class="self-start"
+          @click="removeOrganization"
+        >
+          Desativar organização
+        </UiButton>
+      </UiPanel>
+    </template>
   </OrganizationLayout>
 </template>

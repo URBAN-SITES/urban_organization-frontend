@@ -25,7 +25,7 @@ import {
 } from '../services'
 import { useOrganizationsStore } from '../stores'
 import type { Organization, OrganizationLocation, OrganizationSector } from '../types'
-import { parseInvitationEmails, workspaceSlug } from '../utils'
+import { parseInvitationEmails, slugProblem, TEAM_SIZES, workspaceSlug } from '../utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -54,14 +54,6 @@ const loading = ref(false)
 const saving = ref(false)
 const error = ref('')
 const fieldErrors = reactive({ name: '', slug: '', teamSize: '' })
-const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
-const TEAM_SIZES = [
-  { value: '1', label: 'Só eu' },
-  { value: '2-10', label: '2 a 10 pessoas' },
-  { value: '11-50', label: '11 a 50 pessoas' },
-  { value: '51-200', label: '51 a 200 pessoas' },
-  { value: '201+', label: 'Mais de 200 pessoas' },
-]
 const failures = ref<{ email: string; message: string }[]>([])
 const organizationId = computed(() =>
   typeof route.params.organizationId === 'string' ? route.params.organizationId : '',
@@ -93,12 +85,7 @@ function chooseLogo(event: Event) {
 }
 function validateOrganization() {
   fieldErrors.name = name.value.trim() ? '' : 'Dê um nome para a organização.'
-  fieldErrors.slug =
-    !slug.value && !name.value.trim()
-      ? ''
-      : SLUG_PATTERN.test(slug.value)
-        ? ''
-        : 'Use letras minúsculas, números e hífens, como norte-studio.'
+  fieldErrors.slug = !slug.value && !name.value.trim() ? '' : slugProblem(slug.value)
   fieldErrors.teamSize = teamSize.value ? '' : 'Escolha o tamanho da equipe.'
   return !fieldErrors.name && !fieldErrors.slug && !fieldErrors.teamSize
 }
