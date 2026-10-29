@@ -1,14 +1,69 @@
-# ResenhaCoders Frontend
+# Inceptum Frontend
+
+Vue 3.5 + Vite 8 + Tailwind 4 single-page app of Inceptum. It talks to the Django API
+(`backend-resenha`) only through the shared axios instance and `/api/v1`.
+
+## Running locally
+
+Requirements: Node 22.18+ (or 24.12+) and the backend running on `http://127.0.0.1:8000`
+(see the backend README).
+
+```bash
+npm ci
+cp .env.example .env     # every key is optional; see below
+npm run dev              # http://localhost:5173, /api is proxied to Django
+```
+
+Open the app at **http://localhost:5173** (not 127.0.0.1) so the auth cookies match.
+
+### Checks
+
+```bash
+npx vue-tsc --build                         # types
+npx oxlint . && npx eslint .                # lint (npm run lint also applies --fix)
+npx prettier --list-different --experimental-cli src/
+node --test "src/**/__tests__/*.spec.ts"    # unit tests
+npm run build                               # production build + PWA service worker
+```
+
+## Environment variables
+
+All `VITE_*` values are compiled into the public bundle: never put a secret in them.
+Missing keys turn the related feature off instead of breaking the page.
+
+| Variable | What it does |
+|----------|--------------|
+| `VITE_API_BASE_URL` | API base; defaults to `/api/v1` (same-origin proxy). Ignored in dev |
+| `API_PROXY_TARGET` | Dev only, server side: where Vite forwards `/api` (default `http://127.0.0.1:8000`) |
+| `VITE_MAPBOX_API_KEY` | Map page and address picker; empty shows "Mapa indisponível" |
+| `VITE_API_KEY`, `VITE_AUTH_DOMAIN`, `VITE_PROJECT_ID`, `VITE_STORAGE_BUCKET`, `VITE_MESSAGING_SENDER_ID`, `VITE_APP_ID`, `VITE_MEASUREMENT_ID` | Firebase web config (push notifications) |
+| `VITE_VAPID_KEY` | Firebase Web Push certificate key |
+| `VITE_GOOGLE_CLIENT_ID` | Google sign-in; must match `GOOGLE_CLIENT_ID` on the backend |
+| `VITE_GITHUB_LOGIN` | `true` shows "Continuar com GitHub"; the GitHub App is configured on the backend |
+| `VITE_MP_PUBLIC_KEY` | Mercado Pago public key (same account as the backend `MP_ACCESS_TOKEN`) |
+
+## External services
+
+| Service | Used for |
+|---------|----------|
+| Inceptum API | Everything (auth cookies, data, WebSocket at `/ws/`) |
+| Mapbox GL | Map page and organization address picker (loaded only on those screens) |
+| Firebase Cloud Messaging | Push notifications (SDK loaded only after sign-in) |
+| Google Identity Services | Google sign-in button |
+| Mercado Pago SDK | Card payment form |
+| LiveKit | Video meetings (the token comes from the API) |
+
+## Structure
+
+Domain code lives in `src/modules/<domain>/` (views, components, stores, services,
+router). `src/shared/` holds domain-free UI kit, tokens and utils; `src/app/` holds the
+router, layouts and plugins. Each route is lazy-loaded, so heavy libraries (Mapbox,
+LiveKit, charts, Firebase) only download on the screens that use them.
 
 ## Figma interface development
 
-Organization creation, member lists and invitation onboarding are available at
-`/organizacoes`. See [organization onboarding](docs/ORGANIZATION_ONBOARDING.md) for
-authentication continuation, API requirements and verification.
-
-See the [design reference](docs/FIGMA_REFERENCE.md) for the source Figma file, access
-status and implementation workflow, and the [figma-interface agent](.claude/agents/figma-interface.md)
-for specialized interface implementation instructions.
+See the [design reference](docs/FIGMA_REFERENCE.md) and the
+[figma-interface agent](.claude/agents/figma-interface.md).
 
 ## Integrated Docker development
 
