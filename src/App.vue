@@ -69,7 +69,7 @@ finishGoogleConnect()
   <ConnectionStatus />
   <main v-if="bootFailed" class="grid min-h-dvh place-items-center bg-bg">
     <UiErrorState
-      title="Não foi possível abrir o Inceptum"
+      title="Não foi possível abrir o Urban Organization"
       description="Não conseguimos confirmar sua sessão. Confira a conexão e tente de novo."
       :retrying="retrying"
       @retry="retryBoot"

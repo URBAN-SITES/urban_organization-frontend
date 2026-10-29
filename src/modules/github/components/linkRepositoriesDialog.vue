@@ -124,7 +124,7 @@ const connect = () => startGitHubAuthorization('connect', route.fullPath)
   <UiDialog
     v-model:open="open"
     title="Associar repositórios"
-    description="Só aparecem os repositórios em que você instalou o app do Inceptum."
+    description="Só aparecem os repositórios em que você instalou o app do Urban Organization."
     size="lg"
     :dismissible="!saving"
   >

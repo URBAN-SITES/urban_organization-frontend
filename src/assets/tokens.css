@@ -21,11 +21,11 @@
   --ds-border-strong: #d4d4d1;
   --ds-fg: #18181b;
   --ds-fg-muted: #6b6b73;
-  /* #e85a0c não atinge AA com texto branco (3,6:1); #c2410c atinge 5,2:1 */
-  --ds-accent: #c2410c;
-  --ds-accent-hover: #ad3a0b;
-  --ds-accent-fg: #ffffff;
-  --ds-accent-soft: rgb(194 65 12 / 0.08);
+  /* cor da marca Urban Organization; texto preto sobre ela (10,6:1) */
+  --ds-accent: #f99f11;
+  --ds-accent-hover: #e08e0a;
+  --ds-accent-fg: #000000;
+  --ds-accent-soft: rgb(249 159 17 / 0.14);
   --ds-danger: #c42b2b;
   --ds-danger-soft: rgb(196 43 43 / 0.1);
   --ds-success: #1f7a4d;
@@ -59,19 +59,20 @@
 }
 
 .dark {
-  --ds-bg: #0b0b0c;
-  --ds-surface-1: #121214;
-  --ds-surface-2: #18181b;
-  --ds-surface-3: #202024;
-  --ds-border: #26262b;
-  --ds-border-strong: #34343a;
-  --ds-fg: #ededef;
-  --ds-fg-muted: #8b8b93;
-  --ds-accent: #ff6b1a;
-  --ds-accent-hover: #ff8340;
-  /* texto escuro sobre o laranja: 6,9:1 */
-  --ds-accent-fg: #0b0b0c;
-  --ds-accent-soft: rgb(255 107 26 / 0.14);
+  /* fundo preto e superfícies grafite da identidade Urban Organization */
+  --ds-bg: #000000;
+  --ds-surface-1: #0d0d0e;
+  --ds-surface-2: #161617;
+  --ds-surface-3: #1f1f21;
+  --ds-border: #262628;
+  --ds-border-strong: #353538;
+  --ds-fg: #ffffff;
+  --ds-fg-muted: #9a9aa1;
+  --ds-accent: #f99f11;
+  --ds-accent-hover: #fab13f;
+  /* texto preto sobre o laranja da marca: 10,6:1 */
+  --ds-accent-fg: #000000;
+  --ds-accent-soft: rgb(249 159 17 / 0.14);
   --ds-danger: #f26b6b;
   --ds-danger-soft: rgb(242 107 107 / 0.14);
   --ds-success: #4cc38a;

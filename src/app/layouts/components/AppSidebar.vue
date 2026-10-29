@@ -50,13 +50,13 @@ watch(
       <RouterLink
         to="/"
         class="flex min-w-0 items-center gap-2.5 rounded-control py-1 pr-2 pl-[10px] focus-visible:outline-2 focus-visible:outline-accent"
-        aria-label="Inceptum: início"
+        aria-label="Urban Organization: início"
       >
-        <img src="/icons/logo.svg" alt="" class="size-5 shrink-0 rounded-[4px]" />
+        <img src="/brand/urban-icon-dark.png" alt="" class="size-5 shrink-0 rounded-[4px]" />
         <span
           class="sidebar-label truncate text-13 font-semibold tracking-[0.18em] text-fg uppercase"
         >
-          Inceptum
+          Urban
         </span>
       </RouterLink>
     </div>
