@@ -1,4 +1,4 @@
-const ACCENT = '#ff6700'
+const ACCENT = '#f99f11'
 const CATEGORY = ['#ef5418', '#6a4cf5', '#2563eb', '#15924a', '#c9720a', '#0e9488']
 
 /** Série cronológica: tinta nas barras antigas e o laranja da marca na mais recente. */

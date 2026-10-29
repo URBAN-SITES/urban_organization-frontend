@@ -44,7 +44,7 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         registerType: 'autoUpdate',
         workbox: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2}'],
           cleanupOutdatedCaches: true,
           sourcemap: false,
           maximumFileSizeToCacheInBytes: 5000000,
@@ -53,35 +53,35 @@ export default defineConfig(({ mode }) => {
         srcDir: 'service-worker',
         filename: 'sw.ts',
         injectManifest: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2}'],
           // the map (~1.9 MB) and the meeting room (~0.5 MB) need the network anyway; they load on
           // demand instead of being downloaded by every install
           globIgnores: ['**/mapboxComp-*.js', '**/MeetingRoomView-*.js'],
           maximumFileSizeToCacheInBytes: 5000000,
         },
         manifest: {
-          id: 'inceptum',
-          name: 'Inceptum',
-          short_name: 'Inceptum',
-          description: 'Inceptum',
-          theme_color: '#ffffff',
-          background_color: '#ffffff',
+          id: 'urban-organization',
+          name: 'Urban Organization',
+          short_name: 'Urban',
+          description: 'Organização, planejamento e resultados para equipes.',
+          theme_color: '#000000',
+          background_color: '#000000',
           display: 'standalone',
           scope: '/',
           start_url: '/',
           icons: [
             {
-              src: '/icons/hackathon-192.png',
+              src: '/icons/urban-192.png',
               sizes: '192x192',
               type: 'image/png',
             },
             {
-              src: '/icons/hackathon-512.png',
+              src: '/icons/urban-512.png',
               sizes: '512x512',
               type: 'image/png',
             },
             {
-              src: '/icons/hackathon-512.png',
+              src: '/icons/urban-maskable-512.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'maskable',
