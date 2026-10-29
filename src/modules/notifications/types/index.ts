@@ -15,8 +15,12 @@ export interface NotificationsPage {
   results: AppNotification[]
 }
 
+// filtros do servidor: menções (tarefa e chat), tarefas e organização
+export type NotificationFilterKind = 'mention' | 'task' | 'organization'
+
 export interface ListNotificationsParams {
   unread?: boolean
+  kind?: NotificationFilterKind
   page?: number
 }
 

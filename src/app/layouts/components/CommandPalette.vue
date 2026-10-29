@@ -1,30 +1,46 @@
 <script setup lang="ts">
-import { CornerDownLeft, LogOut, Moon, Plus, Search, SquareKanban, Sun } from '@lucide/vue'
-import { useEventListener } from '@vueuse/core'
+import {
+  CornerDownLeft,
+  FileText,
+  LogOut,
+  Moon,
+  Plus,
+  Search,
+  SquareCheck,
+  SquareKanban,
+  Sun,
+  UserRound,
+} from '@lucide/vue'
+import { useEventListener, watchDebounced } from '@vueuse/core'
 import { computed, nextTick, ref, useId, useTemplateRef, watch, type Component } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTheme } from '@/app/composables/useTheme'
 import { useSectorsStore } from '@/modules/module'
-import { UiIcon } from '@/shared/components'
+import { useOrganizationsStore } from '@/modules/organizations'
+import { useSearchStore } from '@/modules/search'
+import { UiIcon, UiSpinner } from '@/shared/components'
 import { useModalLayer } from '@/shared/composables/overlay'
 import { accountNav, workspaceNav } from '../navigation'
 
 interface Command {
   id: string
-  group: 'Navegar' | 'Projetos' | 'Ações'
+  group: 'Navegar' | 'Projetos' | 'Ações' | 'Tarefas' | 'Pessoas' | 'Arquivos'
   label: string
+  hint?: string
   icon: Component
   keywords?: string
   run: () => void
 }
 
-/** Ctrl/Cmd+K: navegação entre telas, setores e ações rápidas. */
+/** Ctrl/Cmd+K: telas, projetos e ações rápidas, mais tarefas, pessoas e arquivos do servidor. */
 const open = defineModel<boolean>('open', { required: true })
 const emit = defineEmits<{ signOut: [] }>()
 
 const router = useRouter()
 const sectors = useSectorsStore()
 const { isDark, toggleTheme } = useTheme()
+const organizations = useOrganizationsStore()
+const search = useSearchStore()
 
 const query = ref('')
 const activeIndex = ref(0)
@@ -77,14 +93,57 @@ const commands = computed<Command[]>(() => [
   },
 ])
 
+// resultados do servidor valem só para o texto que os pediu
+const remote = computed<Command[]>(() => {
+  const org = organizations.currentId
+  if (!org || search.query !== query.value.trim()) return []
+  const { tasks, people, files } = search.results
+  return [
+    ...tasks.map((task) => ({
+      id: `task:${task.id}`,
+      group: 'Tarefas' as const,
+      label: task.title,
+      hint: `${task.sector_name} · ${task.status}`,
+      icon: SquareCheck,
+      run: () => void router.push(`/setores/${task.sector_id}?task=${task.id}`),
+    })),
+    ...people.map((person) => ({
+      id: `person:${person.id}`,
+      group: 'Pessoas' as const,
+      label: person.name || person.email,
+      hint: person.email,
+      icon: UserRound,
+      run: () => void router.push(`/organizacoes/${org}/membros`),
+    })),
+    ...files.map((file) => ({
+      id: `file:${file.id}`,
+      group: 'Arquivos' as const,
+      label: file.file_name,
+      hint: 'Abre em nova aba',
+      icon: FileText,
+      run: () => void window.open(file.url, '_blank', 'noopener'),
+    })),
+  ]
+})
+
 const results = computed(() => {
   const terms = normalize(query.value).split(/\s+/).filter(Boolean)
   if (!terms.length) return commands.value
-  return commands.value.filter((command) => {
+  const local = commands.value.filter((command) => {
     const haystack = normalize(`${command.label} ${command.keywords ?? ''} ${command.group}`)
     return terms.every((term) => haystack.includes(term))
   })
+  return [...local, ...remote.value]
 })
+
+watchDebounced(
+  query,
+  (text) => {
+    const org = organizations.currentId
+    if (open.value && org) void search.search(org, text)
+  },
+  { debounce: 250 },
+)
 
 const groups = computed(() => {
   const map = new Map<string, { command: Command; index: number }[]>()
@@ -99,6 +158,7 @@ watch(open, (value) => {
   if (value) {
     query.value = ''
     activeIndex.value = 0
+    search.clear()
   }
 })
 
@@ -178,7 +238,10 @@ useEventListener(document, 'keydown', (event: KeyboardEvent) => {
             </kbd>
           </div>
           <div :id="listId" role="listbox" aria-label="Resultados" class="overflow-y-auto p-1.5">
-            <p v-if="!results.length" class="px-3 py-8 text-center text-13 text-fg-muted">
+            <p
+              v-if="!results.length && !search.isLoading"
+              class="px-3 py-8 text-center text-13 text-fg-muted"
+            >
               Nada encontrado para “{{ query }}”.
             </p>
             <div v-for="[group, items] in groups" :key="group" role="group" :aria-label="group">
@@ -199,7 +262,12 @@ useEventListener(document, 'keydown', (event: KeyboardEvent) => {
                 @click="runAt(index)"
               >
                 <UiIcon :icon="command.icon" />
-                <span class="flex-1 truncate">{{ command.label }}</span>
+                <span class="min-w-0 flex-1 truncate">
+                  {{ command.label }}
+                  <span v-if="command.hint" class="ml-1.5 text-12 text-fg-muted">
+                    {{ command.hint }}
+                  </span>
+                </span>
                 <UiIcon
                   v-if="index === activeIndex"
                   :icon="CornerDownLeft"
@@ -208,6 +276,16 @@ useEventListener(document, 'keydown', (event: KeyboardEvent) => {
                 />
               </div>
             </div>
+            <p
+              v-if="search.isLoading || search.error"
+              role="status"
+              class="flex items-center gap-2 px-2.5 py-2 text-12 text-fg-muted"
+            >
+              <template v-if="search.isLoading">
+                <UiSpinner :size="12" /> Buscando tarefas, pessoas e arquivos…
+              </template>
+              <template v-else>{{ search.error }}</template>
+            </p>
           </div>
         </section>
       </div>

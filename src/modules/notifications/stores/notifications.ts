@@ -14,7 +14,7 @@ import {
   unregisterDevice,
   sendNotification,
 } from '../services'
-import type { AppNotification, PushMessage } from '../types'
+import type { AppNotification, NotificationFilterKind, PushMessage } from '../types'
 
 const TOKEN_KEY = 'resenha.pushToken'
 
@@ -28,11 +28,13 @@ export const useNotificationsStore = defineStore('notifications', () => {
   const pushEnabled = computed(() => !!pushToken.value)
   const lastPush = ref<PushMessage | null>(null)
   const unreadOnly = ref(false)
+  const kind = ref<NotificationFilterKind | null>(null)
   const desktopEnabled = ref(desktopAlertsOn())
   let page = 1
   let generation = 0
   let reloadRequested = false
   let stopForeground: (() => void) | undefined
+  const kindParam = () => (kind.value ? { kind: kind.value } : {})
 
   async function run<T>(action: () => Promise<T>, fallback: string): Promise<T | undefined> {
     const current = generation
@@ -61,12 +63,12 @@ export const useNotificationsStore = defineStore('notifications', () => {
     unreadOnly.value = unread
     isLoading.value = true
     const loaded = await run(async () => {
-      const result = await listNotifications({ unread })
+      const result = await listNotifications({ unread, ...kindParam() })
       if (current !== generation) return
       items.value = result.results
       hasMore.value = !!result.next
       page = 1
-      if (unread) unreadCount.value = result.count
+      if (unread && !kind.value) unreadCount.value = result.count
       return true
     }, 'Não foi possível carregar as notificações.')
     if (current !== generation) return
@@ -76,7 +78,13 @@ export const useNotificationsStore = defineStore('notifications', () => {
       await load()
       return
     }
-    if (loaded && !unread) await refreshUnreadCount()
+    if (loaded && (!unread || kind.value)) await refreshUnreadCount()
+  }
+
+  /** Troca o filtro da central (não lidas e/ou tipo) e recarrega do servidor. */
+  function setFilter(filter: { unread: boolean; kind: NotificationFilterKind | null }) {
+    kind.value = filter.kind
+    return load(filter.unread)
   }
 
   async function loadMore(): Promise<void> {
@@ -84,7 +92,11 @@ export const useNotificationsStore = defineStore('notifications', () => {
     const current = generation
     isLoading.value = true
     await run(async () => {
-      const result = await listNotifications({ unread: unreadOnly.value, page: page + 1 })
+      const result = await listNotifications({
+        unread: unreadOnly.value,
+        ...kindParam(),
+        page: page + 1,
+      })
       if (current !== generation) return
       items.value.push(...result.results)
       hasMore.value = !!result.next
@@ -203,6 +215,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
     pushToken.value = ''
     lastPush.value = null
     unreadOnly.value = false
+    kind.value = null
     page = 1
     reloadRequested = false
   }
@@ -217,6 +230,8 @@ export const useNotificationsStore = defineStore('notifications', () => {
     desktopEnabled,
     lastPush,
     unreadOnly,
+    kind,
+    setFilter,
     load,
     loadMore,
     refreshUnreadCount,

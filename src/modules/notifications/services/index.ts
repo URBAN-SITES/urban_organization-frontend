@@ -19,8 +19,12 @@ export async function listNotifications(
   params: ListNotificationsParams = {},
 ): Promise<NotificationsPage> {
   try {
-    const { unread, page } = params
-    const query = { ...(unread && { unread: 'true' }), ...(page && { page }) }
+    const { unread, kind, page } = params
+    const query = {
+      ...(unread && { unread: 'true' }),
+      ...(kind && { kind }),
+      ...(page && { page }),
+    }
     return (await api.get<NotificationsPage>('/notifications/', { params: query })).data
   } catch (error) {
     throw new Error(getErrorMessage(error, 'Não foi possível carregar as notificações.'))

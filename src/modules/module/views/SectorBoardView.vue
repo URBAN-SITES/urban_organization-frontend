@@ -138,6 +138,14 @@ async function load(id: string) {
   }
 }
 watch(() => props.sectorId, load, { immediate: true })
+// a busca global pode abrir outra tarefa do projeto já carregado
+watch(
+  () => route.query.task,
+  (task) => {
+    if (loading.value || typeof task !== 'string') return
+    if (kanban.tasks.some((t) => t.id === task)) openDetails(task)
+  },
+)
 
 watch(panelOpen, (open) => {
   if (open) return

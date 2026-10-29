@@ -1,47 +1,103 @@
 <script setup lang="ts">
+import {
+  AtSign,
+  Bell,
+  BellRing,
+  Building2,
+  Check,
+  CheckCheck,
+  CircleDot,
+  MessageSquare,
+  UserPlus,
+  type LucideIcon,
+} from '@lucide/vue'
 import { computed, onMounted, ref } from 'vue'
 import { toast } from 'vue-sonner'
-import { BaseButton, TopbarComp } from '@/shared/components'
+import {
+  TopbarComp,
+  UiAvatar,
+  UiButton,
+  UiEmptyState,
+  UiErrorState,
+  UiIconButton,
+  UiPanel,
+  UiSkeleton,
+  UiSwitch,
+  UiTabs,
+} from '@/shared/components'
+import { relativeTime } from '@/shared/utils/time'
 import { useNotificationsStore } from '../stores'
 import { useOpenNotification } from '../composables/useOpenNotification'
 import { showDesktopAlert } from '../composables/desktopAlerts'
-import { avatar } from '@/shared/utils/people'
-import { relativeTime } from '@/shared/utils/time'
+import type { AppNotification, NotificationFilterKind } from '../types'
 import {
-  kindIcons,
+  dayLabel,
   notificationActor,
   notificationKind,
   notificationTitle,
   type NotificationKind,
 } from '../utils'
 
+/** Central de notificações: filtros no servidor, agrupada por dia, abre o destino. */
 const notifications = useNotificationsStore()
 const openNotification = useOpenNotification()
 const isChangingPush = ref(false)
 const isSending = ref(false)
 
-const TABS: { id: 'all' | NotificationKind; label: string }[] = [
-  { id: 'all', label: 'Todas' },
-  { id: 'mention', label: 'Menções' },
-  { id: 'assigned', label: 'Atribuídas a mim' },
-  { id: 'comment', label: 'Comentários' },
+const TABS = [
+  { value: 'all', label: 'Todas' },
+  { value: 'mention', label: 'Menções' },
+  { value: 'task', label: 'Tarefas' },
+  { value: 'organization', label: 'Organização' },
 ]
-const tab = ref<(typeof TABS)[number]['id']>('all')
+const ICONS: Record<NotificationKind, LucideIcon> = {
+  mention: AtSign,
+  assigned: UserPlus,
+  comment: MessageSquare,
+  status: CircleDot,
+  organization: Building2,
+  other: Bell,
+}
 
-const visible = computed(() =>
-  tab.value === 'all'
-    ? notifications.items
-    : notifications.items.filter((item) => notificationKind(item) === tab.value),
-)
+const tab = computed({
+  get: () => notifications.kind ?? 'all',
+  set: (value: string) =>
+    void notifications.setFilter({
+      unread: notifications.unreadOnly,
+      kind: value === 'all' ? null : (value as NotificationFilterKind),
+    }),
+})
+const unreadOnly = computed({
+  get: () => notifications.unreadOnly,
+  set: (value: boolean) =>
+    void notifications.setFilter({ unread: value, kind: notifications.kind }),
+})
+
+const groups = computed(() => {
+  const map = new Map<string, AppNotification[]>()
+  for (const item of notifications.items) {
+    const label = dayLabel(item.created_at)
+    map.set(label, [...(map.get(label) ?? []), item])
+  }
+  return [...map.entries()]
+})
+const firstLoad = computed(() => notifications.isLoading && !notifications.items.length)
+const failed = computed(() => !!notifications.error && !notifications.items.length)
+const alertsOn = computed(() => notifications.pushEnabled || notifications.desktopEnabled)
+const emptyText = computed(() => {
+  if (notifications.unreadOnly) return 'Você leu tudo deste filtro.'
+  if (notifications.kind) return 'Nenhuma notificação deste tipo ainda.'
+  return 'Atribuições, comentários, menções e mudanças na organização aparecem aqui.'
+})
 
 onMounted(() => {
-  void notifications.load(false)
+  void notifications.load()
 })
 
 async function togglePush(): Promise<void> {
   isChangingPush.value = true
   try {
-    if (notifications.pushEnabled || notifications.desktopEnabled) {
+    if (alertsOn.value) {
       if (notifications.pushEnabled) await notifications.disablePush()
       notifications.disableDesktop()
     } else {
@@ -51,7 +107,7 @@ async function togglePush(): Promise<void> {
       toast.success('Avisos ativados neste computador.')
     }
   } catch (error) {
-    toast.error(error instanceof Error ? error.message : 'Não foi possível alterar o push.')
+    toast.error(error instanceof Error ? error.message : 'Não foi possível alterar os avisos.')
   } finally {
     isChangingPush.value = false
   }
@@ -63,9 +119,9 @@ async function sendTest(): Promise<void> {
     if (notifications.pushEnabled) await notifications.sendTest()
     else
       showDesktopAlert({
-        title: 'ResenhaCoders',
+        title: 'Inceptum',
         body: 'Os avisos deste computador estão funcionando.',
-        tag: 'resenha-test',
+        tag: 'inceptum-test',
       })
     toast.success('Aviso enviado. Confira a notificação do seu sistema.')
   } catch (error) {
@@ -74,189 +130,155 @@ async function sendTest(): Promise<void> {
     isSending.value = false
   }
 }
+
+async function markAll(): Promise<void> {
+  await notifications.markAllAsRead()
+  if (!notifications.error) toast.success('Todas marcadas como lidas.')
+}
 </script>
 
 <template>
-  <div
-    class="flex min-h-dvh w-full min-w-0 flex-col bg-(--background) dark:bg-(--background-inverse)"
-  >
+  <div class="flex min-h-dvh w-full min-w-0 flex-col bg-bg">
     <TopbarComp :crumbs="['Notificações']" />
 
-    <section
-      class="flex flex-1 flex-col gap-[16px] px-[20px] pt-[24px] pb-[32px] sm:px-[36px] xl:px-[44px]"
-    >
-      <header class="flex flex-wrap items-end justify-between gap-[12px]">
-        <div>
-          <h1 class="text-[26px]! leading-tight! font-semibold! tracking-[-0.02em]!">
+    <main class="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 pt-6 pb-10 sm:px-8">
+      <header class="flex flex-wrap items-end justify-between gap-4">
+        <div class="min-w-0">
+          <h1 class="text-24 leading-tight font-semibold tracking-[-0.01em] text-fg">
             Notificações
           </h1>
-          <p
-            class="text-[14px] text-(--text-secondary) dark:text-(--text-inverse-muted)"
-            aria-live="polite"
-          >
+          <p class="mt-1 text-14 text-fg-muted" aria-live="polite">
             {{
-              notifications.unreadCount ? `${notifications.unreadCount} não lidas` : 'Tudo em dia'
+              notifications.unreadCount
+                ? `${notifications.unreadCount} não ${notifications.unreadCount === 1 ? 'lida' : 'lidas'}`
+                : 'Tudo em dia'
             }}
           </p>
         </div>
-        <BaseButton
-          label="Marcar todas como lidas"
-          icon="check"
-          icon-position="left"
-          variant="secondary"
-          :full-width="false"
-          class="mt-0!"
-          :disabled="!notifications.unreadCount"
-          @click="notifications.markAllAsRead()"
-        />
+        <UiButton :icon="CheckCheck" :disabled="!notifications.unreadCount" @click="markAll">
+          Marcar todas como lidas
+        </UiButton>
       </header>
 
-      <div
-        role="tablist"
-        aria-label="Filtrar notificações"
-        class="flex gap-[22px] overflow-x-auto overflow-y-hidden border-b border-(--border-default) dark:border-(--border-inverse)"
-      >
-        <button
-          v-for="item in TABS"
-          :key="item.id"
-          type="button"
-          role="tab"
-          :aria-selected="tab === item.id"
-          :class="[
-            '-mb-px shrink-0 cursor-pointer border-b-2 pb-[10px] text-[14px] leading-normal',
-            tab === item.id
-              ? 'border-(--text-primary) font-semibold dark:border-(--text-inverse)'
-              : 'border-transparent text-(--text-muted) hover:text-(--text-primary) dark:hover:text-(--text-inverse)',
-          ]"
-          @click="tab = item.id"
-        >
-          {{ item.label }}
-        </button>
+      <div class="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+        <UiTabs v-model="tab" :tabs="TABS" label="Tipo de notificação" />
+        <UiSwitch v-model="unreadOnly" label="Só não lidas" class="pb-2" />
       </div>
 
-      <p v-if="notifications.error" role="alert" class="text-(--destructive)">
-        {{ notifications.error }}
-      </p>
+      <div v-if="firstLoad" class="grid gap-3" aria-label="Carregando notificações">
+        <div v-for="n in 5" :key="n" class="flex items-center gap-3">
+          <UiSkeleton circle class="size-8" />
+          <div class="grid flex-1 gap-1.5">
+            <UiSkeleton class="h-4 w-2/3" />
+            <UiSkeleton class="h-3 w-1/3" />
+          </div>
+        </div>
+      </div>
 
-      <div
-        class="rounded-[16px] border border-(--border-default) bg-(--surface) px-[18px] py-[6px] dark:border-(--border-inverse) dark:bg-(--surface-inverse)"
-      >
-        <p
-          v-if="notifications.isLoading && !notifications.items.length"
-          role="status"
-          class="py-[16px] text-[14px] text-(--text-muted)"
+      <UiErrorState
+        v-else-if="failed"
+        title="Não foi possível carregar as notificações"
+        :description="notifications.error"
+        :retrying="notifications.isLoading"
+        @retry="notifications.load()"
+      />
+
+      <UiEmptyState
+        v-else-if="!notifications.items.length"
+        :icon="Bell"
+        :title="notifications.unreadOnly ? 'Nada pendente' : 'Nenhuma notificação'"
+        :description="emptyText"
+      />
+
+      <div v-else class="grid grid-cols-1 gap-6">
+        <p v-if="notifications.error" role="alert" class="text-13 text-danger">
+          {{ notifications.error }}
+        </p>
+        <section
+          v-for="[day, items] in groups"
+          :key="day"
+          :aria-label="day"
+          class="grid grid-cols-1 gap-2"
         >
-          Carregando notificações…
-        </p>
-        <p v-else-if="!visible.length" class="py-[16px] text-[14px] text-(--text-muted)">
-          {{
-            tab === 'all'
-              ? 'Nada por aqui ainda. Atribuições, comentários e menções aparecem nesta lista.'
-              : 'Nenhuma notificação neste filtro.'
-          }}
-        </p>
-        <ul v-else aria-label="Suas notificações">
-          <li
-            v-for="item in visible"
-            :key="item.id"
-            class="border-b border-(--border-default) last:border-b-0 dark:border-(--border-inverse)"
-          >
-            <button
-              type="button"
-              class="flex w-full cursor-pointer items-center gap-[12px] py-[14px] text-left"
-              @click="openNotification(item)"
+          <h2 class="text-12 font-medium text-fg-muted">{{ day }}</h2>
+          <ul class="divide-y divide-border rounded-card border border-border bg-surface-1">
+            <li
+              v-for="item in items"
+              :key="item.id"
+              class="relative flex items-center gap-3 px-4 py-3 transition-colors duration-(--dur-fast) ease-out hover:bg-surface-2"
             >
-              <span
+              <UiAvatar
                 v-if="notificationActor(item.title)"
-                class="grid size-[32px] shrink-0 place-items-center rounded-full text-[11px] leading-none font-semibold text-white"
-                :style="{ backgroundColor: avatar(notificationActor(item.title)!).color }"
-                aria-hidden="true"
-                >{{ avatar(notificationActor(item.title)!).initials }}</span
-              >
+                :name="notificationActor(item.title)!"
+                size="sm"
+              />
               <span
                 v-else
-                class="grid size-[32px] shrink-0 place-items-center rounded-[9px] bg-(--bg-muted) dark:bg-black/30"
+                class="grid size-8 shrink-0 place-items-center rounded-control border border-border bg-surface-2 text-fg-muted"
                 aria-hidden="true"
               >
-                <span
-                  class="material-symbols-outlined text-[17px]! text-(--text-secondary) dark:text-(--text-inverse-muted)"
-                  >{{ kindIcons[notificationKind(item)] }}</span
-                >
+                <component :is="ICONS[notificationKind(item)]" :size="16" />
               </span>
 
-              <span class="flex min-w-0 flex-1 flex-col leading-normal">
-                <span
-                  :class="['truncate text-[14px]', item.is_read ? 'font-normal' : 'font-semibold']"
-                  >{{ notificationTitle(item.title) }}</span
+              <span class="flex min-w-0 flex-1 flex-col">
+                <button
+                  type="button"
+                  class="cursor-pointer truncate text-left text-14 text-fg after:absolute after:inset-0 focus-visible:outline-none after:focus-visible:rounded-card after:focus-visible:outline-2 after:focus-visible:outline-accent"
+                  :class="item.is_read ? 'font-normal' : 'font-semibold'"
+                  @click="openNotification(item)"
                 >
-                <span class="truncate text-[12.5px] text-(--text-muted)">
+                  {{ notificationTitle(item.title) }}
+                  <span v-if="!item.is_read" class="sr-only">(não lida)</span>
+                </button>
+                <span class="truncate text-12 text-fg-muted">
                   {{ item.message }}{{ item.message ? ' · ' : ''
                   }}{{ relativeTime(item.created_at) }}
                 </span>
               </span>
-
-              <span
+              <UiIconButton
                 v-if="!item.is_read"
-                class="inline-flex shrink-0 items-center rounded-[6px] bg-[#fff1e6] px-[8px] py-[2px] text-[11.5px] leading-[16px] font-medium text-[#e2560b] dark:bg-[#ff6700]/15 dark:text-[#ff8a4c]"
-                >Nova</span
-              >
-            </button>
-          </li>
-        </ul>
+                :icon="Check"
+                label="Marcar como lida"
+                size="sm"
+                class="relative"
+                @click="notifications.markAsRead(item.id)"
+              />
+            </li>
+          </ul>
+        </section>
+
+        <UiButton
+          v-if="notifications.hasMore"
+          class="self-center"
+          :loading="notifications.isLoading"
+          @click="notifications.loadMore()"
+        >
+          Carregar mais
+        </UiButton>
       </div>
 
-      <BaseButton
-        v-if="notifications.hasMore"
-        label="Carregar mais"
-        variant="secondary"
-        :full-width="false"
-        :loading="notifications.isLoading"
-        @click="notifications.loadMore()"
-      />
-
-      <div
-        class="flex flex-wrap items-center justify-between gap-[12px] rounded-[16px] border border-(--border-default) bg-(--surface) px-[18px] py-[14px] dark:border-(--border-inverse) dark:bg-(--surface-inverse)"
+      <UiPanel
+        title="Avisos neste navegador"
+        :description="
+          alertsOn
+            ? 'Mensagens, atribuições e menções aparecem no seu computador quando você não está na aba.'
+            : 'Ative para ver mensagens, atribuições e menções no seu computador quando você não está na aba.'
+        "
       >
-        <div>
-          <h2 class="text-[15px]! leading-normal! font-semibold! tracking-normal!">
-            Avisos neste navegador
-          </h2>
-          <p class="text-[13px] text-(--text-muted)">
-            {{
-              notifications.pushEnabled || notifications.desktopEnabled
-                ? 'Novas mensagens, atribuições e menções aparecem no seu computador quando você não está na aba.'
-                : 'Ative para ver novas mensagens, atribuições e menções no seu computador quando você não está na aba.'
-            }}
-          </p>
-        </div>
-        <div class="flex flex-wrap gap-[8px]">
-          <BaseButton
-            v-if="notifications.pushEnabled || notifications.desktopEnabled"
-            label="Enviar teste"
-            variant="ghost"
-            size="sm"
-            :full-width="false"
-            class="mt-0!"
-            :loading="isSending"
-            @click="sendTest"
-          />
-          <BaseButton
-            :label="
-              notifications.pushEnabled || notifications.desktopEnabled
-                ? 'Desativar avisos'
-                : 'Ativar avisos'
-            "
-            :variant="
-              notifications.pushEnabled || notifications.desktopEnabled ? 'secondary' : 'primary'
-            "
-            size="sm"
-            :full-width="false"
-            class="mt-0!"
+        <div class="flex flex-wrap gap-2">
+          <UiButton
+            :icon="BellRing"
+            :variant="alertsOn ? 'secondary' : 'primary'"
             :loading="isChangingPush"
             @click="togglePush"
-          />
+          >
+            {{ alertsOn ? 'Desativar avisos' : 'Ativar avisos' }}
+          </UiButton>
+          <UiButton v-if="alertsOn" variant="ghost" :loading="isSending" @click="sendTest">
+            Enviar teste
+          </UiButton>
         </div>
-      </div>
-    </section>
+      </UiPanel>
+    </main>
   </div>
 </template>
