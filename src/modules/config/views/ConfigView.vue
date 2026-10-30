@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // TODO: CÓDIGO COMENTADOO, REVISAR MAIS TARDE.
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { useTheme } from '@/app/composables/useTheme'
 import { getErrorMessage } from '@/app/plugins/axios'
@@ -93,7 +94,20 @@ const LANGUAGES: SelectOption[] = [
 
 const { theme, setTheme } = useTheme()
 
-const activeTab = ref<ConfigTabId>('profile')
+// ?aba=preferences abre direto na aba (atalhos do menu do perfil)
+const route = useRoute()
+const tabFromQuery = (): ConfigTabId | null => {
+  const id = route.query.aba
+  return TABS.some((tab) => tab.id === id) ? (id as ConfigTabId) : null
+}
+const activeTab = ref<ConfigTabId>(tabFromQuery() ?? 'profile')
+watch(
+  () => route.query.aba,
+  () => {
+    const tab = tabFromQuery()
+    if (tab) activeTab.value = tab
+  },
+)
 const current = computed(() => TABS.find((tab) => tab.id === activeTab.value) ?? TABS[0]!)
 
 // os dados são JSON simples; structuredClone não aceita os proxies reativos do Vue
