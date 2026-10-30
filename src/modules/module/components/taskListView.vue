@@ -24,7 +24,7 @@ function toggle(id: string) {
       v-for="status in statuses"
       :key="status.id"
       :aria-labelledby="`list-${status.id}`"
-      class="rounded-card border border-border bg-surface-1"
+      class="uo-card"
     >
       <h3 :id="`list-${status.id}`">
         <button

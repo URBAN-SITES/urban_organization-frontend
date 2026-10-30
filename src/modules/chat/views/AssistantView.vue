@@ -147,7 +147,7 @@ async function analyze() {
     <TopbarComp v-model:search="search" :crumbs="['Urban AI', historyTitle]" />
 
     <div
-      class="flex min-h-0 flex-1 flex-col px-[20px] py-[12px] sm:px-[32px] sm:py-[20px] lg:px-[40px] lg:py-[28px]"
+      class="uo-backdrop flex min-h-0 flex-1 flex-col px-[20px] py-[12px] sm:px-[32px] sm:py-[20px] lg:px-[40px] lg:py-[28px]"
     >
       <ChatPanelLayout tinted>
         <template #aside>

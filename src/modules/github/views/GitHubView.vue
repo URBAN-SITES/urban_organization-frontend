@@ -176,6 +176,8 @@ onMounted(loadStatus)
 
 <template>
   <PageLayout
+    :icon="GitBranch"
+    tone="#8b5cf6"
     :crumbs="['Integrações', 'GitHub']"
     title="GitHub"
     description="Entre com o GitHub e associe repositórios aos projetos para ver branches, PRs e issues."
