@@ -4,6 +4,12 @@ const dayMs = 86_400_000
 
 export type DueTone = 'danger' | 'warning' | 'neutral'
 
+/** Variação percentual real entre duas semanas; null quando não há base de comparação. */
+export function weekChange(current: number, previous: number): number | null {
+  if (!previous) return null
+  return Math.round(((current - previous) * 100) / previous)
+}
+
 export function kpis(d: Dashboard) {
   const delta = d.done_this_week - d.done_last_week
   return [
@@ -12,12 +18,14 @@ export function kpis(d: Dashboard) {
       title: 'Projetos ativos',
       value: d.active_projects,
       description: d.active_projects === 1 ? '1 projeto visível' : 'que você pode ver',
+      change: null,
     },
     {
       key: 'progress',
       title: 'Em andamento',
       value: d.in_progress,
       description: `${d.open_tasks} abertas no total`,
+      change: null,
     },
     {
       key: 'done',
@@ -27,14 +35,42 @@ export function kpis(d: Dashboard) {
         delta === 0
           ? 'Igual à semana anterior'
           : `${delta > 0 ? '+' : ''}${delta} em relação à anterior`,
+      change: weekChange(d.done_this_week, d.done_last_week),
     },
     {
-      key: 'overdue',
-      title: 'Atrasadas',
-      value: d.overdue,
-      description: d.overdue_title ?? 'Nada atrasado',
+      key: 'members',
+      title: 'Membros da equipe',
+      value: d.members,
+      description: d.members === 1 ? 'só você por enquanto' : 'na organização',
+      change: null,
     },
   ]
+}
+
+/** "Hoje", "Amanhã" ou a data curta, para a agenda. */
+export function dayLabel(iso: string, today: Date = new Date()): string {
+  const day = new Date(iso)
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()
+  const diff = Math.floor((day.getTime() - start) / dayMs)
+  if (diff === 0) return 'Hoje'
+  if (diff === 1) return 'Amanhã'
+  return day.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })
+}
+
+/** Estado de uma reunião em relação a agora: em andamento, começa em breve ou depois. */
+export function meetingState(
+  startsAt: string,
+  endsAt: string,
+  now: number = Date.now(),
+): 'live' | 'soon' | 'later' {
+  const start = Date.parse(startsAt)
+  if (start <= now && Date.parse(endsAt) >= now) return 'live'
+  return start - now <= 60 * 60_000 ? 'soon' : 'later'
+}
+
+export function duration(seconds: number): string {
+  const minutes = Math.max(1, Math.round(seconds / 60))
+  return minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)} h ${minutes % 60} min`
 }
 
 // `today` é a data local de referência (YYYY-MM-DD); due_date vem sem fuso.
