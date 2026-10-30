@@ -53,6 +53,16 @@ export const useAuthStore = defineStore('auth', () => {
   const isSigningOut = ref(false)
   const signOutStartedAt = ref(0)
   const isAuthenticated = computed(() => user.value !== null)
+  // tela de carregamento da marca durante trocas de contexto reais (entrar, criar conta)
+  const loadingScreen = ref<{ title: string; description?: string } | null>(null)
+
+  function showLoadingScreen(title: string, description?: string): void {
+    loadingScreen.value = { title, description }
+  }
+
+  function hideLoadingScreen(): void {
+    loadingScreen.value = null
+  }
 
   function finishSignOut(): void {
     isSigningOut.value = false
@@ -141,6 +151,9 @@ export const useAuthStore = defineStore('auth', () => {
     isSigningOut,
     signOutStartedAt,
     finishSignOut,
+    loadingScreen,
+    showLoadingScreen,
+    hideLoadingScreen,
     isAuthenticated,
     clearSession,
     loadUser,
