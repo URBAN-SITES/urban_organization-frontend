@@ -332,7 +332,7 @@ const emptyDescription = computed(() => {
           <li
             v-for="project in result.results"
             :key="project.id"
-            class="relative flex flex-col gap-4 rounded-card border border-border bg-surface-1 p-4 transition-colors duration-(--dur-fast) ease-out focus-within:border-border-strong hover:border-border-strong"
+            class="relative flex flex-col gap-4 uo-card uo-card-interactive p-4"
           >
             <div class="flex items-start gap-3">
               <ProjectIcon :icon="project.icon" :color="project.color" />

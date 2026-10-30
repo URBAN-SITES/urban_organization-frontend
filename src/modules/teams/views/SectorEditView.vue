@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { SlidersHorizontal } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
@@ -172,6 +173,8 @@ const field =
 
 <template>
   <PageLayout
+    :icon="SlidersHorizontal"
+    tone="#3b82f6"
     :crumbs="['Equipe e setores', sector?.name ?? 'Setor', 'Editar']"
     title="Editar setor"
     :description="missing ? 'Setor não encontrado' : `${sector?.name ?? ''} · ${description}`"
@@ -215,10 +218,7 @@ const field =
       </p>
 
       <div class="grid items-start gap-[16px] xl:grid-cols-[minmax(0,1fr)_400px]">
-        <form
-          class="grid gap-[16px] rounded-card border border-border bg-surface-1 p-[18px]"
-          @submit.prevent="save"
-        >
+        <form class="grid gap-[16px] uo-card p-[18px]" @submit.prevent="save">
           <h2 class="text-16 font-semibold text-fg">Configurações do setor</h2>
 
           <label class="grid gap-[6px] text-[13px] font-medium">
@@ -321,7 +321,7 @@ const field =
           </div>
         </form>
 
-        <aside class="grid gap-[4px] rounded-card border border-border bg-surface-1 p-[18px]">
+        <aside class="grid gap-[4px] uo-card p-[18px]">
           <div class="flex items-center justify-between pb-[8px]">
             <h2 class="text-16 font-semibold text-fg">Membros · {{ access.members.length }}</h2>
             <button

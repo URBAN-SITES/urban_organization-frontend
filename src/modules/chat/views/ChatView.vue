@@ -230,7 +230,7 @@ watch(() => [chat.activeId, items.value.length], scrollToEnd, { immediate: true 
     />
 
     <div
-      class="flex min-h-0 flex-1 flex-col px-[20px] py-[12px] sm:px-[32px] sm:py-[20px] lg:px-[40px] lg:py-[28px]"
+      class="uo-backdrop flex min-h-0 flex-1 flex-col px-[20px] py-[12px] sm:px-[32px] sm:py-[20px] lg:px-[40px] lg:py-[28px]"
     >
       <UiErrorState
         v-if="failure"

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { FolderOpen } from '@lucide/vue'
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { getErrorMessage } from '@/app/plugins/axios'
@@ -91,6 +92,8 @@ const where = (file: OrganizationFile) => file.task_title ?? file.sector_name ??
 
 <template>
   <PageLayout
+    :icon="FolderOpen"
+    tone="#06b6d4"
     :crumbs="['Arquivos']"
     title="Arquivos"
     description="Tudo que foi anexado à organização, aos setores e às tarefas"
@@ -154,7 +157,7 @@ const where = (file: OrganizationFile) => file.task_title ?? file.sector_name ??
       </button>
     </div>
 
-    <div class="overflow-x-auto rounded-card border border-border bg-surface-1">
+    <div class="overflow-x-auto uo-card">
       <table class="w-full min-w-[720px] border-collapse text-left">
         <thead>
           <tr class="border-b border-border bg-surface-2 dark:bg-black/20">
