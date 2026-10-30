@@ -25,6 +25,8 @@ const dashboard = {
   overdue: 1,
   overdue_title: 'Kit de identidade',
   today: [],
+  my_in_progress: [],
+  my_done: [],
   weekly_done: [],
   open_by_sector: [],
 }

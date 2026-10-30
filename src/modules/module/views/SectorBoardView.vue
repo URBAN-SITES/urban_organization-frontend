@@ -3,12 +3,19 @@ import {
   ArrowRight,
   CalendarDays,
   FolderKanban,
+  GitBranch,
+  LayoutList,
+  ListFilter,
   Plus,
   Search,
   Settings2,
+  Share2,
+  SquareKanban,
   Star,
-  Tag,
+  Table2,
+  Video,
   X,
+  type LucideIcon,
 } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -23,11 +30,10 @@ import {
   UiButton,
   UiEmptyState,
   UiErrorState,
-  UiIconButton,
   UiInput,
   UiSelect,
   UiSkeleton,
-  UiTabs,
+  UiTooltip,
   type MenuItem,
 } from '@/shared/components'
 import { fetchAllPages } from '@/shared/utils'
@@ -77,6 +83,23 @@ const VIEWS = [
   { value: 'meetings', label: 'Reuniões' },
   { value: 'github', label: 'GitHub' },
 ]
+const VIEW_ICONS: Record<View, LucideIcon> = {
+  board: SquareKanban,
+  list: LayoutList,
+  table: Table2,
+  meetings: Video,
+  github: GitBranch,
+}
+const filtersOpen = ref(false)
+
+async function share() {
+  try {
+    await navigator.clipboard.writeText(window.location.href)
+    toast.success('Link do projeto copiado.')
+  } catch {
+    toast.error('Não foi possível copiar o link.')
+  }
+}
 const view = computed<View>({
   get: () =>
     ['list', 'table', 'meetings', 'github'].includes(String(route.query.view))
@@ -244,7 +267,7 @@ function clearFilters() {
   <div class="flex h-[calc(100dvh-3.75rem)] min-h-0 w-full min-w-0 flex-col bg-bg md:h-dvh">
     <TopbarComp :crumbs="['Projetos', sector?.name ?? 'Projeto']" />
 
-    <main class="uo-glow flex min-h-0 flex-1 flex-col gap-4 px-4 pt-5 pb-4 sm:px-8">
+    <main class="flex min-h-0 flex-1 flex-col gap-4 px-4 pb-4 sm:px-8">
       <UiErrorState
         v-if="error"
         title="Não foi possível abrir este projeto"
@@ -253,118 +276,194 @@ function clearFilters() {
       />
 
       <template v-else>
-        <header class="board-hero ui-rise">
+        <section class="board-stage">
           <img
-            class="board-hero-media"
-            src="/images/office-workstation-sm.webp"
+            class="board-stage-media"
+            src="/images/office-workstation.webp"
+            srcset="/images/office-workstation-sm.webp 960w, /images/office-workstation.webp 1920w"
+            sizes="100vw"
             alt=""
             decoding="async"
           />
-          <div class="flex min-w-0 flex-1 basis-64 items-start gap-4">
-            <UiSkeleton v-if="!sector" class="size-12 rounded-[12px]" />
-            <span
-              v-else
-              class="board-hero-icon"
-              :style="{ '--project': sector.color || '#f99f11' }"
-            >
-              <ProjectIcon :icon="sector.icon" :color="sector.color" size="lg" />
-            </span>
-            <div class="min-w-0 flex-1">
-              <UiSkeleton v-if="!sector" class="mt-1 h-7 w-56" />
-              <h1
+          <header class="ui-rise flex flex-wrap items-start justify-between gap-4">
+            <div class="flex min-w-0 flex-1 basis-64 items-center gap-4">
+              <UiSkeleton v-if="!sector" class="size-12 rounded-[12px]" />
+              <span
                 v-else
-                class="truncate text-24 leading-tight font-semibold tracking-[-0.015em] text-fg"
+                class="board-tile"
+                :style="{ '--project': sector.color || '#f99f11' }"
+                aria-hidden="true"
               >
-                {{ sector.name }}
-              </h1>
-              <p
-                v-if="sector?.description"
-                class="mt-1 line-clamp-2 max-w-2xl text-14 text-fg-muted"
-              >
-                {{ sector.description }}
-              </p>
-              <div
-                v-if="sector && topLevel.length"
-                class="mt-3 flex w-full max-w-72 items-center gap-3"
-              >
-                <span
-                  class="uo-meter flex-1"
-                  role="progressbar"
-                  aria-label="Progresso do projeto"
-                  aria-valuemin="0"
-                  :aria-valuemax="topLevel.length"
-                  :aria-valuenow="done"
+                <ProjectIcon :icon="sector.icon" color="#ffffff" size="lg" />
+              </span>
+              <div class="min-w-0 flex-1">
+                <UiSkeleton v-if="!sector" class="mt-1 h-7 w-56" />
+                <h1
+                  v-else
+                  class="truncate text-24 leading-tight font-semibold tracking-[-0.015em] text-white"
                 >
-                  <span :style="{ width: `${percent}%` }" />
-                </span>
-                <span class="shrink-0 text-12 text-fg-muted tabular-nums">
-                  <span class="font-mono text-fg">{{ percent }}%</span> · {{ done }} de
-                  {{ topLevel.length }}
-                </span>
+                  {{ sector.name }}
+                </h1>
+                <p
+                  v-if="sector"
+                  class="mt-0.5 line-clamp-1 max-w-2xl text-13 text-white/65 sm:text-14"
+                >
+                  {{ sector.description || `${done} de ${topLevel.length} tarefas concluídas` }}
+                </p>
+              </div>
+            </div>
+            <div v-if="sector" class="flex flex-wrap items-center gap-2">
+              <span
+                class="mr-1 hidden items-center sm:flex"
+                :title="people.map((p) => p.name).join(', ')"
+              >
+                <UiAvatar
+                  v-for="person in people.slice(0, 4)"
+                  :key="person.id"
+                  :name="person.name || person.email"
+                  size="sm"
+                  class="-ml-1.5 ring-2 ring-black first:ml-0"
+                />
+                <span v-if="people.length > 4" class="ml-1.5 text-12 text-white/70"
+                  >+{{ people.length - 4 }}</span
+                >
+                <span class="sr-only">{{ people.length }} pessoas com acesso</span>
+              </span>
+              <button type="button" class="board-glass" @click="share">
+                <Share2 :size="15" aria-hidden="true" />
+                <span class="hidden sm:inline">Compartilhar</span>
+                <span class="sr-only sm:hidden">Copiar link do projeto</span>
+              </button>
+              <button
+                v-if="!TASKLESS.includes(view)"
+                type="button"
+                class="board-glass board-glass-icon"
+                :aria-pressed="filtersOpen"
+                :aria-label="filtersOpen ? 'Esconder filtros' : 'Mostrar filtros'"
+                @click="filtersOpen = !filtersOpen"
+              >
+                <ListFilter :size="16" aria-hidden="true" />
+                <span v-if="activeFilters(filters) > 0" class="board-glass-dot" />
+              </button>
+              <button
+                type="button"
+                class="board-glass board-glass-icon"
+                :aria-pressed="!!sector.is_favorite"
+                :aria-label="sector.is_favorite ? 'Desafixar projeto' : 'Fixar projeto'"
+                @click="toggleFavorite"
+              >
+                <Star
+                  :size="16"
+                  :class="sector.is_favorite ? 'fill-[#f99f11] text-[#f99f11]' : ''"
+                  aria-hidden="true"
+                />
+              </button>
+              <button
+                v-if="canManage"
+                type="button"
+                class="board-glass board-glass-icon"
+                aria-label="Colunas e configurações do projeto"
+                @click="configure"
+              >
+                <Settings2 :size="16" aria-hidden="true" />
+              </button>
+              <UiButton v-if="canEdit" variant="primary" :icon="Plus" @click="openCreate()">
+                Nova tarefa
+              </UiButton>
+            </div>
+          </header>
+
+          <div
+            v-if="sector && topLevel.length"
+            class="ui-rise mt-4 flex max-w-sm items-center gap-3"
+          >
+            <span
+              class="uo-meter flex-1"
+              role="progressbar"
+              aria-label="Progresso do projeto"
+              aria-valuemin="0"
+              :aria-valuemax="topLevel.length"
+              :aria-valuenow="done"
+            >
+              <span :style="{ width: `${percent}%` }" />
+            </span>
+            <span class="shrink-0 text-12 text-white/65 tabular-nums">
+              <span class="font-mono text-white">{{ percent }}%</span> concluído
+            </span>
+          </div>
+
+          <!-- etiquetas como abas (Todos, Design, Back-end…) e o modo de visualização -->
+          <div class="mt-5 flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
+            <div
+              v-if="!TASKLESS.includes(view)"
+              class="board-cats"
+              role="group"
+              aria-label="Filtrar por etiqueta"
+            >
+              <button
+                type="button"
+                class="board-cat"
+                :aria-pressed="!filters.label"
+                @click="filters.label = ''"
+              >
+                Todos <span class="board-cat-count">{{ topLevel.length }}</span>
+              </button>
+              <button
+                v-for="label in labelChips"
+                :key="label.id"
+                type="button"
+                class="board-cat"
+                :style="{ '--cat': label.color || '#f99f11' }"
+                :aria-pressed="filters.label === label.id"
+                @click="filters.label = filters.label === label.id ? '' : label.id"
+              >
+                {{ label.name }} <span class="board-cat-count">{{ label.count }}</span>
+              </button>
+            </div>
+            <span v-else />
+            <div class="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap">
+              <UiInput
+                v-if="!TASKLESS.includes(view)"
+                v-model="search"
+                type="search"
+                :icon="Search"
+                placeholder="Buscar tarefas"
+                aria-label="Buscar tarefas"
+                class="board-search w-full sm:w-56"
+              />
+              <div class="board-views" role="tablist" aria-label="Modo de visualização">
+                <UiTooltip
+                  v-for="item in VIEWS"
+                  :key="item.value"
+                  :text="item.label"
+                  placement="bottom"
+                  :delay="250"
+                >
+                  <button
+                    type="button"
+                    role="tab"
+                    class="board-view"
+                    :aria-selected="view === item.value"
+                    :aria-label="item.label"
+                    @click="view = item.value as View"
+                  >
+                    <component :is="VIEW_ICONS[item.value as View]" :size="16" aria-hidden="true" />
+                    <span class="board-view-label">{{ item.label }}</span>
+                  </button>
+                </UiTooltip>
+                <UiTooltip text="Calendário da organização" placement="bottom" :delay="250">
+                  <RouterLink to="/calendario" class="board-view" aria-label="Calendário">
+                    <CalendarDays :size="16" aria-hidden="true" />
+                  </RouterLink>
+                </UiTooltip>
               </div>
             </div>
           </div>
-          <div v-if="sector" class="flex flex-wrap items-center gap-2">
-            <span
-              class="mr-1 hidden items-center sm:flex"
-              :title="people.map((p) => p.name).join(', ')"
-            >
-              <UiAvatar
-                v-for="person in people.slice(0, 4)"
-                :key="person.id"
-                :name="person.name || person.email"
-                size="sm"
-                class="-ml-1.5 ring-2 ring-surface-1 first:ml-0"
-              />
-              <span v-if="people.length > 4" class="ml-1.5 text-12 text-fg-muted"
-                >+{{ people.length - 4 }}</span
-              >
-              <span class="sr-only">{{ people.length }} pessoas com acesso</span>
-            </span>
-            <UiIconButton
-              :icon="Star"
-              :label="sector.is_favorite ? 'Desafixar projeto' : 'Fixar projeto'"
-              :pressed="!!sector.is_favorite"
-              :class="
-                sector.is_favorite
-                  ? 'aria-pressed:bg-transparent! aria-pressed:text-accent! [&_svg]:fill-current'
-                  : ''
-              "
-              @click="toggleFavorite"
-            />
-            <UiIconButton
-              v-if="canManage"
-              :icon="Settings2"
-              label="Colunas e configurações do projeto"
-              @click="configure"
-            />
-            <UiButton v-if="canEdit" variant="primary" :icon="Plus" @click="openCreate()">
-              Nova tarefa
-            </UiButton>
-          </div>
-        </header>
-
-        <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
-          <div class="flex max-w-full items-center gap-1 overflow-x-auto">
-            <UiTabs v-model="view" :tabs="VIEWS" label="Modo de visualização" />
-            <RouterLink to="/calendario" class="board-view-link">
-              <CalendarDays :size="14" aria-hidden="true" /> Calendário
-            </RouterLink>
-          </div>
-          <UiInput
-            v-if="!TASKLESS.includes(view)"
-            v-model="search"
-            type="search"
-            :icon="Search"
-            placeholder="Buscar tarefas"
-            aria-label="Buscar tarefas"
-            class="w-full sm:w-64"
-          />
-        </div>
+        </section>
 
         <div
-          v-if="!TASKLESS.includes(view)"
-          class="board-filters"
+          v-if="!TASKLESS.includes(view) && (filtersOpen || activeFilters(filters) > 0)"
+          class="board-filters ui-rise"
           role="group"
           aria-label="Filtrar tarefas"
         >
@@ -387,42 +486,12 @@ function clearFilters() {
             class="sm:w-40"
           />
           <UiSelect
-            v-if="labels.length && !labelChips.length"
+            v-if="labels.length"
             v-model="filters.label"
             aria-label="Etiqueta"
             :options="labelOptions"
             class="sm:w-40"
           />
-          <template v-if="labelChips.length">
-            <span class="hidden h-6 w-px bg-border sm:block" aria-hidden="true" />
-            <div
-              class="col-span-2 flex gap-2 overflow-x-auto sm:col-span-1"
-              role="group"
-              aria-label="Filtrar por etiqueta"
-            >
-              <button
-                type="button"
-                class="board-chip"
-                :aria-pressed="!filters.label"
-                @click="filters.label = ''"
-              >
-                Todas <span class="font-mono">{{ topLevel.length }}</span>
-              </button>
-              <button
-                v-for="label in labelChips"
-                :key="label.id"
-                type="button"
-                class="board-chip"
-                :style="{ '--chip': label.color }"
-                :aria-pressed="filters.label === label.id"
-                @click="filters.label = filters.label === label.id ? '' : label.id"
-              >
-                <Tag :size="12" class="board-chip-dot" aria-hidden="true" />
-                {{ label.name }}
-                <span class="font-mono">{{ label.count }}</span>
-              </button>
-            </div>
-          </template>
           <UiButton v-if="filtering" variant="ghost" :icon="X" @click="clearFilters"
             >Limpar</UiButton
           >
@@ -527,86 +596,237 @@ function clearFilters() {
 </template>
 
 <style>
-.board-hero {
+/* a foto do escritório ocupa o topo do quadro, por trás do cabeçalho, e some no fundo */
+.board-stage {
   position: relative;
   isolation: isolate;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
   overflow: hidden;
-  border: 1px solid var(--ds-border);
-  border-radius: var(--radius-modal);
-  background: var(--ds-surface-1);
-  padding: 20px;
-  box-shadow: var(--shadow-card);
+  margin-inline: -16px;
+  padding: 24px 16px 0;
+  color: #ffffff;
 }
 
 @media (width >= 40rem) {
-  .board-hero {
-    padding: 22px 24px;
+  .board-stage {
+    margin-inline: -32px;
+    padding: 28px 32px 0;
   }
 }
 
-/* a foto do escritório entra só à direita, bem escurecida, como ambientação */
-.board-hero-media {
+.board-stage-media {
   position: absolute;
-  inset: 0 0 0 auto;
+  inset: 0;
   z-index: -2;
-  width: min(60%, 640px);
+  width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0.55;
-  mask-image: linear-gradient(90deg, transparent, #000 70%);
+  object-position: center 55%;
+  animation: uo-hero-settle 1.4s var(--ease-out) both;
 }
 
-.board-hero::after {
+.board-stage::before {
   position: absolute;
   inset: 0;
   z-index: -1;
   content: '';
   background:
-    radial-gradient(70% 120% at 100% 0%, rgb(249 159 17 / 0.14), transparent 60%),
-    linear-gradient(
-      90deg,
-      var(--ds-surface-1) 35%,
-      color-mix(in srgb, var(--ds-surface-1) 55%, transparent)
-    );
+    radial-gradient(50% 90% at 90% 0%, rgb(249 159 17 / 0.18), transparent 60%),
+    linear-gradient(90deg, rgb(0 0 0 / 0.88) 0%, rgb(0 0 0 / 0.6) 50%, rgb(0 0 0 / 0.35) 100%),
+    linear-gradient(180deg, transparent 40%, var(--ds-bg) 100%);
 }
 
-.board-hero-icon {
+.board-tile {
   display: grid;
+  width: 48px;
+  height: 48px;
   flex-shrink: 0;
   place-items: center;
-  border-radius: 14px;
-  box-shadow:
-    0 0 0 1px var(--ds-border),
-    0 10px 30px -12px var(--project);
+  border-radius: 12px;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--project), #fff 15%), var(--project));
+  box-shadow: 0 10px 28px -10px var(--project);
 }
 
-.board-view-link {
+.board-tile > span {
+  border: 0;
+  background: transparent;
+}
+
+/* botões de vidro sobre a foto */
+.board-glass {
+  position: relative;
   display: inline-flex;
   height: 36px;
-  flex-shrink: 0;
+  cursor: pointer;
   align-items: center;
-  gap: 6px;
-  border-bottom: 2px solid transparent;
-  padding-inline: 10px;
+  gap: 8px;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  border-radius: 10px;
+  background: rgb(0 0 0 / 0.35);
+  padding-inline: 12px;
   font-size: var(--text-13);
-  color: var(--ds-fg-muted);
+  color: rgb(255 255 255 / 0.9);
+  backdrop-filter: blur(10px);
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+.board-glass:hover {
+  border-color: rgb(255 255 255 / 0.28);
+  background: rgb(255 255 255 / 0.1);
+}
+
+.board-glass:active {
+  transform: scale(0.96);
+}
+
+.board-glass:focus-visible,
+.board-cat:focus-visible,
+.board-view:focus-visible {
+  outline: 2px solid #f99f11;
+  outline-offset: 2px;
+}
+
+.board-glass[aria-pressed='true'] {
+  border-color: rgb(249 159 17 / 0.5);
+  background: rgb(249 159 17 / 0.14);
+}
+
+.board-glass-icon {
+  width: 36px;
+  justify-content: center;
+  padding: 0;
+}
+
+.board-glass-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #f99f11;
+}
+
+/* etiquetas como abas sublinhadas */
+.board-cats {
+  display: flex;
+  max-width: 100%;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.board-cat {
+  --cat: #f99f11;
+  position: relative;
+  display: inline-flex;
+  height: 38px;
+  flex-shrink: 0;
+  cursor: pointer;
+  align-items: center;
+  gap: 8px;
+  padding-inline: 12px;
+  font-size: var(--text-13);
+  color: rgb(255 255 255 / 0.62);
   transition: color var(--dur-fast) var(--ease-out);
 }
 
-.board-view-link:hover {
-  color: var(--ds-fg);
+.board-cat::after {
+  position: absolute;
+  right: 8px;
+  bottom: 0;
+  left: 8px;
+  height: 2px;
+  border-radius: 2px;
+  content: '';
+  background: var(--cat);
+  box-shadow: 0 0 10px var(--cat);
+  transform: scaleX(0);
+  transition: transform var(--dur-base) var(--ease-out);
+}
+
+.board-cat:hover {
+  color: #ffffff;
+}
+
+.board-cat[aria-pressed='true'] {
+  color: #ffffff;
+}
+
+.board-cat[aria-pressed='true']::after {
+  transform: scaleX(1);
+}
+
+.board-cat-count {
+  border-radius: 6px;
+  background: rgb(255 255 255 / 0.1);
+  padding: 1px 6px;
+  font-family: var(--font-mono);
+  font-size: var(--text-12);
+}
+
+.board-cat[aria-pressed='true'] .board-cat-count {
+  background: color-mix(in srgb, var(--cat) 25%, transparent);
+  color: color-mix(in srgb, var(--cat), #fff 40%);
+}
+
+.board-views {
+  display: flex;
+  flex-shrink: 0;
+  gap: 2px;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 10px;
+  background: rgb(0 0 0 / 0.4);
+  padding: 3px;
+  backdrop-filter: blur(10px);
+}
+
+.board-view {
+  display: inline-flex;
+  height: 30px;
+  min-width: 30px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 7px;
+  padding-inline: 8px;
+  font-size: var(--text-13);
+  color: rgb(255 255 255 / 0.62);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+.board-view:hover {
+  color: #ffffff;
+}
+
+.board-view[aria-selected='true'] {
+  background: rgb(249 159 17 / 0.16);
+  color: #f99f11;
+}
+
+.board-view-label {
+  display: none;
+}
+
+@media (width >= 96rem) {
+  .board-view-label {
+    display: inline;
+  }
+}
+
+.board-search input {
+  background: rgb(0 0 0 / 0.4);
 }
 
 .board-filters {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
-  margin-top: -4px;
 }
 
 @media (width >= 40rem) {
@@ -615,50 +835,6 @@ function clearFilters() {
     flex-wrap: wrap;
     align-items: center;
   }
-}
-
-.board-chip {
-  display: inline-flex;
-  height: 30px;
-  flex-shrink: 0;
-  cursor: pointer;
-  align-items: center;
-  gap: 6px;
-  border: 1px solid var(--ds-border);
-  border-radius: 999px;
-  background: var(--ds-surface-1);
-  padding-inline: 12px;
-  font-size: var(--text-13);
-  color: var(--ds-fg-muted);
-  transition:
-    color var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out),
-    background-color var(--dur-fast) var(--ease-out),
-    transform var(--dur-fast) var(--ease-out);
-}
-
-.board-chip:hover {
-  border-color: var(--ds-border-strong);
-  color: var(--ds-fg);
-}
-
-.board-chip:active {
-  transform: scale(0.97);
-}
-
-.board-chip[aria-pressed='true'] {
-  border-color: rgb(249 159 17 / 0.45);
-  background: var(--ds-accent-soft);
-  color: var(--ds-fg);
-}
-
-.board-chip:focus-visible {
-  outline: 2px solid var(--ds-accent);
-  outline-offset: 2px;
-}
-
-.board-chip-dot {
-  color: var(--chip, var(--ds-fg-muted));
 }
 
 /* colunas encaixam ao rolar no celular */
