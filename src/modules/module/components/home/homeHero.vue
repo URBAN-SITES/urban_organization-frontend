@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { CalendarDays, CircleAlert, FolderKanban, Search } from '@lucide/vue'
-import { UiSkeleton } from '@/shared/components'
 import { useShell } from '@/shared/composables/shell'
 import type { Dashboard } from '../../types'
 
 /**
- * Abertura do início: a mesma foto do escritório do login, escurecida à esquerda para o texto.
- * Os números vêm do dashboard real; enquanto carrega, só a saudação aparece.
+ * Topo do início: a foto do escritório do login ocupa a largura toda, por trás da saudação e
+ * dos indicadores (slot), e se dissolve no preto da página. Os números vêm do dashboard real.
  */
 defineProps<{
   greeting: string
@@ -19,75 +18,118 @@ const shell = useShell()
 </script>
 
 <template>
-  <section class="uo-hero ui-rise" aria-labelledby="home-greeting">
+  <section class="home-stage" aria-labelledby="home-greeting">
     <img
-      class="uo-hero-media"
+      class="home-stage-media"
       src="/images/office-executive.webp"
       srcset="/images/office-executive-sm.webp 960w, /images/office-executive.webp 1920w"
-      sizes="(max-width: 960px) 100vw, 1200px"
+      sizes="100vw"
       alt=""
       decoding="async"
       fetchpriority="high"
     />
-    <div class="flex min-h-56 flex-col justify-between gap-8 p-6 sm:min-h-64 sm:p-8 lg:p-10">
-      <div class="max-w-xl">
-        <p class="text-12 font-medium tracking-[0.12em] text-[#f99f11] uppercase">
-          {{ dateLabel }}
-        </p>
-        <h1
-          id="home-greeting"
-          class="mt-3 text-32 leading-tight font-semibold tracking-[-0.02em] text-white sm:text-48 sm:leading-[1.05]"
-        >
-          {{ greeting }}
-        </h1>
-        <p class="mt-3 max-w-md text-14 text-white/70 sm:text-16">
-          <template v-if="!data">Preparando o seu resumo do dia…</template>
-          <template v-else-if="data.open_tasks">
-            Você tem {{ data.open_tasks }}
-            {{ data.open_tasks === 1 ? 'tarefa aberta' : 'tarefas abertas' }}
-            <template v-if="data.due_this_week">
-              e {{ data.due_this_week }} com prazo nesta semana</template
-            >. Bom trabalho pela frente.
-          </template>
-          <template v-else>Nenhuma tarefa aberta com você. Bom momento para planejar.</template>
-        </p>
-      </div>
-
-      <div class="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          class="hero-action hero-action-primary"
-          aria-keyshortcuts="Control+K Meta+K"
-          @click="shell.openPalette()"
-        >
-          <Search :size="16" aria-hidden="true" />
-          Buscar no workspace
-        </button>
-        <RouterLink :to="projectsTo" class="hero-action">
-          <FolderKanban :size="16" aria-hidden="true" />
-          Projetos
-        </RouterLink>
-        <RouterLink to="/calendario" class="hero-action">
-          <CalendarDays :size="16" aria-hidden="true" />
-          Calendário
-        </RouterLink>
-        <UiSkeleton v-if="!data" class="h-9 w-40 rounded-full opacity-30" />
-        <span
-          v-else-if="data.overdue"
-          class="inline-flex h-9 items-center gap-2 rounded-full border border-[#f26b6b]/30 bg-[#f26b6b]/12 px-3.5 text-13 text-[#ffb4b4] backdrop-blur"
-        >
-          <CircleAlert :size="16" aria-hidden="true" />
-          {{ data.overdue }} {{ data.overdue === 1 ? 'atrasada' : 'atrasadas' }}
-          <span v-if="data.overdue_title" class="hidden max-w-48 truncate text-white/60 md:inline">
-            · {{ data.overdue_title }}
+    <div class="home-container relative flex flex-col gap-7 pt-8 pb-2 sm:pt-12">
+      <slot name="top" />
+      <div class="ui-rise flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
+        <div class="max-w-xl">
+          <p class="text-12 font-medium tracking-[0.12em] text-[#f99f11] uppercase">
+            {{ dateLabel }}
+          </p>
+          <h1
+            id="home-greeting"
+            class="mt-2 text-32 leading-tight font-semibold tracking-[-0.02em] text-white sm:text-[40px] sm:leading-[48px]"
+          >
+            {{ greeting }}
+          </h1>
+          <p class="mt-2 text-14 text-white/70 sm:text-16">
+            <template v-if="!data">Preparando o seu resumo do dia…</template>
+            <template v-else-if="data.open_tasks">
+              {{ data.open_tasks }}
+              {{ data.open_tasks === 1 ? 'tarefa aberta' : 'tarefas abertas' }} com você<template
+                v-if="data.due_this_week"
+              >
+                · {{ data.due_this_week }} com prazo nesta semana</template
+              >.
+            </template>
+            <template v-else>Organize suas ideias e transforme projetos em resultados.</template>
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <span
+            v-if="data?.overdue"
+            class="inline-flex h-9 items-center gap-2 rounded-full border border-[#f26b6b]/30 bg-[#f26b6b]/12 px-3.5 text-13 text-[#ffb4b4] backdrop-blur"
+          >
+            <CircleAlert :size="16" aria-hidden="true" />
+            {{ data.overdue }} {{ data.overdue === 1 ? 'atrasada' : 'atrasadas' }}
           </span>
-        </span>
+          <RouterLink :to="projectsTo" class="hero-action">
+            <FolderKanban :size="16" aria-hidden="true" />
+            Projetos
+          </RouterLink>
+          <RouterLink to="/calendario" class="hero-action">
+            <CalendarDays :size="16" aria-hidden="true" />
+            Calendário
+          </RouterLink>
+          <button
+            type="button"
+            class="hero-action hero-action-primary"
+            aria-keyshortcuts="Control+K Meta+K"
+            @click="shell.openPalette()"
+          >
+            <Search :size="16" aria-hidden="true" />
+            Buscar
+          </button>
+        </div>
       </div>
+      <slot />
     </div>
   </section>
 </template>
 
-<style scoped>
+<style>
+/* largura útil das telas do início (mesma no topo com foto e no conteúdo) */
+.home-container {
+  width: 100%;
+  max-width: 1400px;
+  margin-inline: auto;
+  padding-inline: 16px;
+}
+
+@media (width >= 40rem) {
+  .home-container {
+    padding-inline: 32px;
+  }
+}
+
+.home-stage {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.home-stage-media {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: -2;
+  width: 100%;
+  height: min(520px, 100%);
+  object-fit: cover;
+  object-position: center 45%;
+  animation: uo-hero-settle 1.4s var(--ease-out) both;
+}
+
+/* escurece à esquerda (texto) e dissolve a foto no fundo da página */
+.home-stage::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  content: '';
+  background:
+    radial-gradient(60% 70% at 85% 10%, rgb(249 159 17 / 0.16), transparent 60%),
+    linear-gradient(90deg, rgb(0 0 0 / 0.85) 0%, rgb(0 0 0 / 0.55) 45%, rgb(0 0 0 / 0.25) 100%),
+    linear-gradient(180deg, transparent 0, transparent 200px, var(--ds-bg) min(520px, 100%));
+}
+
 .hero-action {
   display: inline-flex;
   height: 36px;
@@ -132,5 +174,11 @@ const shell = useShell()
 .hero-action-primary:hover {
   border-color: transparent;
   background: #fab13f;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-stage-media {
+    animation: none;
+  }
 }
 </style>
