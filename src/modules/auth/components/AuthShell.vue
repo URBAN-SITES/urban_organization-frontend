@@ -26,6 +26,8 @@ const composition = reactive({
 const busy = ref(false)
 const leaving = ref(false)
 const curtainOn = ref(false)
+// a foto nova assenta devagar enquanto a cortina recua
+const revealing = ref(false)
 // troca instantânea do conteúdo enquanto a cortina cobre; esmaecer curto no resto
 const swapName = ref('auth-swap')
 const enterDelay = ref('0ms')
@@ -33,10 +35,12 @@ const enterDelay = ref('0ms')
 const visual = useTemplateRef<InstanceType<typeof AuthVisual>>('visual')
 const curtain = useTemplateRef<HTMLDivElement>('curtain')
 
-const COVER_MS = 520
-const REVEAL_MS = 640
-const COVER_EASE = 'cubic-bezier(0.65, 0, 0.35, 1)'
-const REVEAL_EASE = 'cubic-bezier(0.16, 1, 0.3, 1)'
+// a cortina atravessa num só movimento: cobrir acelera e revelar sai na mesma velocidade,
+// então não há parada no meio (inclinações 3 e 4 compensam as durações diferentes)
+const COVER_MS = 560
+const REVEAL_MS = 760
+const COVER_EASE = 'cubic-bezier(0.45, 0, 0.85, 0.55)'
+const REVEAL_EASE = 'cubic-bezier(0.1, 0.4, 0.3, 1)'
 
 watch(
   () => route.fullPath,
@@ -81,6 +85,7 @@ async function cover() {
 async function reveal() {
   // a troca de conteúdo aconteceu por baixo da cortina; os itens novos entram enquanto ela recua
   leaving.value = false
+  revealing.value = true
   await nextTick()
   await new Promise((resolve) => requestAnimationFrame(resolve))
   window.scrollTo(0, 0)
@@ -88,6 +93,7 @@ async function reveal() {
   else await slide('0%', '-100%', REVEAL_MS, REVEAL_EASE)
   curtain.value?.getAnimations().forEach((animation) => animation.cancel())
   curtainOn.value = false
+  revealing.value = false
   swapName.value = 'auth-swap'
   busy.value = false
 }
@@ -102,7 +108,7 @@ onBeforeRouteUpdate(async (to) => {
   }
   busy.value = true
   swapName.value = 'auth-cut'
-  enterDelay.value = '220ms'
+  enterDelay.value = '360ms'
   await cover()
   const stop = router.afterEach((next, _from, failure) => {
     stop()
@@ -128,6 +134,7 @@ const KEEP = ['LoginView', 'RegisterView']
     <AuthVisual
       ref="visual"
       class="auth-shell-visual lg:h-dvh"
+      :class="{ 'is-revealing': revealing }"
       :scene="composition.scene"
       :side="composition.formLeft ? 'left' : 'right'"
     />
@@ -201,12 +208,23 @@ const KEEP = ['LoginView', 'RegisterView']
 /* a foto fica embaixo, a cortina no meio e o painel do formulário por cima dela */
 .auth-panel {
   z-index: 2;
-  transition: opacity 260ms var(--ease-out);
+  transition: opacity 520ms var(--ease-out);
 }
 
 .auth-panel.is-leaving {
   opacity: 0;
-  transition: opacity 240ms var(--ease-in);
+  transition: opacity 420ms var(--ease-in-out);
+}
+
+.auth-shell-visual.is-revealing img {
+  animation: auth-photo-settle 760ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes auth-photo-settle {
+  from {
+    opacity: 0.7;
+    transform: scale(1.04);
+  }
 }
 
 .auth-curtain {
@@ -282,7 +300,7 @@ const KEEP = ['LoginView', 'RegisterView']
 
 .auth-view > :not(form),
 .auth-view form > * {
-  animation: auth-item-in 420ms var(--ease-out) backwards;
+  animation: auth-item-in 560ms var(--ease-out) backwards;
   animation-delay: var(--auth-enter-delay, 0ms);
 }
 
