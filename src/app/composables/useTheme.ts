@@ -32,10 +32,12 @@ media?.addEventListener('change', (event) => {
 })
 
 type ViewTransitionDocument = Document & {
-  startViewTransition?: (update: () => void) => unknown
+  startViewTransition?: (update: () => void) => { ready: Promise<void> }
 }
 
 function setTheme(value: Theme): void {
+  // telas como Configurações reaplicam o tema salvo; sem mudança, nada a animar
+  if (value === theme.value) return
   theme.value = value
   try {
     localStorage.setItem(STORAGE_KEY, value)
@@ -45,7 +47,8 @@ function setTheme(value: Theme): void {
   const doc = document as ViewTransitionDocument
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   // Cross-fade nativo quando o navegador suporta; senão troca direto (o fallback simples).
-  if (doc.startViewTransition && !reduced) doc.startViewTransition(applyTheme)
+  // uma troca seguida cancela o cross-fade anterior; o tema já foi aplicado, só a animação é pulada
+  if (doc.startViewTransition && !reduced) doc.startViewTransition(applyTheme).ready.catch(() => {})
   else applyTheme()
 }
 

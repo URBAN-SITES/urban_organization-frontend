@@ -253,7 +253,7 @@ async function analyze() {
                   Você · {{ formatTime(entry.created_at) }}
                 </p>
                 <p
-                  class="whitespace-pre-wrap rounded-[12px] rounded-tr-[4px] bg-(--text-primary) px-[12px] py-[8px] text-[13.5px] leading-[20px] text-white"
+                  class="whitespace-pre-wrap rounded-[12px] rounded-tr-[4px] bg-(--text-primary) px-[12px] py-[8px] text-[13.5px] leading-[20px] text-white dark:bg-[#2e2c28]"
                 >
                   {{ entry.content }}
                 </p>

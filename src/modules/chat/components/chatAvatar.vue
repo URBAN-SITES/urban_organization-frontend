@@ -25,7 +25,7 @@ const style = computed(() => ({
   <span
     :class="[
       'relative grid shrink-0 place-items-center rounded-full leading-none font-semibold text-white',
-      variant === 'self' ? 'bg-(--text-primary) dark:bg-(--text-inverse) dark:text-fg' : '',
+      variant === 'self' ? 'bg-(--text-primary) dark:bg-(--text-inverse) dark:text-bg' : '',
       variant === 'ai' ? 'rounded-[10px]! bg-linear-to-br from-[#ff9a55] to-accent' : '',
     ]"
     :style="style"
