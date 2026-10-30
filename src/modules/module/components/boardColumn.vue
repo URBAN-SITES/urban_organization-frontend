@@ -88,7 +88,7 @@ function drop(event: DragEvent, position = props.tasks.length) {
 <template>
   <section
     :aria-label="`${status.name}, ${tasks.length} ${tasks.length === 1 ? 'tarefa' : 'tarefas'}`"
-    :class="['board-column', { 'is-over': over }]"
+    :class="['board-column', { 'is-over': over, 'is-active': status.category === 'in_progress' }]"
     :style="{ '--status': tone }"
     @dragover.prevent="dragOver(tasks.length)"
     @dragleave.self="leave"
@@ -134,6 +134,10 @@ function drop(event: DragEvent, position = props.tasks.length) {
         </UiMenu>
       </span>
     </header>
+
+    <button v-if="canEdit" type="button" class="board-add" @click="emit('add')">
+      <Plus :size="14" aria-hidden="true" /> Adicionar tarefa
+    </button>
 
     <TransitionGroup
       tag="ul"
@@ -207,6 +211,44 @@ function drop(event: DragEvent, position = props.tasks.length) {
   content: '';
   background: linear-gradient(90deg, var(--status), transparent 85%);
   opacity: 0.8;
+}
+
+/* a coluna em andamento ganha a borda da marca, como nas referências */
+.board-column.is-active {
+  border-color: rgb(249 159 17 / 0.4);
+  box-shadow:
+    0 0 0 1px rgb(249 159 17 / 0.12),
+    0 20px 50px -30px rgb(249 159 17 / 0.5);
+}
+
+.board-add {
+  display: flex;
+  height: 34px;
+  flex-shrink: 0;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0 8px 8px;
+  border: 1px dashed var(--ds-border-strong);
+  border-radius: 8px;
+  font-size: var(--text-12);
+  color: var(--ds-fg-muted);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+.board-add:hover {
+  border-color: rgb(249 159 17 / 0.5);
+  background: var(--ds-accent-soft);
+  color: var(--ds-fg);
+}
+
+.board-add:focus-visible {
+  outline: 2px solid var(--ds-accent);
+  outline-offset: 2px;
 }
 
 .board-column.is-over {

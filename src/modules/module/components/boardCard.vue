@@ -91,7 +91,9 @@ watch(
           }"
         />
       </span>
-      <span class="font-mono text-12 text-fg-muted">{{ steps.done }}/{{ steps.total }}</span>
+      <span class="font-mono text-12 text-fg-muted">
+        {{ Math.round((steps.done * 100) / steps.total) }}%
+      </span>
     </div>
 
     <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-12 text-fg-muted">
