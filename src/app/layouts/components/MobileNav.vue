@@ -1,30 +1,30 @@
 <script setup lang="ts">
 import { Menu } from '@lucide/vue'
-import { computed, ref, watch } from 'vue'
+import { computed, ref, useTemplateRef, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/modules/auth'
 import { useChatStore } from '@/modules/chat'
 import { useNotificationsStore } from '@/modules/notifications'
-import { UiDrawer, UiIcon } from '@/shared/components'
-import { isNavActive, workspaceNav } from '../navigation'
-import SidebarNav from './SidebarNav.vue'
-import SidebarProfile from './SidebarProfile.vue'
+import { UiIcon } from '@/shared/components'
+import { useModalLayer } from '@/shared/composables/overlay'
+import { isNavActive, mobileTabs } from '../navigation'
+import SidebarPanel from './SidebarPanel.vue'
 
-// As quatro telas do dia a dia ficam na barra; "Menu" abre a navegação completa num painel.
-const tabs = workspaceNav.slice(0, 4)
-
+// As quatro telas do dia a dia ficam na barra; "Menu" abre a barra lateral completa num painel.
 const route = useRoute()
 const auth = useAuthStore()
 const notifications = useNotificationsStore()
 const chat = useChatStore()
 
 const open = ref(false)
+const panel = useTemplateRef<HTMLElement>('panel')
+useModalLayer(open, panel, () => (open.value = false))
 watch(
   () => route.fullPath,
   () => (open.value = false),
 )
 
-const menuActive = computed(() => !tabs.some((item) => isNavActive(item, route.path)))
+const menuActive = computed(() => !mobileTabs.some((item) => isNavActive(item, route.path)))
 
 const tabClass = (active: boolean) => [
   'relative flex flex-1 flex-col items-center justify-center gap-0.5 text-12 outline-none',
@@ -40,7 +40,7 @@ const tabClass = (active: boolean) => [
     class="fixed inset-x-0 bottom-0 z-40 flex h-[calc(3.5rem+env(safe-area-inset-bottom))] border-t border-border bg-surface-1 pb-[env(safe-area-inset-bottom)] md:hidden"
   >
     <RouterLink
-      v-for="item in tabs"
+      v-for="item in mobileTabs"
       :key="item.to"
       :to="item.to"
       :aria-current="isNavActive(item, route.path) ? 'page' : undefined"
@@ -84,19 +84,52 @@ const tabClass = (active: boolean) => [
     </button>
   </nav>
 
-  <UiDrawer v-model:open="open" title="Menu" side="left" width="sm">
-    <div class="-mx-3 -mt-1 flex min-h-full flex-col">
-      <SidebarNav size="lg" />
-    </div>
-    <template #footer>
-      <div class="w-full">
-        <SidebarProfile />
-      </div>
-    </template>
-  </UiDrawer>
+  <!-- celular: a mesma barra lateral, como painel deslizante sobre o conteúdo escurecido -->
+  <Teleport to="body">
+    <Transition name="ui-fade">
+      <div
+        v-if="open"
+        class="fixed inset-0 z-50 bg-black/70 backdrop-blur-[2px] md:hidden"
+        aria-hidden="true"
+        @click="open = false"
+      />
+    </Transition>
+    <Transition name="sb-drawer">
+      <section
+        v-if="open"
+        ref="panel"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menu"
+        tabindex="-1"
+        class="sb-drawer app-sidebar dark fixed inset-y-0 left-0 z-50 w-[min(300px,86vw)] outline-none md:hidden"
+      >
+        <SidebarPanel size="lg" closable @close="open = false" />
+      </section>
+    </Transition>
+  </Teleport>
 </template>
 
-<style scoped>
+<style>
+.sb-drawer.app-sidebar {
+  position: fixed;
+  width: min(300px, 86vw);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.sb-drawer-enter-active {
+  transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.sb-drawer-leave-active {
+  transition: transform 220ms cubic-bezier(0.4, 0, 1, 1);
+}
+
+.sb-drawer-enter-from,
+.sb-drawer-leave-to {
+  transform: translateX(-100%);
+}
+
 .mobile-tab-indicator {
   animation: mobile-tab-indicator var(--dur-base) var(--ease-out);
 }
@@ -105,6 +138,13 @@ const tabClass = (active: boolean) => [
   from {
     opacity: 0;
     transform: scaleX(0.4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-drawer-enter-active,
+  .sb-drawer-leave-active {
+    transition: none;
   }
 }
 </style>
