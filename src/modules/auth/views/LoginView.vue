@@ -3,7 +3,7 @@ import { ArrowRight, Lock, Mail } from '@lucide/vue'
 import { reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { GitHubLoginButton } from '@/modules/github'
-import { UiButton, UiInput } from '@/shared/components'
+import { UiButton, UiCheckbox, UiInput } from '@/shared/components'
 import { AuthDivider, AuthHeading, GoogleButton } from '../components'
 import { useAuthNavigation } from '../composables'
 import { useAuthFlowStore, useAuthStore } from '../stores'
@@ -22,6 +22,7 @@ const email = ref(typeof route.query.email === 'string' ? route.query.email : au
 // mantém o e-mail ao alternar entre login e cadastro
 watch(email, (value) => (authFlow.email = value))
 const password = ref('')
+const remember = ref(true)
 const errors = reactive({ email: '', password: '' })
 const formError = ref('')
 const isSubmitting = ref(false)
@@ -50,7 +51,11 @@ async function handleSubmit() {
   if (!validate()) return
   isSubmitting.value = true
   try {
-    await auth.signIn({ email: email.value.trim(), password: password.value })
+    await auth.signIn({
+      email: email.value.trim(),
+      password: password.value,
+      remember: remember.value,
+    })
     authFlow.clear()
     await enterApp()
   } catch (error) {
@@ -123,7 +128,12 @@ async function handleGoogleCredential(credential: string) {
         autocomplete="current-password"
         placeholder="Sua senha"
       />
-      <div class="flex items-center justify-end gap-3">
+      <div class="flex items-center justify-between gap-3">
+        <UiCheckbox id="login-remember" v-model="remember">
+          <template #label>
+            <span class="text-13 text-fg-muted">Lembrar de mim</span>
+          </template>
+        </UiCheckbox>
         <RouterLink :to="navigation.to('ForgotPassword')" class="auth-cta text-13">
           Esqueceu sua senha?
         </RouterLink>
