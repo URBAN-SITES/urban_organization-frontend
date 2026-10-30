@@ -1,17 +1,25 @@
 <script setup lang="ts">
-import { ArrowLeft, Check, Trash2 } from '@lucide/vue'
+import { ArrowLeft, CalendarClock, Check, Trash2 } from '@lucide/vue'
 import { computed, reactive, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { getErrorMessage } from '@/app/plugins/axios'
 import { TaskGitHubLinks } from '@/modules/github'
 import { TaskCharges } from '@/modules/payments'
-import { UiButton, UiDrawer, UiInput, UiSelect, UiSpinner, UiTextarea } from '@/shared/components'
+import {
+  UiAvatar,
+  UiButton,
+  UiDrawer,
+  UiInput,
+  UiSelect,
+  UiSpinner,
+  UiTextarea,
+} from '@/shared/components'
 import { useConfirm } from '@/shared/composables/confirm'
 import { useKanbanStore } from '../stores'
 import type { Label, Person, Task, UpdateTaskRequest } from '../types'
 import LabelChip from './labelChip.vue'
 import LabelPicker from './labelPicker.vue'
-import { PRIORITIES } from './priority'
+import { PRIORITIES, PRIORITY_TEXT, priorityOf, shortDate } from './priority'
 import TaskAttachments from './taskAttachments.vue'
 import TaskChecklist from './taskChecklist.vue'
 import TaskConversation from './taskConversation.vue'
@@ -39,6 +47,16 @@ const confirm = useConfirm()
 const task = computed<Task | null>(
   () => kanban.tasks.find((row) => row.id === taskId.value) ?? null,
 )
+const currentStatus = computed(() =>
+  kanban.statuses.find((status) => status.id === task.value?.status_id),
+)
+const STATUS_TONES = { todo: '#a1a1aa', in_progress: '#f99f11', done: '#4cc38a' } as const
+const statusTone = computed(() => STATUS_TONES[currentStatus.value?.category ?? 'todo'])
+const currentPriority = computed(() => priorityOf(task.value?.priority ?? 'medium'))
+const steps = computed(() => ({
+  done: (task.value?.subtask_done ?? 0) + (task.value?.checklist_done ?? 0),
+  total: (task.value?.subtask_total ?? 0) + (task.value?.checklist_total ?? 0),
+}))
 const parent = computed(() =>
   task.value?.parent_id ? kanban.tasks.find((row) => row.id === task.value!.parent_id) : null,
 )
@@ -268,6 +286,35 @@ const refresh = () => task.value && kanban.reload(task.value.id).catch(() => und
         </p>
       </div>
 
+      <ul class="task-summary" aria-label="Resumo da tarefa">
+        <li :style="{ '--tone': currentStatus?.color || statusTone }">
+          <span class="task-summary-dot" aria-hidden="true" />
+          {{ currentStatus?.name ?? 'Sem status' }}
+        </li>
+        <li :class="PRIORITY_TEXT[currentPriority.tone]">
+          <component :is="currentPriority.icon" :size="14" aria-hidden="true" />
+          {{ currentPriority.label }}
+        </li>
+        <li
+          v-if="task.due_date"
+          :class="task.is_overdue && !task.completed_at ? 'text-danger' : ''"
+        >
+          <CalendarClock :size="14" aria-hidden="true" />
+          {{ task.is_overdue && !task.completed_at ? 'Atrasada · ' : ''
+          }}{{ shortDate(task.due_date) }}
+        </li>
+        <li v-if="task.assignee_name">
+          <UiAvatar :name="task.assignee_name" size="xs" />
+          {{ task.assignee_name }}
+        </li>
+        <li v-if="steps.total">
+          <span class="uo-meter w-16" aria-hidden="true">
+            <span :style="{ width: `${(steps.done * 100) / steps.total}%` }" />
+          </span>
+          {{ steps.done }}/{{ steps.total }} itens
+        </li>
+      </ul>
+
       <div class="grid gap-4 sm:grid-cols-2">
         <UiSelect
           v-model="form.status"
@@ -354,3 +401,32 @@ const refresh = () => task.value && kanban.reload(task.value.id).catch(() => und
     <p v-else class="text-14 text-fg-muted">Esta tarefa não está mais disponível.</p>
   </UiDrawer>
 </template>
+
+<style>
+.task-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.task-summary > li {
+  display: inline-flex;
+  height: 28px;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--ds-border);
+  border-radius: 999px;
+  background: var(--ds-bg-2);
+  padding-inline: 10px;
+  font-size: var(--text-12);
+  color: var(--ds-fg-muted);
+}
+
+.task-summary-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--tone);
+  box-shadow: 0 0 8px var(--tone);
+}
+</style>

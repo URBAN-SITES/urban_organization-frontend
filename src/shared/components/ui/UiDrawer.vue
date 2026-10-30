@@ -41,7 +41,7 @@ const WIDTHS = { sm: 'sm:max-w-sm', md: 'sm:max-w-md', lg: 'sm:max-w-2xl' } as c
         :aria-labelledby="titleId"
         tabindex="-1"
         :class="[
-          'fixed z-50 flex flex-col border-border bg-surface-1 shadow-modal outline-none',
+          'ui-drawer-panel fixed z-50 flex flex-col border-border bg-surface-1 shadow-modal outline-none',
           side === 'bottom'
             ? 'inset-x-0 bottom-0 max-h-[85dvh] rounded-t-modal border-t'
             : [
@@ -51,7 +51,7 @@ const WIDTHS = { sm: 'sm:max-w-sm', md: 'sm:max-w-md', lg: 'sm:max-w-2xl' } as c
               ],
         ]"
       >
-        <header class="flex items-start gap-3 border-b border-border px-5 py-4">
+        <header class="ui-drawer-head flex items-start gap-3 border-b border-border px-5 py-4">
           <div class="min-w-0 flex-1">
             <h2 :id="titleId" class="truncate text-16 font-semibold text-fg">{{ title }}</h2>
             <p v-if="description" class="mt-0.5 text-13 text-fg-muted">{{ description }}</p>
@@ -71,3 +71,10 @@ const WIDTHS = { sm: 'sm:max-w-sm', md: 'sm:max-w-md', lg: 'sm:max-w-2xl' } as c
     </Transition>
   </Teleport>
 </template>
+
+<style>
+/* brilho quente discreto no topo dos painéis laterais, como no login */
+.ui-drawer-head {
+  background: radial-gradient(80% 140% at 0% 0%, var(--ds-glow), transparent 70%);
+}
+</style>
