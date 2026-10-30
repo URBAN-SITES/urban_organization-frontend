@@ -2,6 +2,7 @@
 import { CalendarCheck, Trophy, Users } from '@lucide/vue'
 import { computed } from 'vue'
 import { UiIcon } from '@/shared/components'
+import AuthEdge from './AuthEdge.vue'
 
 /**
  * Painel institucional das telas de acesso: foto do escritório, camada escura para leitura,
@@ -33,47 +34,29 @@ const FEATURES = [
 
 <template>
   <section class="auth-visual relative isolate overflow-hidden bg-black" :data-side="side">
-    <picture>
-      <source
-        media="(max-width: 1023px)"
-        :srcset="`${base}images/office-${scene}-sm.webp`"
-        type="image/webp"
-      />
-      <img
-        :src="`${base}images/office-${scene}.webp`"
-        alt=""
-        aria-hidden="true"
-        decoding="async"
-        fetchpriority="high"
-        class="auth-visual-image absolute inset-0 -z-10 size-full object-cover"
-        :style="{ objectPosition: current.position }"
-      />
-    </picture>
+    <Transition name="auth-scene">
+      <picture :key="scene">
+        <source
+          media="(max-width: 1023px)"
+          :srcset="`${base}images/office-${scene}-sm.webp`"
+          type="image/webp"
+        />
+        <img
+          :src="`${base}images/office-${scene}.webp`"
+          alt=""
+          aria-hidden="true"
+          decoding="async"
+          fetchpriority="high"
+          class="auth-visual-image absolute inset-0 -z-10 size-full object-cover"
+          :style="{ objectPosition: current.position }"
+        />
+      </picture>
+    </Transition>
     <!-- leitura: escurece a base e o lado do formulário; a luz do pôr do sol continua visível -->
     <div class="auth-visual-shade absolute inset-0 -z-10" aria-hidden="true" />
 
     <!-- borda orgânica iluminada entre a foto e o painel preto (só no desktop) -->
-    <svg
-      class="auth-edge pointer-events-none absolute inset-y-0 hidden w-[clamp(96px,10vw,168px)] lg:block"
-      viewBox="0 0 100 1000"
-      preserveAspectRatio="none"
-      aria-hidden="true"
-    >
-      <path
-        class="auth-edge-fill"
-        d="M100 0 L74 0 C30 120 22 210 46 330 S30 760 0 1000 L100 1000 Z"
-      />
-      <path
-        class="auth-edge-glow"
-        d="M74 0 C30 120 22 210 46 330 S30 760 0 1000"
-        vector-effect="non-scaling-stroke"
-      />
-      <path
-        class="auth-edge-line"
-        d="M74 0 C30 120 22 210 46 330 S30 760 0 1000"
-        vector-effect="non-scaling-stroke"
-      />
-    </svg>
+    <AuthEdge class="absolute inset-y-0 hidden h-full lg:block" />
 
     <div class="auth-visual-copy relative hidden h-full flex-col justify-end p-10 lg:flex xl:p-14">
       <!-- formulário à direita: frase à esquerda; formulário à esquerda: destaques à direita -->
@@ -130,31 +113,15 @@ const FEATURES = [
   transform: scaleX(-1);
 }
 
-.auth-edge-fill {
-  fill: #000;
+/* troca de foto sem mudar de lado (ex.: entrar -> esqueci a senha): as duas se cruzam */
+.auth-scene-enter-active,
+.auth-scene-leave-active {
+  transition: opacity 600ms var(--ease-in-out);
 }
 
-.auth-edge-line,
-.auth-edge-glow {
-  fill: none;
-  stroke: var(--ds-accent);
-}
-
-.auth-edge-line {
-  stroke-width: 1.5px;
-}
-
-.auth-edge-glow {
-  stroke-width: 8px;
-  opacity: 0.35;
-  filter: blur(6px);
-  animation: auth-edge-breathe 4.8s ease-in-out infinite;
-}
-
-@keyframes auth-edge-breathe {
-  50% {
-    opacity: 0.6;
-  }
+.auth-scene-enter-from,
+.auth-scene-leave-to {
+  opacity: 0;
 }
 
 /* no celular a foto vira uma faixa no topo que se dissolve no preto do formulário */
@@ -162,12 +129,6 @@ const FEATURES = [
   .auth-visual {
     height: clamp(160px, 30vh, 260px);
     mask-image: linear-gradient(to bottom, #000 55%, transparent);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .auth-edge-glow {
-    animation: none;
   }
 }
 </style>
