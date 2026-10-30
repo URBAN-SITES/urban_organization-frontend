@@ -109,7 +109,7 @@ const dayLabel = (date: string, count: number) =>
 </script>
 
 <template>
-  <PageLayout :crumbs="['Calendário']" width="wide">
+  <PageLayout :icon="CalendarDays" tone="#8b5cf6" :crumbs="['Calendário']" width="wide">
     <template #title>
       <span class="flex items-center gap-1">
         <span aria-live="polite">{{ title }}</span>
@@ -126,7 +126,7 @@ const dayLabel = (date: string, count: number) =>
       <UiButton v-else :icon="CalendarDays" @click="connectGoogle">Conectar Google Agenda</UiButton>
     </template>
 
-    <div class="rounded-card border border-border bg-surface-1 p-3 sm:p-4" :aria-busy="loading">
+    <div class="uo-card p-3 sm:p-4" :aria-busy="loading">
       <div class="grid grid-cols-7 gap-1.5 pb-2 text-12 text-fg-muted" aria-hidden="true">
         <span v-for="weekday in WEEKDAYS" :key="weekday" class="px-1.5">{{ weekday }}</span>
       </div>
@@ -204,7 +204,7 @@ const dayLabel = (date: string, count: number) =>
 
     <section v-if="agenda.length" class="sm:hidden" aria-label="Entregas do mês">
       <h2 class="pb-2 text-14 font-semibold text-fg">Neste mês</h2>
-      <ul class="rounded-card border border-border bg-surface-1 px-3.5">
+      <ul class="uo-card px-3.5">
         <li
           v-for="item in agenda"
           :key="item.id"

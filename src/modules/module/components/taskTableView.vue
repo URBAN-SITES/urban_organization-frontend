@@ -84,7 +84,7 @@ function changePage(offset: number) {
 </script>
 
 <template>
-  <div class="overflow-hidden rounded-card border border-border bg-surface-1">
+  <div class="overflow-hidden uo-card">
     <div class="overflow-x-auto">
       <table class="w-full min-w-[720px] text-left text-13">
         <caption class="sr-only">

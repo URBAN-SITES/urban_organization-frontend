@@ -79,8 +79,8 @@ function open(organization: Organization) {
         v-for="organization in store.organizations"
         :key="organization.id"
         :class="[
-          'flex flex-col gap-4 rounded-card border bg-surface-1 p-4',
-          store.current?.id === organization.id ? 'border-border-strong' : 'border-border',
+          'uo-card uo-card-interactive flex flex-col gap-4 p-4',
+          { 'is-current': store.current?.id === organization.id },
         ]"
       >
         <div class="flex items-start gap-3">

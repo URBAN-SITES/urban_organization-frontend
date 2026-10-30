@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Settings } from '@lucide/vue'
 // TODO: CÓDIGO COMENTADOO, REVISAR MAIS TARDE.
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
@@ -376,6 +377,8 @@ function handleCancel() {
 
 <template>
   <PageLayout
+    :icon="Settings"
+    tone="#f2683c"
     :crumbs="['Configurações', current.label]"
     :title="current.title"
     :description="current.description"

@@ -138,7 +138,13 @@ async function markAll(): Promise<void> {
 </script>
 
 <template>
-  <PageLayout :crumbs="['Notificações']" title="Notificações" width="narrow">
+  <PageLayout
+    :icon="Bell"
+    tone="#f99f11"
+    :crumbs="['Notificações']"
+    title="Notificações"
+    width="narrow"
+  >
     <template #description>
       <span aria-live="polite">
         {{
@@ -195,7 +201,7 @@ async function markAll(): Promise<void> {
         class="grid grid-cols-1 gap-2"
       >
         <h2 class="text-12 font-medium text-fg-muted">{{ day }}</h2>
-        <ul class="divide-y divide-border rounded-card border border-border bg-surface-1">
+        <ul class="divide-y divide-border uo-card">
           <li
             v-for="item in items"
             :key="item.id"

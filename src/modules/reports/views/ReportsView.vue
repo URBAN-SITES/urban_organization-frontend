@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ChartColumn } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { useTheme } from '@/app/composables/useTheme'
@@ -82,6 +83,8 @@ function exportCsv() {
 
 <template>
   <PageLayout
+    :icon="ChartColumn"
+    tone="#3b82f6"
     :crumbs="['Relatórios']"
     title="Relatórios"
     :description="`${periods.find((p) => p.days === days)!.label} · setores que você acompanha`"
@@ -140,7 +143,7 @@ function exportCsv() {
       />
     </div>
 
-    <section class="overflow-hidden rounded-card border border-border bg-surface-1">
+    <section class="overflow-hidden uo-card">
       <h2 class="px-[18px] pt-[16px] pb-[12px] text-16 font-semibold text-fg">
         Desempenho por pessoa
       </h2>

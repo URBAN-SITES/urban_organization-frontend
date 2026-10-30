@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowLeft, FileDown, FileText, ListChecks, Printer, Sparkles } from '@lucide/vue'
+import { ArrowLeft, FileDown, FileText, ListChecks, Printer, Sparkles, Video } from '@lucide/vue'
 import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
 import { RouterLink } from 'vue-router'
 import { toast } from 'vue-sonner'
@@ -48,6 +48,12 @@ let timer: ReturnType<typeof setTimeout> | undefined
 const running = computed(
   () => !!insight.value && !['done', 'failed'].includes(insight.value.status),
 )
+// data e duração, abaixo do título no topo com foto
+const subtitle = computed(() => {
+  if (!meeting.value || !recording.value) return ''
+  const seconds = recording.value.duration_seconds
+  return seconds ? `${when.value} · ${formatDuration(seconds)}` : when.value
+})
 const when = computed(() =>
   recording.value
     ? new Date(recording.value.started_at).toLocaleString('pt-BR', {
@@ -145,7 +151,13 @@ function pdf() {
 </script>
 
 <template>
-  <PageLayout :crumbs="['Reuniões', meeting?.title ?? 'Gravação']">
+  <PageLayout
+    :crumbs="['Reuniões', meeting?.title ?? 'Gravação']"
+    :title="meeting?.title ?? 'Gravação'"
+    :description="subtitle"
+    :icon="Video"
+    tone="#8b5cf6"
+  >
     <RouterLink
       v-if="meeting"
       :to="{
@@ -166,18 +178,6 @@ function pdf() {
     <UiErrorState v-else-if="loadError" :description="loadError" @retry="load" />
 
     <template v-else-if="meeting && recording">
-      <header class="min-w-0">
-        <h1 class="text-24 leading-tight font-semibold tracking-[-0.01em] text-fg">
-          {{ meeting.title }}
-        </h1>
-        <p class="mt-1 text-14 text-fg-muted">
-          {{ when }}
-          <template v-if="recording.duration_seconds">
-            · {{ formatDuration(recording.duration_seconds) }}
-          </template>
-        </p>
-      </header>
-
       <video
         v-if="recording.play_url"
         ref="video"
@@ -219,7 +219,7 @@ function pdf() {
 
       <section
         v-else-if="running"
-        class="flex items-center gap-3 rounded-card border border-border bg-surface-1 p-4"
+        class="flex items-center gap-3 uo-card p-4"
         role="status"
         aria-live="polite"
       >
@@ -233,10 +233,7 @@ function pdf() {
         </div>
       </section>
 
-      <section
-        v-else-if="insight.status === 'failed'"
-        class="grid gap-3 rounded-card border border-border bg-surface-1 p-4"
-      >
+      <section v-else-if="insight.status === 'failed'" class="grid gap-3 uo-card p-4">
         <div class="flex flex-wrap items-center gap-2">
           <UiBadge tone="danger">Falhou</UiBadge>
           <span class="text-13 text-fg-muted">
