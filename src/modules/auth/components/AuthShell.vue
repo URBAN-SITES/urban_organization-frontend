@@ -400,7 +400,6 @@ const KEEP = ['LoginView', 'RegisterView']
 /* Botão principal com reflexo: a luz atravessa uma vez no hover. */
 .auth-shell [data-ui='button'].bg-accent {
   overflow: hidden;
-  box-shadow: 0 8px 24px -12px rgb(249 159 17 / 0.6);
 }
 
 .auth-shell [data-ui='button'].bg-accent::after {
