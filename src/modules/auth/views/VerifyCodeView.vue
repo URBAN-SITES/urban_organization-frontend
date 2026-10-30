@@ -12,7 +12,7 @@ import {
   requestRegistrationCode,
   verifyPasswordReset,
 } from '../services'
-import { useAuthFlowStore } from '../stores'
+import { useAuthFlowStore, useAuthStore } from '../stores'
 
 const RESEND_SECONDS = 45
 
@@ -21,6 +21,7 @@ const props = defineProps<{ flow: 'register' | 'reset' }>()
 const router = useRouter()
 const navigation = useAuthNavigation()
 const authFlow = useAuthFlowStore()
+const auth = useAuthStore()
 const code = ref('')
 const isSubmitting = ref(false)
 const isResending = ref(false)
@@ -45,6 +46,23 @@ function startTimer() {
   }, 1000)
 }
 
+// conta criada: entra com as mesmas credenciais por trás da tela da marca; se a entrada
+// automática falhar, a conta continua criada e a pessoa entra pelo formulário
+async function enterNewAccount() {
+  const credentials = { email: authFlow.email, password: authFlow.password }
+  authFlow.clear()
+  auth.showLoadingScreen('Criando seu espaço...', 'Sua conta foi criada. Estamos entrando nela.')
+  try {
+    await auth.signIn(credentials)
+    await router.push(navigation.afterLogin.value)
+  } catch {
+    toast.success('Conta criada. Agora é só entrar.')
+    await router.push(navigation.to('Login'))
+  } finally {
+    auth.hideLoadingScreen()
+  }
+}
+
 async function handleSubmit() {
   if (!isComplete.value) {
     errorMessage.value = 'Digite os 6 dígitos do código.'
@@ -60,9 +78,7 @@ async function handleSubmit() {
         name: authFlow.name,
         password: authFlow.password,
       })
-      authFlow.clear()
-      toast.success('Conta criada. Agora é só entrar.')
-      await router.push(navigation.to('Login'))
+      await enterNewAccount()
       return
     }
     await verifyPasswordReset({ email: authFlow.email, code: code.value })

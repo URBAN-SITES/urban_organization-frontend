@@ -33,6 +33,16 @@ function validate() {
   return !errors.email && !errors.password
 }
 
+// sessão criada: a tela da marca cobre o carregamento do app e some quando a rota resolve
+async function enterApp() {
+  auth.showLoadingScreen('Entrando na sua conta...', 'Preparando seus projetos.')
+  try {
+    await router.push(navigation.afterLogin.value)
+  } finally {
+    auth.hideLoadingScreen()
+  }
+}
+
 async function handleSubmit() {
   // Enter repetido no campo não dispara um segundo envio
   if (isSubmitting.value || isGoogleSubmitting.value) return
@@ -42,7 +52,7 @@ async function handleSubmit() {
   try {
     await auth.signIn({ email: email.value.trim(), password: password.value })
     authFlow.clear()
-    await router.push(navigation.afterLogin.value)
+    await enterApp()
   } catch (error) {
     formError.value =
       error instanceof Error ? error.message : 'Não foi possível entrar. Tente novamente.'
@@ -58,7 +68,7 @@ async function handleGoogleCredential(credential: string) {
   try {
     await auth.signInWithGoogle(credential)
     authFlow.clear()
-    await router.push(navigation.afterLogin.value)
+    await enterApp()
   } catch (error) {
     formError.value = error instanceof Error ? error.message : 'Não foi possível entrar com Google.'
   } finally {
