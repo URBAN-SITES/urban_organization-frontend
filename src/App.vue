@@ -94,4 +94,9 @@ finishGoogleConnect()
     title="Saindo da sua conta..."
     description="Encerrando a sessão neste dispositivo."
   />
+  <AuthTransitionOverlay
+    :visible="!auth.isSigningOut && auth.loadingScreen !== null"
+    :title="auth.loadingScreen?.title ?? ''"
+    :description="auth.loadingScreen?.description"
+  />
 </template>

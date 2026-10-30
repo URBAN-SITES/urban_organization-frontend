@@ -2,9 +2,9 @@
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
-import { useAuthStore } from '@/modules/auth'
+import { AuthTransitionOverlay, useAuthStore } from '@/modules/auth'
 import { CircleAlert } from '@lucide/vue'
-import { UiButton, UiEmptyState, UiSpinner } from '@/shared/components'
+import { UiButton, UiEmptyState } from '@/shared/components'
 import { takeGitHubReturnTo } from '../composables'
 import { finishGitHubAuthorization } from '../services'
 
@@ -58,9 +58,12 @@ onMounted(async () => {
           </UiButton>
         </template>
       </UiEmptyState>
-      <p v-else role="status" class="flex items-center justify-center gap-2 text-14 text-fg-muted">
-        <UiSpinner :size="16" /> Concluindo com o GitHub…
-      </p>
+      <AuthTransitionOverlay
+        v-else
+        visible
+        title="Concluindo com o GitHub..."
+        description="Confirmando sua conta com segurança."
+      />
     </div>
   </main>
 </template>
