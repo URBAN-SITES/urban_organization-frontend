@@ -34,6 +34,9 @@
   --ds-warning-soft: rgb(176 115 0 / 0.12);
   --ds-overlay: rgb(24 24 27 / 0.4);
   --ds-shadow-color: 24 24 27;
+  --ds-bg-2: #f4f4f3;
+  --ds-glow: rgb(249 159 17 / 0.12);
+  --ds-card-sheen: rgb(255 255 255 / 0.6);
 
   /* motion */
   --dur-instant: 80ms;
@@ -59,15 +62,16 @@
 }
 
 .dark {
-  /* fundo preto e superfícies grafite da identidade Urban Organization */
+  /* identidade Urban Organization: preto profundo, superfícies em camadas e bordas de luz */
   --ds-bg: #000000;
-  --ds-surface-1: #0d0d0e;
-  --ds-surface-2: #161617;
-  --ds-surface-3: #1f1f21;
-  --ds-border: #262628;
-  --ds-border-strong: #353538;
+  --ds-bg-2: #080808;
+  --ds-surface-1: #101010;
+  --ds-surface-2: #151515;
+  --ds-surface-3: #1d1d1f;
+  --ds-border: rgb(255 255 255 / 0.08);
+  --ds-border-strong: rgb(255 255 255 / 0.14);
   --ds-fg: #ffffff;
-  --ds-fg-muted: #9a9aa1;
+  --ds-fg-muted: #a1a1aa;
   --ds-accent: #f99f11;
   --ds-accent-hover: #fab13f;
   /* texto preto sobre o laranja da marca: 10,6:1 */
@@ -79,8 +83,11 @@
   --ds-success-soft: rgb(76 195 138 / 0.14);
   --ds-warning: #e5a83b;
   --ds-warning-soft: rgb(229 168 59 / 0.14);
-  --ds-overlay: rgb(0 0 0 / 0.6);
+  --ds-overlay: rgb(0 0 0 / 0.66);
   --ds-shadow-color: 0 0 0;
+  /* luz quente das fotos de referência, usada em brilhos e no topo dos cartões */
+  --ds-glow: rgb(249 159 17 / 0.16);
+  --ds-card-sheen: rgb(255 255 255 / 0.035);
 
   color-scheme: dark;
 }
@@ -100,6 +107,8 @@
 
 @theme inline {
   --color-bg: var(--ds-bg);
+  --color-bg-2: var(--ds-bg-2);
+  --color-glow: var(--ds-glow);
   --color-surface-1: var(--ds-surface-1);
   --color-surface-2: var(--ds-surface-2);
   --color-surface-3: var(--ds-surface-3);
@@ -121,6 +130,12 @@
 
   --shadow-float:
     0 1px 2px rgb(var(--ds-shadow-color) / 0.08), 0 8px 24px rgb(var(--ds-shadow-color) / 0.16);
+  --shadow-card:
+    0 1px 0 var(--ds-card-sheen) inset, 0 1px 2px rgb(var(--ds-shadow-color) / 0.06),
+    0 10px 30px -18px rgb(var(--ds-shadow-color) / 0.5);
+  --shadow-lift:
+    0 1px 0 var(--ds-card-sheen) inset, 0 18px 40px -16px rgb(var(--ds-shadow-color) / 0.6),
+    0 0 0 1px var(--ds-border-strong);
   --shadow-modal:
     0 2px 4px rgb(var(--ds-shadow-color) / 0.1), 0 24px 48px rgb(var(--ds-shadow-color) / 0.24);
 }
@@ -152,8 +167,8 @@
   --text-48--letter-spacing: -0.03em;
 
   --radius-control: 6px;
-  --radius-card: 10px;
-  --radius-modal: 14px;
+  --radius-card: 12px;
+  --radius-modal: 16px;
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
