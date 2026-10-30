@@ -25,8 +25,8 @@ const FEATURE_ICONS: Record<PlanFeature['icon'], { icon: string; class: string }
 <template>
   <article
     :class="[
-      'relative flex h-full flex-col gap-[16px] overflow-hidden rounded-card border bg-surface-1 px-5 py-4',
-      plan.highlighted ? 'border-accent/45 dark:border-accent/45' : 'border-border',
+      'uo-card uo-card-interactive flex h-full flex-col gap-[16px] overflow-hidden px-5 py-4',
+      { 'is-highlighted': plan.highlighted },
     ]"
   >
     <span

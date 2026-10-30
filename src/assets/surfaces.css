@@ -138,3 +138,48 @@
     animation: none;
   }
 }
+
+/* cartão marcado (organização atual) e cartão em destaque (plano recomendado) */
+.uo-card.is-current {
+  border-color: var(--ds-border-strong);
+}
+
+.uo-card.is-highlighted {
+  border-color: rgb(249 159 17 / 0.45);
+  box-shadow:
+    0 0 0 1px rgb(249 159 17 / 0.12),
+    0 20px 50px -30px rgb(249 159 17 / 0.5);
+}
+
+/* bloco colorido com o ícone da tela ou do item; a cor vem de --tile */
+.uo-tile {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 12px;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--tile), #fff 18%), var(--tile));
+  color: #ffffff;
+  box-shadow: 0 10px 28px -10px var(--tile);
+}
+
+/* telas cheias (mensagens, assistente): a foto do escritório aparece apagada no topo */
+.uo-backdrop {
+  position: relative;
+  isolation: isolate;
+}
+
+.uo-backdrop::before {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: -1;
+  height: 320px;
+  content: '';
+  background:
+    radial-gradient(50% 100% at 85% 0%, rgb(249 159 17 / 0.14), transparent 65%),
+    linear-gradient(180deg, rgb(0 0 0 / 0.55), var(--ds-bg) 100%),
+    url('/images/office-boardroom-sm.webp') center 40% / cover no-repeat;
+  opacity: 0.9;
+  pointer-events: none;
+}

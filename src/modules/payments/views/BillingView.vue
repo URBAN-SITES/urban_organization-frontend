@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Wallet } from '@lucide/vue'
 import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
@@ -69,6 +70,8 @@ function exportInvoices() {
 
 <template>
   <PageLayout
+    :icon="Wallet"
+    tone="#22b26b"
     :crumbs="['Faturamento']"
     title="Faturamento"
     description="Plano, método de pagamento e faturas"
@@ -113,7 +116,7 @@ function exportInvoices() {
     </div>
 
     <div class="grid items-start gap-[16px] xl:grid-cols-[minmax(0,1fr)_400px]">
-      <section class="overflow-hidden rounded-card border border-border bg-surface-1">
+      <section class="overflow-hidden uo-card">
         <header class="flex items-center justify-between px-[18px] pt-[16px] pb-[12px]">
           <h2 class="text-16 font-semibold text-fg">Faturas</h2>
           <button
@@ -170,9 +173,7 @@ function exportInvoices() {
         </div>
       </section>
 
-      <section
-        class="flex flex-col rounded-card border border-border bg-surface-1 px-[18px] pt-[16px] pb-[6px]"
-      >
+      <section class="flex flex-col uo-card px-[18px] pt-[16px] pb-[6px]">
         <header class="flex items-center justify-between pb-[4px]">
           <h2 class="text-16 font-semibold text-fg">Método de pagamento</h2>
           <button

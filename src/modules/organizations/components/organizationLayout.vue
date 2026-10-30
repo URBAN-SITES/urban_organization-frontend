@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Building } from '@lucide/vue'
 import { watch } from 'vue'
 import DefaultLayout from '@/app/layouts/DefaultLayout.vue'
 import { PageLayout } from '@/shared/components'
@@ -32,6 +33,8 @@ const TABS = [
 <template>
   <DefaultLayout>
     <PageLayout
+      :icon="Building"
+      tone="#f99f11"
       :crumbs="[title]"
       :title="title"
       :description="description"
@@ -59,7 +62,7 @@ const TABS = [
               'relative -mb-px shrink-0 border-b-2 px-3 py-2.5 text-13 whitespace-nowrap',
               'transition-colors duration-(--dur-fast) ease-out focus-visible:outline-2 focus-visible:outline-accent',
               isActive
-                ? 'border-fg font-medium text-fg'
+                ? 'border-accent font-medium text-fg'
                 : 'border-transparent text-fg-muted hover:text-fg',
             ]"
             @click="navigate"

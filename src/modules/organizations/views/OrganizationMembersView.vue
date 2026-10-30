@@ -227,7 +227,7 @@ watch(id, load, { immediate: true })
     />
 
     <UiTabs v-else v-model="tab" :tabs="tabs" label="Integrantes da organização">
-      <section class="mt-4 overflow-hidden rounded-card border border-border bg-surface-1">
+      <section class="mt-4 overflow-hidden uo-card">
         <ul v-if="loading" aria-label="Carregando" class="divide-y divide-border">
           <li v-for="n in 4" :key="n" class="flex items-center gap-3 px-4 py-3">
             <UiSkeleton circle class="size-8" />
