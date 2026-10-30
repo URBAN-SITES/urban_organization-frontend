@@ -37,6 +37,8 @@ export type UpdatedUserProfile = Pick<User, 'name' | 'bio' | 'avatar_url'>
 export interface LoginCredentials {
   email: string
   password: string
+  /** false: a sessão termina ao fechar o navegador (o backend assume true) */
+  remember?: boolean
 }
 
 export interface GoogleLoginRequest {
