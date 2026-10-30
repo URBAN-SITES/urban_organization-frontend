@@ -1,18 +1,119 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { nextTick, reactive, ref, useTemplateRef, watch } from 'vue'
+import { onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
 import { BrandLogo } from '@/shared/components'
+import AuthEdge from './AuthEdge.vue'
 import AuthVisual from './AuthVisual.vue'
 
 /**
  * Moldura das telas de acesso e do onboarding, sempre no tema escuro da marca:
  * painel institucional (60%) com a foto do escritório e painel preto (40%) com o formulário.
  * No cadastro a composição inverte: formulário à esquerda, foto à direita.
+ *
+ * Trocar de lado (entrar <-> criar conta) passa por uma cortina preta: ela nasce da borda curva,
+ * cobre a composição atual, a troca acontece por baixo e a cortina recua revelando a nova.
+ * No celular a cortina sobe de baixo para cima; com movimento reduzido vira só um esmaecer.
  */
 const route = useRoute()
+const router = useRouter()
 
-const formLeft = computed(() => Boolean(route.meta.authAsideRight))
-const scene = computed(() => route.meta.authScene ?? 'executive')
+// a composição desenhada só muda quando a cortina cobre a tela, não no instante da navegação
+const composition = reactive({
+  formLeft: Boolean(route.meta.authAsideRight),
+  scene: route.meta.authScene ?? 'executive',
+})
+
+const busy = ref(false)
+const leaving = ref(false)
+const curtainOn = ref(false)
+// troca instantânea do conteúdo enquanto a cortina cobre; esmaecer curto no resto
+const swapName = ref('auth-swap')
+const enterDelay = ref('0ms')
+
+const visual = useTemplateRef<InstanceType<typeof AuthVisual>>('visual')
+const curtain = useTemplateRef<HTMLDivElement>('curtain')
+
+const COVER_MS = 520
+const REVEAL_MS = 640
+const COVER_EASE = 'cubic-bezier(0.65, 0, 0.35, 1)'
+const REVEAL_EASE = 'cubic-bezier(0.16, 1, 0.3, 1)'
+
+watch(
+  () => route.fullPath,
+  () => {
+    if (busy.value) return
+    composition.formLeft = Boolean(route.meta.authAsideRight)
+    composition.scene = route.meta.authScene ?? 'executive'
+  },
+)
+
+const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+const isDesktop = () => window.matchMedia('(min-width: 64rem)').matches
+
+/** Deslocamento em que a ponta da cortina coincide com a borda curva da composição atual. */
+function edgeOffset(): number {
+  const el = visual.value?.$el as HTMLElement | undefined
+  if (!el) return 0
+  const rect = el.getBoundingClientRect()
+  return composition.formLeft ? rect.left - window.innerWidth : rect.right
+}
+
+function slide(from: string, to: string, duration: number, easing: string) {
+  const el = curtain.value
+  if (!el) return Promise.resolve()
+  const axis = isDesktop() ? 'X' : 'Y'
+  return el
+    .animate(
+      [{ transform: `translate${axis}(${from})` }, { transform: `translate${axis}(${to})` }],
+      { duration, easing, fill: 'forwards' },
+    )
+    .finished.then(() => undefined)
+}
+
+async function cover() {
+  curtainOn.value = true
+  leaving.value = true
+  await nextTick()
+  if (isDesktop()) await slide(`${edgeOffset()}px`, '0px', COVER_MS, COVER_EASE)
+  else await slide('100%', '0%', COVER_MS, COVER_EASE)
+}
+
+async function reveal() {
+  // a troca de conteúdo aconteceu por baixo da cortina; os itens novos entram enquanto ela recua
+  leaving.value = false
+  await nextTick()
+  await new Promise((resolve) => requestAnimationFrame(resolve))
+  window.scrollTo(0, 0)
+  if (isDesktop()) await slide('0px', `${edgeOffset()}px`, REVEAL_MS, REVEAL_EASE)
+  else await slide('0%', '-100%', REVEAL_MS, REVEAL_EASE)
+  curtain.value?.getAnimations().forEach((animation) => animation.cancel())
+  curtainOn.value = false
+  swapName.value = 'auth-swap'
+  busy.value = false
+}
+
+onBeforeRouteUpdate(async (to) => {
+  // uma transição por vez: cliques repetidos durante a cortina são ignorados
+  if (busy.value) return false
+  const toLeft = Boolean(to.meta.authAsideRight)
+  if (toLeft === composition.formLeft || reducedMotion()) {
+    enterDelay.value = '0ms'
+    return true
+  }
+  busy.value = true
+  swapName.value = 'auth-cut'
+  enterDelay.value = '220ms'
+  await cover()
+  const stop = router.afterEach((next, _from, failure) => {
+    stop()
+    if (!failure) {
+      composition.formLeft = Boolean(next.meta.authAsideRight)
+      composition.scene = next.meta.authScene ?? 'executive'
+    }
+    void reveal()
+  })
+  return true
+})
 
 // entrar e criar conta ficam em cache: alternar entre elas não apaga o que já foi digitado
 const KEEP = ['LoginView', 'RegisterView']
@@ -20,17 +121,32 @@ const KEEP = ['LoginView', 'RegisterView']
 
 <template>
   <div
-    :data-form="formLeft ? 'left' : 'right'"
-    class="auth-shell dark relative flex min-h-dvh flex-col overflow-x-clip bg-black text-fg lg:grid lg:h-dvh lg:overflow-hidden"
+    :data-form="composition.formLeft ? 'left' : 'right'"
+    class="auth-shell dark relative isolate flex min-h-dvh flex-col overflow-x-clip bg-black text-fg lg:grid lg:h-dvh lg:overflow-hidden"
+    :aria-busy="busy"
   >
     <AuthVisual
+      ref="visual"
       class="auth-shell-visual lg:h-dvh"
-      :scene="scene"
-      :side="formLeft ? 'left' : 'right'"
+      :scene="composition.scene"
+      :side="composition.formLeft ? 'left' : 'right'"
     />
+
+    <!-- cortina da troca entre entrar e criar conta; a ponta é a mesma borda curva do painel -->
+    <div
+      v-show="curtainOn"
+      ref="curtain"
+      class="auth-curtain"
+      :data-cap="composition.formLeft ? 'right' : 'left'"
+      aria-hidden="true"
+    >
+      <AuthEdge class="auth-curtain-cap" />
+    </div>
 
     <main
       class="auth-panel relative flex min-w-0 flex-1 flex-col bg-black lg:h-dvh lg:overflow-y-auto"
+      :class="{ 'is-leaving': leaving }"
+      :inert="busy"
     >
       <div
         class="mx-auto flex w-full max-w-[400px] flex-1 flex-col px-5 pt-2 pb-8 sm:px-8 lg:max-w-[420px] lg:justify-center lg:py-12"
@@ -43,11 +159,11 @@ const KEEP = ['LoginView', 'RegisterView']
           <BrandLogo on="dark" class="w-full" />
         </RouterLink>
 
-        <div class="auth-stage">
+        <div class="auth-stage" :style="{ '--auth-enter-delay': enterDelay }">
           <!-- telas de acesso usam as rotas filhas; o onboarding passa o próprio conteúdo -->
           <slot>
             <RouterView v-slot="{ Component, route: current }">
-              <Transition name="auth-swap" appear>
+              <Transition :name="swapName" appear>
                 <KeepAlive :include="KEEP">
                   <component :is="Component" :key="current.path" class="auth-view" />
                 </KeepAlive>
@@ -63,6 +179,10 @@ const KEEP = ['LoginView', 'RegisterView']
 </template>
 
 <style>
+.auth-shell {
+  --auth-edge-width: clamp(96px, 10vw, 168px);
+}
+
 /* 60% foto, 40% formulário; no cadastro o formulário vem primeiro */
 @media (min-width: 64rem) {
   .auth-shell[data-form='right'] {
@@ -75,6 +195,57 @@ const KEEP = ['LoginView', 'RegisterView']
 
   .auth-shell[data-form='left'] .auth-panel {
     order: -1;
+  }
+}
+
+/* a foto fica embaixo, a cortina no meio e o painel do formulário por cima dela */
+.auth-panel {
+  z-index: 2;
+  transition: opacity 260ms var(--ease-out);
+}
+
+.auth-panel.is-leaving {
+  opacity: 0;
+  transition: opacity 240ms var(--ease-in);
+}
+
+.auth-curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background: #000;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.auth-curtain-cap {
+  position: absolute;
+  inset-block: 0;
+  height: 100%;
+}
+
+.auth-curtain[data-cap='left'] .auth-curtain-cap {
+  right: calc(100% - 1px);
+}
+
+.auth-curtain[data-cap='right'] .auth-curtain-cap {
+  left: calc(100% - 1px);
+  transform: scaleX(-1);
+}
+
+/* no celular a cortina sobe por cima de tudo, com a linha laranja nas bordas */
+@media (max-width: 63.999rem) {
+  .auth-curtain {
+    z-index: 3;
+    box-shadow:
+      0 -1px 0 var(--ds-accent),
+      0 -10px 28px -6px rgb(249 159 17 / 0.45),
+      0 1px 0 var(--ds-accent),
+      0 10px 28px -6px rgb(249 159 17 / 0.45);
+  }
+
+  .auth-curtain-cap {
+    display: none;
   }
 }
 
@@ -112,24 +283,25 @@ const KEEP = ['LoginView', 'RegisterView']
 .auth-view > :not(form),
 .auth-view form > * {
   animation: auth-item-in 420ms var(--ease-out) backwards;
+  animation-delay: var(--auth-enter-delay, 0ms);
 }
 
 .auth-view > :nth-child(2),
 .auth-view form > :nth-child(1) {
-  animation-delay: 50ms;
+  animation-delay: calc(var(--auth-enter-delay, 0ms) + 50ms);
 }
 .auth-view form > :nth-child(2) {
-  animation-delay: 90ms;
+  animation-delay: calc(var(--auth-enter-delay, 0ms) + 90ms);
 }
 .auth-view form > :nth-child(3) {
-  animation-delay: 130ms;
+  animation-delay: calc(var(--auth-enter-delay, 0ms) + 130ms);
 }
 .auth-view form > :nth-child(4) {
-  animation-delay: 170ms;
+  animation-delay: calc(var(--auth-enter-delay, 0ms) + 170ms);
 }
 .auth-view form > :nth-child(n + 5),
 .auth-view > :nth-child(n + 3) {
-  animation-delay: 210ms;
+  animation-delay: calc(var(--auth-enter-delay, 0ms) + 210ms);
 }
 
 /* a logo acende uma vez ao abrir a área de acesso */
