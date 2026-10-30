@@ -6,6 +6,8 @@ import { BrandLogo } from '@/shared/components'
  * GitHub). Fica visível só enquanto o trabalho real acontece: quem a abre também a fecha.
  */
 defineProps<{ visible: boolean; title: string; description?: string }>()
+
+const base = import.meta.env.BASE_URL
 </script>
 
 <template>
@@ -17,12 +19,21 @@ defineProps<{ visible: boolean; title: string; description?: string }>()
         role="status"
         aria-live="polite"
       >
+        <!-- foto do escritório ao fundo, escurecida para a marca e o texto ficarem legíveis -->
+        <picture class="urban-loading-photo" aria-hidden="true">
+          <source
+            media="(max-width: 1023px)"
+            :srcset="`${base}images/office-executive-sm.webp`"
+            type="image/webp"
+          />
+          <img :src="`${base}images/office-executive.webp`" alt="" decoding="async" />
+        </picture>
         <span class="urban-loading-light" aria-hidden="true" />
         <div class="urban-loading-content relative flex flex-col items-center">
           <BrandLogo on="dark" class="urban-loading-logo w-36" />
           <span class="urban-loading-bar mt-8" aria-hidden="true" />
           <p class="mt-6 text-14 font-medium text-white">{{ title }}</p>
-          <p v-if="description" class="mt-1.5 max-w-xs text-13 text-[var(--ds-fg-muted)]">
+          <p v-if="description" class="mt-1.5 max-w-xs text-13 text-white/75">
             {{ description }}
           </p>
         </div>
@@ -45,6 +56,33 @@ defineProps<{ visible: boolean; title: string; description?: string }>()
 
 .urban-loading-enter-active .urban-loading-content {
   animation: ui-rise var(--dur-slow) var(--ease-out) 60ms backwards;
+}
+
+.urban-loading-photo,
+.urban-loading-photo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.urban-loading-photo img {
+  object-fit: cover;
+  object-position: 35% 50%;
+  animation: urban-loading-drift 14s ease-out both;
+}
+
+.urban-loading-photo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgb(0 0 0 / 0.55), rgb(0 0 0 / 0.82) 70%);
+}
+
+@keyframes urban-loading-drift {
+  from {
+    transform: scale(1.08);
+  }
 }
 
 /* luz quente bem suave atrás da marca, como o pôr do sol das fotos */
@@ -111,7 +149,8 @@ defineProps<{ visible: boolean; title: string; description?: string }>()
 
 @media (prefers-reduced-motion: reduce) {
   .urban-loading-light,
-  .urban-loading-logo {
+  .urban-loading-logo,
+  .urban-loading-photo img {
     animation: none;
   }
   .urban-loading-bar::after {
