@@ -476,31 +476,43 @@ const KEEP = ['LoginView', 'RegisterView']
   --auth-sweep: rgb(249 159 17 / 0.08);
 }
 
-/* campos: o preenchimento fica sob o fundo translúcido; no foco, uma linha laranja corre por baixo */
+/* campos: o preenchimento fica sob o fundo translúcido; no foco, o contorno laranja inteiro
+   (borda e halo) é desenhado da esquerda para a direita, revelado por um recorte que se abre */
 .auth-shell [data-ui='input'] {
   isolation: isolate;
   border-radius: var(--radius-control);
 }
 
+.auth-shell [data-ui='input'] input:focus-visible {
+  border-color: var(--ds-border);
+  box-shadow: none;
+}
+
+.auth-shell [data-ui='input'] input[aria-invalid='true']:focus-visible {
+  border-color: var(--ds-danger);
+}
+
 .auth-shell [data-ui='input']::after {
+  --auth-ring: var(--ds-accent);
+  --auth-halo: var(--ds-accent-soft);
   position: absolute;
-  inset: auto 6px 0;
-  height: 2px;
-  border-radius: 2px;
+  inset: 0;
+  border: 1px solid var(--auth-ring);
+  border-radius: inherit;
   content: '';
-  background: var(--ds-accent);
+  box-shadow: 0 0 0 3px var(--auth-halo);
   pointer-events: none;
-  transform: scaleX(0);
-  transform-origin: left center;
-  transition: transform 460ms cubic-bezier(0.65, 0, 0.35, 1);
+  clip-path: inset(-4px calc(100% + 4px) -4px -4px round var(--radius-control));
+  transition: clip-path 460ms cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 .auth-shell [data-ui='input']:focus-within::after {
-  transform: scaleX(1);
+  clip-path: inset(-4px -4px -4px -4px round var(--radius-control));
 }
 
 .auth-shell [data-ui='input']:has([aria-invalid='true'])::after {
-  background: var(--ds-danger);
+  --auth-ring: var(--ds-danger);
+  --auth-halo: var(--ds-danger-soft);
 }
 
 /* links: a linha de baixo cresce da esquerda para a direita sobre um traço apagado */
