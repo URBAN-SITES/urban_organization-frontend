@@ -46,7 +46,7 @@ const controlAttrs = computed(() =>
     :required="required"
   >
     <template #default="{ describedby, invalid }">
-      <div class="group relative">
+      <div data-ui="input" class="group relative">
         <!-- o ícone acompanha o campo: laranja no foco, claro quando preenchido, vermelho no erro -->
         <UiIcon
           v-if="icon"
