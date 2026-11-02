@@ -366,7 +366,6 @@ const KEEP = ['LoginView', 'RegisterView']
 .auth-social:hover:not(:disabled),
 .auth-social:focus-within {
   border-color: var(--ds-accent);
-  background: rgb(249 159 17 / 0.06);
   box-shadow: 0 0 0 4px rgb(249 159 17 / 0.08);
 }
 
@@ -397,14 +396,9 @@ const KEEP = ['LoginView', 'RegisterView']
 }
 
 /* Campos das telas de acesso: preto profundo e borda discreta; o foco (borda e halo laranja)
-   e o erro vêm do UiInput. Aqui só o fundo, que clareia de leve ao passar o mouse. */
+   e o erro vêm do UiInput; o preenchimento do hover está mais abaixo. */
 .auth-shell input:not([type='checkbox']) {
   background-color: rgb(255 255 255 / 0.03);
-}
-
-.auth-shell input:not([type='checkbox']):hover:not(:disabled),
-.auth-shell input:not([type='checkbox']):focus-visible {
-  background-color: rgb(255 255 255 / 0.05);
 }
 
 /* preenchimento automático do navegador sem o fundo claro que quebra o tema escuro */
@@ -427,42 +421,115 @@ const KEEP = ['LoginView', 'RegisterView']
   color: var(--ds-accent-fg);
 }
 
-/* Botão principal com reflexo: a luz atravessa uma vez no hover. */
-.auth-shell [data-ui='button'].bg-accent {
+/*
+ * Hover das telas de acesso: um tom mais claro preenche da esquerda para a direita
+ * (botões, botões sociais e campos) e a linha dos links cresce no mesmo sentido.
+ * O preenchimento fica atrás do conteúdo (z-index -1 dentro do próprio elemento).
+ */
+.auth-shell [data-ui='button'],
+.auth-social {
+  isolation: isolate;
   overflow: hidden;
 }
 
-.auth-shell [data-ui='button'].bg-accent::after {
-  content: '';
+.auth-shell [data-ui='button']::before,
+.auth-social::before,
+.auth-shell [data-ui='input']::before {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    105deg,
-    transparent 35%,
-    rgb(255 255 255 / 0.35) 50%,
-    transparent 65%
-  );
-  transform: translateX(-120%);
+  z-index: -1;
+  border-radius: inherit;
+  content: '';
+  background: var(--auth-sweep, rgb(255 255 255 / 0.06));
   pointer-events: none;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 460ms cubic-bezier(0.65, 0, 0.35, 1);
 }
 
-.auth-shell [data-ui='button'].bg-accent:hover:not(:disabled)::after {
-  transform: translateX(120%);
-  transition: transform 700ms var(--ease-out);
+.auth-shell [data-ui='button']:hover:not(:disabled)::before,
+.auth-social:hover::before,
+.auth-shell [data-ui='input']:hover:has(input:not(:disabled))::before,
+.auth-shell [data-ui='input']:focus-within::before {
+  transform: scaleX(1);
 }
 
+/* no botão principal o tom mais claro é o laranja de hover, que agora entra varrendo */
+.auth-shell [data-ui='button'].bg-accent {
+  --auth-sweep: var(--ds-accent-hover);
+}
+
+.auth-shell [data-ui='button'].bg-accent:hover:not(:disabled) {
+  background-color: var(--ds-accent);
+}
+
+/* secundário e fantasma mantêm o fundo de repouso; quem clareia é o preenchimento */
+.auth-shell [data-ui='button'].bg-surface-1:hover:not(:disabled) {
+  background-color: var(--ds-surface-1);
+}
+
+.auth-shell [data-ui='button']:not(.bg-accent, .bg-surface-1):hover:not(:disabled) {
+  background-color: transparent;
+}
+
+.auth-social {
+  --auth-sweep: rgb(249 159 17 / 0.08);
+}
+
+/* campos: o preenchimento fica sob o fundo translúcido; no foco, uma linha laranja corre por baixo */
+.auth-shell [data-ui='input'] {
+  isolation: isolate;
+  border-radius: var(--radius-control);
+}
+
+.auth-shell [data-ui='input']::after {
+  position: absolute;
+  inset: auto 6px 0;
+  height: 2px;
+  border-radius: 2px;
+  content: '';
+  background: var(--ds-accent);
+  pointer-events: none;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 460ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.auth-shell [data-ui='input']:focus-within::after {
+  transform: scaleX(1);
+}
+
+.auth-shell [data-ui='input']:has([aria-invalid='true'])::after {
+  background: var(--ds-danger);
+}
+
+/* links: a linha de baixo cresce da esquerda para a direita sobre um traço apagado */
 .auth-cta {
   border-radius: 4px;
   font-weight: 500;
   color: var(--ds-accent);
-  text-decoration: underline;
-  text-decoration-color: rgb(249 159 17 / 0.4);
-  text-underline-offset: 4px;
-  transition: text-decoration-color var(--dur-fast) var(--ease-out);
+  text-decoration: none;
+  background:
+    linear-gradient(var(--ds-accent), var(--ds-accent)) left bottom / 0% 1px no-repeat,
+    linear-gradient(rgb(249 159 17 / 0.35), rgb(249 159 17 / 0.35)) left bottom / 100% 1px no-repeat;
+  padding-bottom: 2px;
+  transition: background-size 460ms cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 .auth-cta:hover {
-  text-decoration-color: var(--ds-accent);
+  background-size:
+    100% 1px,
+    100% 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-shell [data-ui='button']::before,
+  .auth-social::before,
+  .auth-shell [data-ui='input']::before,
+  .auth-shell [data-ui='input']::after,
+  .auth-cta {
+    transition: none;
+  }
 }
 
 .auth-cta:focus-visible {
