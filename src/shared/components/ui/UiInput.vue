@@ -46,13 +46,17 @@ const controlAttrs = computed(() =>
     :required="required"
   >
     <template #default="{ describedby, invalid }">
-      <div class="relative">
+      <div class="group relative">
+        <!-- o ícone acompanha o campo: laranja no foco, claro quando preenchido, vermelho no erro -->
         <UiIcon
           v-if="icon"
           :icon="icon"
           :class="[
-            'pointer-events-none absolute top-1/2 -translate-y-1/2 text-fg-muted',
+            'pointer-events-none absolute top-1/2 -translate-y-1/2 transition-colors duration-(--dur-base) ease-out',
             size === 'lg' ? 'left-3.5' : 'left-2.5',
+            invalid
+              ? 'text-danger'
+              : 'text-fg-muted group-focus-within:text-accent group-has-[input:not(:placeholder-shown)]:text-fg',
           ]"
         />
         <input

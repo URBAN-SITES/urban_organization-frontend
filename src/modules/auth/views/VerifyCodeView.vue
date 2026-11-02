@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { ArrowLeft } from '@lucide/vue'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { UiButton } from '@/shared/components'
-import { AuthHeading, CodeInput } from '../components'
+import { AuthAlert, AuthBackLink, AuthHeading, CodeInput } from '../components'
 import { useAuthNavigation } from '../composables'
 import {
   confirmRegistration,
@@ -129,13 +128,7 @@ onBeforeUnmount(() => clearInterval(timer))
     <form class="flex flex-col gap-4" novalidate @submit.prevent="handleSubmit">
       <CodeInput v-model="code" :disabled="isSubmitting" :invalid="Boolean(errorMessage)" />
 
-      <p
-        v-if="errorMessage"
-        role="alert"
-        class="rounded-control bg-danger-soft px-3 py-2.5 text-13 text-danger"
-      >
-        {{ errorMessage }}
-      </p>
+      <AuthAlert :message="errorMessage" />
 
       <UiButton
         type="submit"
@@ -144,7 +137,7 @@ onBeforeUnmount(() => clearInterval(timer))
         block
         :loading="isSubmitting"
         :loading-text="props.flow === 'register' ? 'Criando conta...' : 'Verificando...'"
-        class="mt-2"
+        class="mt-1"
       >
         {{ props.flow === 'register' ? 'Confirmar e criar conta' : 'Verificar código' }}
       </UiButton>
@@ -162,12 +155,6 @@ onBeforeUnmount(() => clearInterval(timer))
       </template>
     </p>
 
-    <RouterLink
-      :to="backTo"
-      class="mt-8 inline-flex items-center gap-1.5 rounded-[4px] text-14 text-fg-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-accent"
-    >
-      <ArrowLeft :size="16" aria-hidden="true" />
-      Corrigir e-mail
-    </RouterLink>
+    <AuthBackLink :to="backTo" class="mt-8">Corrigir e-mail</AuthBackLink>
   </section>
 </template>

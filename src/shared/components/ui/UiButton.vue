@@ -30,7 +30,8 @@ const {
 }>()
 
 const VARIANTS = {
-  primary: 'bg-accent text-accent-fg hover:bg-accent-hover',
+  primary:
+    'bg-accent text-accent-fg not-disabled:hover:bg-accent-hover not-disabled:hover:shadow-[0_8px_22px_-10px_var(--ds-accent)]',
   secondary:
     'border border-border bg-surface-1 text-fg hover:bg-surface-2 hover:border-border-strong',
   ghost: 'text-fg hover:bg-surface-2',
@@ -55,7 +56,7 @@ const SIZES = {
     :aria-busy="loading || undefined"
     :class="[
       'relative inline-flex shrink-0 items-center justify-center rounded-control font-medium whitespace-nowrap select-none',
-      'transition-[background-color,border-color,color,scale] duration-(--dur-fast) ease-out',
+      'transition-[background-color,border-color,color,box-shadow,scale] duration-(--dur-fast) ease-out',
       'not-disabled:active:scale-[0.98] not-disabled:active:duration-(--dur-instant)',
       'disabled:cursor-not-allowed',
       disabled && !loading ? 'opacity-50' : '',
