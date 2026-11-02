@@ -8,9 +8,9 @@ import AuthVisual from './AuthVisual.vue'
 /**
  * Moldura das telas de acesso e do onboarding, sempre no tema escuro da marca:
  * painel institucional (60%) com a foto do escritório e painel preto (40%) com o formulário.
- * No cadastro a composição inverte: formulário à esquerda, foto à direita.
+ * No cadastro e na recuperação de senha a composição inverte: formulário à esquerda, foto à direita.
  *
- * Trocar de lado (entrar <-> criar conta) passa por uma cortina preta: ela nasce da borda curva,
+ * Trocar de lado (entrar <-> criar conta ou esqueci a senha) passa por uma cortina preta: ela nasce da borda curva,
  * cobre a composição atual, a troca acontece por baixo e a cortina recua revelando a nova.
  * No celular a cortina sobe de baixo para cima; com movimento reduzido vira só um esmaecer.
  */
@@ -344,7 +344,7 @@ const KEEP = ['LoginView', 'RegisterView']
 .auth-social {
   position: relative;
   display: flex;
-  height: 3rem;
+  height: 2.75rem;
   width: 100%;
   align-items: center;
   gap: 0.75rem;
@@ -396,13 +396,25 @@ const KEEP = ['LoginView', 'RegisterView']
   transform: translateX(3px);
 }
 
-/* Campos das telas de acesso: preto profundo, borda discreta, foco com brilho laranja. */
+/* Campos das telas de acesso: preto profundo e borda discreta; o foco (borda e halo laranja)
+   e o erro vêm do UiInput. Aqui só o fundo, que clareia de leve ao passar o mouse. */
 .auth-shell input:not([type='checkbox']) {
   background-color: rgb(255 255 255 / 0.03);
 }
 
-.auth-shell input:focus-visible {
-  box-shadow: 0 0 0 4px rgb(249 159 17 / 0.12);
+.auth-shell input:not([type='checkbox']):hover:not(:disabled),
+.auth-shell input:not([type='checkbox']):focus-visible {
+  background-color: rgb(255 255 255 / 0.05);
+}
+
+/* preenchimento automático do navegador sem o fundo claro que quebra o tema escuro */
+.auth-shell input:-webkit-autofill {
+  -webkit-text-fill-color: var(--ds-fg);
+  caret-color: var(--ds-fg);
+  transition:
+    background-color 99999s,
+    border-color var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out);
 }
 
 /* Checkbox marcado em laranja, com o check preto. */
