@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ArrowLeft, ArrowRight, Mail } from '@lucide/vue'
+import { ArrowRight, Mail } from '@lucide/vue'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { UiButton, UiInput } from '@/shared/components'
-import { AuthHeading, AuthSentIcon } from '../components'
+import { AuthAlert, AuthBackLink, AuthHeading, AuthSentIcon } from '../components'
 import { useAuthNavigation } from '../composables'
 import { requestPasswordReset } from '../services'
 import { useAuthFlowStore, useAuthStore } from '../stores'
@@ -65,15 +65,7 @@ function useAnotherEmail() {
             @blur="email && (emailError = emailProblem(email))"
           />
 
-          <Transition name="auth-feedback">
-            <p
-              v-if="formError"
-              role="alert"
-              class="auth-error rounded-control border border-danger/30 bg-danger-soft px-3 py-2.5 text-13 text-danger"
-            >
-              {{ formError }}
-            </p>
-          </Transition>
+          <AuthAlert :message="formError" />
 
           <UiButton
             type="submit"
@@ -83,39 +75,31 @@ function useAnotherEmail() {
             :icon-right="ArrowRight"
             :loading="isSubmitting"
             loading-text="Enviando..."
-            class="mt-1 h-12"
+            class="mt-1"
           >
             Enviar código
           </UiButton>
         </form>
 
         <p class="mt-8 text-center">
-          <RouterLink
-            :to="navigation.to('Login')"
-            class="auth-back inline-flex items-center gap-1.5 rounded-[4px] text-14 text-fg-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-accent"
-          >
-            <ArrowLeft :size="16" aria-hidden="true" />
-            Voltar para o login
-          </RouterLink>
+          <AuthBackLink :to="navigation.to('Login')">Voltar para o login</AuthBackLink>
         </p>
       </div>
 
       <div v-else key="sent" class="flex flex-col items-center text-center" role="status">
         <AuthSentIcon class="mb-6" />
-        <h1 class="text-24 font-bold tracking-[-0.01em] text-fg lg:text-32">E-mail enviado</h1>
-        <p class="mt-3 text-14 leading-relaxed text-fg-muted">
+        <AuthHeading title="E-mail enviado" align="center">
           Se existir uma conta com
           <strong class="font-medium break-all text-fg">{{ sentTo }}</strong
           >, você vai receber um código para criar uma nova senha. Confira também a caixa de spam.
-        </p>
+        </AuthHeading>
 
-        <div class="mt-8 grid w-full gap-3">
+        <div class="mt-2 grid w-full gap-3">
           <UiButton
             variant="primary"
             size="xl"
             block
             :icon-right="ArrowRight"
-            class="h-12"
             @click="router.push(navigation.to('ResetCode'))"
           >
             Inserir código
@@ -124,7 +108,6 @@ function useAnotherEmail() {
             variant="secondary"
             size="xl"
             block
-            class="h-12"
             @click="router.push(navigation.to('Login'))"
           >
             Voltar para o login
@@ -138,13 +121,3 @@ function useAnotherEmail() {
     </Transition>
   </section>
 </template>
-
-<style>
-.auth-back svg {
-  transition: transform var(--dur-base) var(--ease-out);
-}
-
-.auth-back:hover svg {
-  transform: translateX(-3px);
-}
-</style>

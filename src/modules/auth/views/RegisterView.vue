@@ -4,7 +4,13 @@ import { reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { GitHubLoginButton } from '@/modules/github'
 import { UiButton, UiCheckbox, UiInput } from '@/shared/components'
-import { AuthDivider, AuthHeading, GoogleButton, PasswordRequirements } from '../components'
+import {
+  AuthAlert,
+  AuthDivider,
+  AuthHeading,
+  GoogleButton,
+  PasswordRequirements,
+} from '../components'
 import { useAuthNavigation } from '../composables'
 import { requestRegistrationCode } from '../services'
 import { useAuthFlowStore, useAuthStore } from '../stores'
@@ -164,15 +170,7 @@ async function handleGoogleCredential(credential: string) {
         </p>
       </div>
 
-      <Transition name="auth-feedback">
-        <p
-          v-if="formError"
-          role="alert"
-          class="auth-error rounded-control border border-danger/30 bg-danger-soft px-3 py-2.5 text-13 text-danger"
-        >
-          {{ formError }}
-        </p>
-      </Transition>
+      <AuthAlert :message="formError" />
 
       <UiButton
         type="submit"
@@ -183,7 +181,7 @@ async function handleGoogleCredential(credential: string) {
         :loading="isSubmitting"
         loading-text="Enviando código..."
         :disabled="isGoogleSubmitting"
-        class="mt-1 h-12"
+        class="mt-1"
       >
         Criar conta
       </UiButton>
