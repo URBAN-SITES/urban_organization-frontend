@@ -109,7 +109,7 @@ const photo = computed(() => {
 
     <main
       :class="[
-        'mx-auto flex w-full min-w-0 flex-1 flex-col gap-6 px-4 pb-10 sm:px-8',
+        'page-content mx-auto flex w-full min-w-0 flex-1 flex-col gap-6 px-4 pb-10 sm:px-8',
         title || $slots.title || $slots.actions ? 'pt-1' : 'pt-6',
         WIDTHS[width],
       ]"
@@ -165,6 +165,23 @@ const photo = computed(() => {
 
 .page-stage-actions :is(button, a, [role='button']) {
   backdrop-filter: blur(10px);
+}
+
+/* entrada: depois do cabeçalho, os blocos do conteúdo sobem em sequência curta */
+.page-content > * {
+  animation: ui-rise var(--dur-slow) var(--ease-out) 60ms backwards;
+}
+
+.page-content > :nth-child(2) {
+  animation-delay: 110ms;
+}
+
+.page-content > :nth-child(3) {
+  animation-delay: 160ms;
+}
+
+.page-content > :nth-child(n + 4) {
+  animation-delay: 210ms;
 }
 
 @media (prefers-reduced-motion: reduce) {

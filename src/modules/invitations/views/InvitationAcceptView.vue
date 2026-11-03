@@ -114,7 +114,7 @@ watch(token, load, { immediate: true })
           <template v-if="preview.has_account">
             <p>Entre com a sua conta para aceitar.</p>
             <div class="workspace-actions">
-              <RouterLink :to="authTarget('Login')" class="workspace-link-button"
+              <RouterLink :to="authTarget('Login')" class="ui-sweep workspace-link-button"
                 >Entrar para aceitar</RouterLink
               >
             </div>
@@ -125,7 +125,7 @@ watch(token, load, { immediate: true })
               minuto; depois você volta direto para este convite.
             </p>
             <div class="workspace-actions">
-              <RouterLink :to="authTarget('Register')" class="workspace-link-button"
+              <RouterLink :to="authTarget('Register')" class="ui-sweep workspace-link-button"
                 >Criar minha conta</RouterLink
               >
             </div>
@@ -181,10 +181,13 @@ watch(token, load, { immediate: true })
             :full-width="false"
             @click="preview ? accept() : load()"
           />
-          <RouterLink v-else-if="auth.user" to="/" class="workspace-link-button secondary"
+          <RouterLink v-else-if="auth.user" to="/" class="ui-sweep workspace-link-button secondary"
             >Ir para o início</RouterLink
           >
-          <RouterLink v-else :to="{ name: 'Login' }" class="workspace-link-button secondary"
+          <RouterLink
+            v-else
+            :to="{ name: 'Login' }"
+            class="ui-sweep workspace-link-button secondary"
             >Entrar</RouterLink
           >
         </div>

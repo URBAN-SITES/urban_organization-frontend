@@ -25,7 +25,7 @@ async function start() {
   <!-- mesmo visual do botão do Google nas telas de acesso (classe auth-social, do AuthShell) -->
   <button
     type="button"
-    class="auth-social"
+    class="auth-social ui-sweep"
     :disabled="disabled || loading"
     :aria-busy="loading || undefined"
     @click="start"

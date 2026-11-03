@@ -393,7 +393,7 @@ const other = computed(() =>
             <h2 class="text-16 font-semibold text-fg">Dúvidas ou pedidos sobre seus dados</h2>
             <p class="mt-1 text-14 text-fg-muted">
               Escreva para
-              <a :href="`mailto:${CONTACT}`" class="legal-link">{{ CONTACT }}</a
+              <a :href="`mailto:${CONTACT}`" class="legal-link ui-link">{{ CONTACT }}</a
               >. Respondemos pedidos de titulares no prazo previsto na LGPD.
             </p>
           </div>
@@ -403,7 +403,7 @@ const other = computed(() =>
           <RouterLink to="/" class="legal-back">
             <ArrowLeft :size="16" aria-hidden="true" /> Voltar ao Urban Organization
           </RouterLink>
-          <RouterLink :to="{ name: other.name }" class="legal-link"
+          <RouterLink :to="{ name: other.name }" class="legal-link ui-link"
             >Ler {{ other.label }}</RouterLink
           >
         </div>
@@ -570,13 +570,6 @@ const other = computed(() =>
 
 .legal-link {
   color: var(--ds-accent);
-  text-decoration: none;
-  background: linear-gradient(currentColor, currentColor) left bottom / 0% 1px no-repeat;
-  transition: background-size 460ms cubic-bezier(0.65, 0, 0.35, 1);
-}
-
-.legal-link:hover {
-  background-size: 100% 1px;
 }
 
 .legal-back {
