@@ -15,7 +15,12 @@ import type {
   CreateSectorRequest,
   CreateStatusRequest,
   CreateTaskRequest,
+  CreateCycleRequest,
+  Cycle,
   Dashboard,
+  RelationKind,
+  TaskRelations,
+  UpdateCycleRequest,
   MoveTaskRequest,
   ResourceLink,
   Sector,
@@ -303,4 +308,41 @@ export async function deleteLink(linkId: string): Promise<void> {
 // ── Dashboard ──────────────────────────────────────────────────────────────
 export async function getDashboard(organizationId: string): Promise<Dashboard> {
   return (await api.get<Dashboard>(`/organizations/${enc(organizationId)}/dashboard/`)).data
+}
+
+// ── Ciclos (sprints) ───────────────────────────────────────────────────────
+export async function listCycles(sectorId: string, page = 1): Promise<Page<Cycle>> {
+  return (await api.get<Page<Cycle>>(`/sectors/${enc(sectorId)}/cycles/`, { params: { page } }))
+    .data
+}
+
+export async function createCycle(sectorId: string, payload: CreateCycleRequest): Promise<Cycle> {
+  return (await api.post<Cycle>(`/sectors/${enc(sectorId)}/cycles/`, payload)).data
+}
+
+export async function updateCycle(id: string, payload: UpdateCycleRequest): Promise<Cycle> {
+  return (await api.patch<Cycle>(`/cycles/${enc(id)}/`, payload)).data
+}
+
+export async function deleteCycle(id: string): Promise<void> {
+  await api.delete(`/cycles/${enc(id)}/`)
+}
+
+// ── Relações entre tarefas (bloqueios) ─────────────────────────────────────
+export async function getTaskRelations(taskId: string): Promise<TaskRelations> {
+  return (await api.get<TaskRelations>(`/tasks/${enc(taskId)}/relations/`)).data
+}
+
+export async function addTaskRelation(
+  taskId: string,
+  kind: RelationKind,
+  otherId: string,
+): Promise<TaskRelations> {
+  return (
+    await api.post<TaskRelations>(`/tasks/${enc(taskId)}/relations/`, { kind, task: otherId })
+  ).data
+}
+
+export async function removeTaskRelation(taskId: string, otherId: string): Promise<void> {
+  await api.delete(`/tasks/${enc(taskId)}/relations/${enc(otherId)}/`)
 }
