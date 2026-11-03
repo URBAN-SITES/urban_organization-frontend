@@ -9,7 +9,6 @@ import {
   ListChecks,
   Map as MapIcon,
   MessagesSquare,
-  Receipt,
   Settings,
   Sparkles,
   SquareKanban,
@@ -181,13 +180,6 @@ export const mobileTabs: NavItem[] = [dashboard, calendar, messages, team]
 
 export const accountNav: NavItem[] = [
   { to: '/notificacoes', label: 'Notificações', icon: Bell, keywords: 'avisos alertas' },
-  {
-    to: '/faturamento',
-    label: 'Faturamento',
-    icon: Receipt,
-    also: ['/planos', '/pagamentos'],
-    keywords: 'plano pagamento pix assinatura',
-  },
   { to: '/configuracoes', label: 'Configurações', icon: Settings, keywords: 'perfil conta tema' },
 ]
 

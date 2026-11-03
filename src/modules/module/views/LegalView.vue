@@ -55,7 +55,7 @@ const docs: Record<'privacidade' | 'termos', LegalDoc> = {
           'Cadastro: nome, e-mail, senha (guardada só como hash, nunca em texto) e, se você quiser, foto e biografia.',
           'Conteúdo que você cria: organizações, projetos, tarefas, comentários, mensagens, arquivos anexados e convites.',
           'Reuniões: participantes, horários e, quando há gravação, o áudio e o vídeo, a transcrição e o resumo gerados a partir dela.',
-          'Pagamentos: nome e CPF do pagador e a situação do pagamento. Os dados do cartão são digitados e guardados pelo Mercado Pago, não por nós.',
+          'Cobranças das tarefas: nome e CPF de quem paga pelo Pix e a situação do pagamento.',
           'Integrações que você conectar: identificação da conta Google ou GitHub e as permissões concedidas.',
           'Dados técnicos: endereço IP, navegador, sessões ativas e registro de ações importantes, usados para segurança e auditoria.',
           'Notificações: o identificador do seu aparelho, se você ativar as notificações push.',
@@ -118,7 +118,7 @@ const docs: Record<'privacidade' | 'termos', LegalDoc> = {
         items: [
           'Hospedagem e envio de e-mails do serviço.',
           'Cloudinary, para guardar os arquivos anexados.',
-          'Mercado Pago, para processar pagamentos.',
+          'Mercado Pago, para processar os pagamentos das cobranças das tarefas.',
           'Google (login, Agenda, Drive e Gemini) e GitHub, quando você usa essas funções.',
           'Firebase, para entregar notificações push.',
           'LiveKit, para as chamadas de vídeo, e Mapbox, para o mapa.',
@@ -175,7 +175,7 @@ const docs: Record<'privacidade' | 'termos', LegalDoc> = {
       'O conteúdo que você cria continua sendo seu.',
       'Você responde pela sua conta e pelo que publica nas organizações de que participa.',
       'Para gravar uma reunião, todos os participantes precisam concordar.',
-      'O plano Pro é um pagamento único, sem renovação automática.',
+      'O uso é gratuito, incluindo o assistente de IA.',
     ],
     sections: [
       {
@@ -246,10 +246,11 @@ const docs: Record<'privacidade' | 'termos', LegalDoc> = {
         ],
       },
       {
-        id: 'planos',
-        title: 'Planos e pagamentos',
+        id: 'gratuidade',
+        title: 'Gratuidade e cobranças',
         body: [
-          'O plano Free é gratuito, com os limites informados na página de planos. O plano Pro é contratado por pagamento único, processado pelo Mercado Pago, sem renovação automática. Para compras feitas pela internet, você pode desistir em até 7 dias, conforme o Código de Defesa do Consumidor.',
+          'O Urban Organization é gratuito, incluindo o assistente de IA. Para manter o serviço estável, o assistente tem um limite de uso por hora para cada conta.',
+          'As cobranças que você cria nas tarefas são pagas por Pix e processadas pelo Mercado Pago.',
         ],
       },
       {

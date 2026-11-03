@@ -40,7 +40,6 @@ Missing keys turn the related feature off instead of breaking the page.
 | `VITE_VAPID_KEY` | Firebase Web Push certificate key |
 | `VITE_GOOGLE_CLIENT_ID` | Google sign-in; must match `GOOGLE_CLIENT_ID` on the backend |
 | `VITE_GITHUB_LOGIN` | `true` shows "Continuar com GitHub"; the GitHub App is configured on the backend |
-| `VITE_MP_PUBLIC_KEY` | Mercado Pago public key (same account as the backend `MP_ACCESS_TOKEN`) |
 
 ## External services
 

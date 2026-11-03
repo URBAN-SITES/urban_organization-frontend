@@ -4,7 +4,6 @@ import {
   ChevronsUpDown,
   CircleHelp,
   LogOut,
-  Receipt,
   Settings,
   SlidersHorizontal,
   UserRound,
@@ -43,7 +42,6 @@ const menu = computed<MenuItem[]>(() => [
     icon: SlidersHorizontal,
     onSelect: () => void router.push('/configuracoes?aba=preferences'),
   },
-  { label: 'Faturamento', icon: Receipt, onSelect: () => void router.push('/faturamento') },
   {
     label: 'Ajuda e atalhos',
     icon: CircleHelp,

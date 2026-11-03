@@ -8,11 +8,6 @@ export interface User {
   bio: string
   avatar_url: string
   created_at: ISODateTime
-  /** Only /users/me/ exposes billing access and the server-defined price. */
-  is_subscriber?: boolean
-  /** Subscribers plus the e-mails the server grants temporary assistant access. */
-  has_assistant_access?: boolean
-  subscription_price?: string
 }
 
 /** UserSessionSerializer response. */
