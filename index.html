@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" href="/favicon.ico" sizes="any" />
@@ -26,15 +26,6 @@
       media="(max-width: 1023px)"
     />
     <title>Urban Organization</title>
-    <!-- Aplica o tema salvo antes da primeira pintura (sem flash). Mesma regra de useTheme. -->
-    <script>
-      try {
-        var t = localStorage.getItem('theme')
-        var dark =
-          t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)
-        document.documentElement.classList.toggle('dark', dark)
-      } catch (e) {}
-    </script>
     <link
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
