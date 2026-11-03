@@ -24,7 +24,77 @@ export interface Task extends ITasks {
   key: string | null
   /** pontos de esforço */
   estimate: number | null
+  /** '' não repete; ao concluir, a próxima nasce aberta com as datas adiante */
+  recurrence: Recurrence
   archived_at: ISODateTime | null
+}
+export type Recurrence = '' | 'daily' | 'weekly' | 'monthly'
+export type ViewLayout = 'board' | 'list' | 'table' | 'timeline'
+/** Visão salva: filtros, busca e modo do quadro com um nome. */
+export interface SavedView {
+  id: UUID
+  name: string
+  layout: ViewLayout
+  filters: Record<string, string>
+  sort: string[]
+  search: string
+  is_shared: boolean
+  position: number
+  owner_id: UUID | null
+  owner_name: string | null
+  created_at: ISODateTime | null
+}
+export type SaveViewRequest = Pick<
+  SavedView,
+  'name' | 'layout' | 'filters' | 'search' | 'is_shared'
+>
+export type CustomFieldType = 'text' | 'number' | 'date' | 'select' | 'checkbox' | 'url'
+export interface CustomFieldOption {
+  id?: UUID
+  name: string
+  color?: string
+}
+export interface CustomField {
+  id: UUID
+  name: string
+  type: CustomFieldType
+  position: number
+  options: CustomFieldOption[]
+}
+export interface WriteCustomFieldRequest {
+  name: string
+  type?: CustomFieldType
+  options?: CustomFieldOption[]
+}
+export type FieldValue = string | number | boolean | null
+export interface TaskFieldValue {
+  field_id: UUID
+  value: FieldValue
+}
+/** Modelo de tarefa: campos e checklist copiados ao criar. */
+export interface TaskTemplate {
+  id: UUID
+  name: string
+  title: string
+  description: string
+  priority: Task['priority']
+  estimate: number | null
+  label_ids: UUID[]
+  checklist: string[]
+  created_at: ISODateTime
+}
+export type WriteTemplateRequest = Omit<TaskTemplate, 'id' | 'created_at'>
+/** Edição em massa: as mesmas regras de editar uma por uma. */
+export interface BulkRequest {
+  task_ids: UUID[]
+  status?: UUID
+  assignee?: UUID | null
+  cycle?: UUID | null
+  priority?: Task['priority']
+  due_date?: ISODate | null
+  add_label?: UUID
+  archive?: boolean
+  delete?: boolean
 }
 export type CycleState = 'upcoming' | 'current' | 'completed'
 /** Ciclo (sprint) do projeto: um período com as tarefas que entram nele. */
@@ -187,11 +257,14 @@ export interface CreateTaskRequest {
   assignee?: UUID | null
   cycle?: UUID | null
   estimate?: number | null
+  recurrence?: Recurrence
   status?: UUID
   parent?: UUID
   label_ids?: UUID[]
+  /** itens da checklist já na criação (modelos) */
+  checklist?: string[]
 }
-export type UpdateTaskRequest = Partial<Omit<CreateTaskRequest, 'status' | 'parent'>>
+export type UpdateTaskRequest = Partial<Omit<CreateTaskRequest, 'status' | 'parent' | 'checklist'>>
 export interface MoveTaskRequest {
   status: UUID
   position?: number

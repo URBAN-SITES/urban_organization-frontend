@@ -30,3 +30,16 @@ export function shortDate(iso: string): string {
     .toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
     .replace('.', '')
 }
+
+/** Repetição: texto curto ("Repete toda semana"). */
+export const REPEAT_TEXT = {
+  daily: 'todo dia',
+  weekly: 'toda semana',
+  monthly: 'todo mês',
+} as const
+export const REPEAT_OPTIONS = [
+  { value: '', label: 'Não repete' },
+  { value: 'daily', label: 'Todo dia' },
+  { value: 'weekly', label: 'Toda semana' },
+  { value: 'monthly', label: 'Todo mês' },
+]

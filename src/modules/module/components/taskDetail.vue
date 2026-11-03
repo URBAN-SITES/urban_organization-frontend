@@ -8,6 +8,7 @@ import {
   BellOff,
   CalendarClock,
   Check,
+  LayoutTemplate,
   Trash2,
 } from '@lucide/vue'
 import { computed, reactive, ref, watch } from 'vue'
@@ -25,15 +26,26 @@ import {
   UiTextarea,
 } from '@/shared/components'
 import { useConfirm } from '@/shared/composables/confirm'
-import { getFollow, setFollow } from '../services'
+import { fetchAllPages } from '@/shared/utils'
+import { createTemplate, getFollow, listChecklist, setFollow } from '../services'
 import { useKanbanStore } from '../stores'
-import type { Cycle, Label, Person, Task, UpdateTaskRequest } from '../types'
+import type {
+  CustomField,
+  Cycle,
+  Label,
+  Person,
+  Recurrence,
+  Task,
+  TaskTemplate,
+  UpdateTaskRequest,
+} from '../types'
 import LabelChip from './labelChip.vue'
 import LabelPicker from './labelPicker.vue'
-import { PRIORITIES, PRIORITY_TEXT, priorityOf, shortDate } from './priority'
+import { PRIORITIES, PRIORITY_TEXT, REPEAT_OPTIONS, priorityOf, shortDate } from './priority'
 import TaskAttachments from './taskAttachments.vue'
 import TaskChecklist from './taskChecklist.vue'
 import TaskConversation from './taskConversation.vue'
+import TaskFields from './taskFields.vue'
 import TaskRelations from './taskRelations.vue'
 import TaskSubtasks from './taskSubtasks.vue'
 
@@ -49,11 +61,16 @@ const props = defineProps<{
   people: Person[]
   labels: Label[]
   cycles: Cycle[]
+  fields: CustomField[]
+  templates: TaskTemplate[]
   initialStatus: string
   canEdit: boolean
   canManage: boolean
 }>()
-const emit = defineEmits<{ labelCreated: [label: Label] }>()
+const emit = defineEmits<{
+  labelCreated: [label: Label]
+  templateSaved: [template: TaskTemplate]
+}>()
 const kanban = useKanbanStore()
 const confirm = useConfirm()
 
@@ -83,8 +100,52 @@ const form = reactive({
   due: '',
   cycle: '',
   estimate: '',
+  recurrence: '' as Recurrence,
   labels: [] as string[],
 })
+// modelo escolhido na criação: preenche o formulário e traz a checklist dele
+const templateId = ref('')
+const templateOptions = computed(() => [
+  { value: '', label: 'Em branco' },
+  ...props.templates.map((tpl) => ({ value: tpl.id, label: tpl.name })),
+])
+function applyTemplate(id: string) {
+  const tpl = props.templates.find((row) => row.id === id)
+  if (!tpl) return
+  Object.assign(form, {
+    title: tpl.title || form.title,
+    description: tpl.description,
+    priority: tpl.priority,
+    estimate: tpl.estimate === null ? '' : String(tpl.estimate),
+    labels: tpl.label_ids.filter((label) => props.labels.some((l) => l.id === label)),
+  })
+}
+const chosenTemplate = computed(() => props.templates.find((tpl) => tpl.id === templateId.value))
+
+const savingTemplate = ref(false)
+async function saveAsTemplate() {
+  const t = task.value
+  if (!t || savingTemplate.value) return
+  savingTemplate.value = true
+  try {
+    const items = await fetchAllPages((page) => listChecklist(t.id, page))
+    const created = await createTemplate(props.sectorId, {
+      name: t.title.slice(0, 100),
+      title: t.title,
+      description: t.description,
+      priority: t.priority,
+      estimate: t.estimate,
+      label_ids: t.labels.map((label) => label.id),
+      checklist: items.map((item) => item.content).slice(0, 50),
+    })
+    emit('templateSaved', created)
+    toast.success(`Modelo “${created.name}” salvo. Escolha-o ao criar uma tarefa.`)
+  } catch (cause) {
+    toast.error(getErrorMessage(cause, 'Não foi possível salvar o modelo.'))
+  } finally {
+    savingTemplate.value = false
+  }
+}
 const titleError = ref('')
 const state = ref<'idle' | 'saving' | 'saved'>('idle')
 const creating = ref(false)
@@ -180,10 +241,12 @@ function fill() {
     due: t?.due_date ?? '',
     cycle: t?.cycle_id ?? '',
     estimate: t?.estimate === null || t?.estimate === undefined ? '' : String(t.estimate),
+    recurrence: t?.recurrence ?? '',
     labels: t?.labels.map((label) => label.id) ?? [],
   })
   titleError.value = ''
   state.value = 'idle'
+  if (!t) templateId.value = ''
 }
 watch(
   () => [open.value, taskId.value] as const,
@@ -292,6 +355,9 @@ async function create() {
       cycle: form.cycle || null,
       assignee: form.assignee || null,
       label_ids: form.labels,
+      estimate: form.estimate === '' ? null : Number(form.estimate),
+      recurrence: form.recurrence,
+      ...(chosenTemplate.value?.checklist.length && { checklist: chosenTemplate.value.checklist }),
       ...(form.status && { status: form.status }),
     })
     toast.success('Tarefa criada.')
@@ -315,6 +381,18 @@ const refresh = () => task.value && kanban.reload(task.value.id).catch(() => und
   >
     <!-- criar -->
     <form v-if="!taskId" class="grid gap-4" novalidate @submit.prevent="create">
+      <UiSelect
+        v-if="templates.length"
+        v-model="templateId"
+        label="Modelo"
+        :options="templateOptions"
+        :hint="
+          chosenTemplate?.checklist.length
+            ? `Traz ${chosenTemplate.checklist.length} ${chosenTemplate.checklist.length === 1 ? 'item' : 'itens'} de checklist.`
+            : undefined
+        "
+        @update:model-value="applyTemplate"
+      />
       <UiInput
         v-model="form.title"
         label="Título"
@@ -337,6 +415,8 @@ const refresh = () => task.value && kanban.reload(task.value.id).catch(() => und
         <UiSelect v-if="cycles.length" v-model="form.cycle" label="Ciclo" :options="cycleOptions" />
         <UiInput v-model="form.start" type="date" label="Início" />
         <UiInput v-model="form.due" type="date" label="Prazo" :error="datesError" />
+        <UiSelect v-model="form.estimate" label="Estimativa" :options="estimateOptions" />
+        <UiSelect v-model="form.recurrence" label="Repetir" :options="REPEAT_OPTIONS" />
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <LabelChip v-for="label in chosenLabels" :key="label.id" :label="label" />
@@ -473,12 +553,22 @@ const refresh = () => task.value && kanban.reload(task.value.id).catch(() => und
           v-if="cycles.length || task.cycle_id"
           v-model="form.cycle"
           label="Ciclo"
-          class="sm:col-span-2"
           :options="cycleOptions"
           :disabled="readOnly"
           @update:model-value="save({ cycle: $event || null })"
         />
+        <UiSelect
+          v-model="form.recurrence"
+          label="Repetir"
+          :class="cycles.length || task.cycle_id ? '' : 'sm:col-span-2'"
+          :options="REPEAT_OPTIONS"
+          :disabled="readOnly"
+          :hint="form.recurrence ? 'Ao concluir, a próxima já nasce aberta.' : undefined"
+          @update:model-value="save({ recurrence: $event as Recurrence })"
+        />
       </div>
+
+      <TaskFields :task-id="task.id" :fields="fields" :can-edit="canEdit" />
 
       <div class="grid gap-2">
         <span class="text-13 font-medium text-fg">Etiquetas</span>
@@ -538,6 +628,16 @@ const refresh = () => task.value && kanban.reload(task.value.id).catch(() => und
             @click="toggleFollow"
           >
             {{ follow.following ? 'Deixar de seguir' : 'Seguir' }}
+          </UiButton>
+          <UiButton
+            v-if="canEdit && !task.parent_id"
+            size="sm"
+            :icon="LayoutTemplate"
+            :loading="savingTemplate"
+            title="Guardar estes campos e a checklist para criar tarefas parecidas"
+            @click="saveAsTemplate"
+          >
+            Salvar como modelo
           </UiButton>
           <UiButton
             v-if="canEdit && task.archived_at"
