@@ -168,11 +168,20 @@ export const useKanbanStore = defineStore('kanban', () => {
     tasks.value = tasks.value.map((task) => ordered.get(task.id) ?? task)
     try {
       const moved = await moveTask(id, { status: statusId, position: targetPosition })
+      // concluir ou reabrir libera ou volta a bloquear as tarefas que esperam por esta
+      if (!!current.completed_at !== !!moved.completed_at) void refreshTasks(sector)
       return sectorId.value === sector ? replace(moved) : moved
     } catch (error) {
       if (sectorId.value === sector) tasks.value = previous
       throw error
     }
+  }
+
+  async function refreshTasks(sector: string): Promise<void> {
+    const rows = await fetchAllPages((page) =>
+      listTasks(sector, { page, ordering: 'position' }),
+    ).catch(() => null)
+    if (rows && sectorId.value === sector) tasks.value = rows
   }
 
   function replace(task: Task): Task {

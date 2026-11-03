@@ -1,10 +1,15 @@
 <script lang="ts">
-import type { Label, Person, Sector, SectorRole } from '../types'
+import type { Cycle, Label, Person, Sector, SectorRole } from '../types'
 
 // último estado visto de cada projeto, fora da instância (sobrevive a sair e voltar):
 // reabrir um projeto mostra na hora o que já havia e atualiza por trás, sem trocar o quadro
 // por esqueletos. As colunas e tarefas ficam no kanban store.
-type Snapshot = { sector: Sector & { my_role: SectorRole }; people: Person[]; labels: Label[] }
+type Snapshot = {
+  sector: Sector & { my_role: SectorRole }
+  people: Person[]
+  labels: Label[]
+  cycles: Cycle[]
+}
 const snapshots = new Map<string, Snapshot>()
 </script>
 
@@ -12,7 +17,9 @@ const snapshots = new Map<string, Snapshot>()
 import {
   ArrowRight,
   CalendarDays,
+  ChartGantt,
   FolderKanban,
+  IterationCw,
   GitBranch,
   LayoutList,
   ListFilter,
@@ -48,13 +55,15 @@ import {
 } from '@/shared/components'
 import { fetchAllPages } from '@/shared/utils'
 import BoardColumn from '../components/boardColumn.vue'
+import ProjectCycles from '../components/projectCycles.vue'
 import ProjectIcon from '../components/projectIcon.vue'
 import TaskDetail from '../components/taskDetail.vue'
 import TaskListView from '../components/taskListView.vue'
 import TaskTableView from '../components/taskTableView.vue'
-import { getSector, listLabels, listSectorPeople, setSectorFavorite } from '../services'
+import TaskTimeline from '../components/taskTimeline.vue'
+import { getSector, listCycles, listLabels, listSectorPeople, setSectorFavorite } from '../services'
 import { useKanbanStore, useSectorsStore } from '../stores'
-import type { Task } from '../types'
+import type { Task, UpdateTaskRequest } from '../types'
 import {
   NO_FILTERS,
   activeFilters,
@@ -63,9 +72,9 @@ import {
   type BoardFilters,
 } from '../utils/board'
 
-type View = 'board' | 'list' | 'table' | 'meetings' | 'github'
+type View = 'board' | 'list' | 'table' | 'timeline' | 'cycles' | 'meetings' | 'github'
 // abas que não mostram tarefas (sem filtros)
-const TASKLESS: View[] = ['meetings', 'github']
+const TASKLESS: View[] = ['cycles', 'meetings', 'github']
 
 const props = defineProps<{ sectorId: string }>()
 const router = useRouter()
@@ -77,6 +86,7 @@ const sidebar = useSectorsStore()
 const sector = ref<(Sector & { my_role: SectorRole }) | null>(null)
 const people = ref<Person[]>([])
 const labels = ref<Label[]>([])
+const cycles = ref<Cycle[]>([])
 const loading = ref(true)
 const error = ref('')
 const search = ref('')
@@ -90,6 +100,8 @@ const VIEWS = [
   { value: 'board', label: 'Quadro' },
   { value: 'list', label: 'Lista' },
   { value: 'table', label: 'Tabela' },
+  { value: 'timeline', label: 'Linha do tempo' },
+  { value: 'cycles', label: 'Ciclos' },
   { value: 'meetings', label: 'Reuniões' },
   { value: 'github', label: 'GitHub' },
 ]
@@ -97,6 +109,8 @@ const VIEW_ICONS: Record<View, LucideIcon> = {
   board: SquareKanban,
   list: LayoutList,
   table: Table2,
+  timeline: ChartGantt,
+  cycles: IterationCw,
   meetings: Video,
   github: GitBranch,
 }
@@ -112,7 +126,7 @@ async function share() {
 }
 const view = computed<View>({
   get: () =>
-    ['list', 'table', 'meetings', 'github'].includes(String(route.query.view))
+    VIEWS.some((item) => item.value !== 'board' && item.value === route.query.view)
       ? (route.query.view as View)
       : 'board',
   set: (value) =>
@@ -168,6 +182,27 @@ const DUE_OPTIONS = [
   { value: 'week', label: 'Próximos 7 dias' },
   { value: 'none', label: 'Sem prazo' },
 ]
+const cycleFilterOptions = computed(() => [
+  { value: '', label: 'Ciclo: todos' },
+  { value: 'none', label: 'Fora de ciclos' },
+  ...cycles.value.map((cycle) => ({ value: cycle.id, label: cycle.name })),
+])
+const currentCycle = computed(() => cycles.value.find((cycle) => cycle.state === 'current'))
+
+function showCycle(cycleId: string) {
+  filters.value = { ...NO_FILTERS, cycle: cycleId }
+  search.value = ''
+  view.value = 'board'
+}
+
+async function reschedule(id: string, dates: UpdateTaskRequest) {
+  try {
+    await kanban.editTask(id, dates)
+    tableVersion.value++
+  } catch (cause) {
+    toast.error(getErrorMessage(cause, 'Não foi possível remarcar a tarefa.'))
+  }
+}
 const labelOptions = computed(() => [
   { value: '', label: 'Etiqueta: todas' },
   ...labels.value.map((label) => ({ value: label.id, label: label.name })),
@@ -181,21 +216,24 @@ async function load(id: string) {
   sector.value = cached?.sector ?? null
   people.value = cached?.people ?? []
   labels.value = cached?.labels ?? []
+  cycles.value = cached?.cycles ?? []
   panelOpen.value = false
   filters.value = { ...NO_FILTERS }
   search.value = ''
   try {
-    const [detail, peopleRows, labelRows] = await Promise.all([
+    const [detail, peopleRows, labelRows, cycleRows] = await Promise.all([
       getSector(id),
       fetchAllPages((page) => listSectorPeople(id, page)),
       fetchAllPages((page) => listLabels(id, page)),
+      fetchAllPages((page) => listCycles(id, page)),
       kanban.load(id),
     ])
     if (id !== props.sectorId) return
     sector.value = detail
     people.value = peopleRows
     labels.value = labelRows
-    snapshots.set(id, { sector: detail, people: peopleRows, labels: labelRows })
+    cycles.value = cycleRows
+    snapshots.set(id, { sector: detail, people: peopleRows, labels: labelRows, cycles: cycleRows })
     // link direto (dashboard, calendário, notificações): /setores/:id?task=<id>
     const task = route.query.task
     if (typeof task === 'string' && kanban.tasks.some((t) => t.id === task)) openDetails(task)
@@ -217,6 +255,11 @@ watch(
     if (kanban.tasks.some((t) => t.id === task)) openDetails(task)
   },
 )
+
+watch(cycles, (rows) => {
+  const cached = snapshots.get(props.sectorId)
+  if (cached) cached.cycles = rows
+})
 
 watch(panelOpen, (open) => {
   if (open) return
@@ -392,7 +435,7 @@ function clearFilters() {
 
           <div
             v-if="sector && topLevel.length"
-            class="ui-rise mt-4 flex max-w-sm items-center gap-3"
+            class="ui-rise mt-4 flex max-w-lg items-center gap-3"
           >
             <span
               class="uo-meter flex-1"
@@ -407,6 +450,16 @@ function clearFilters() {
             <span class="shrink-0 text-12 text-white/65 tabular-nums">
               <span class="font-mono text-white">{{ percent }}%</span> concluído
             </span>
+            <button
+              v-if="currentCycle"
+              type="button"
+              class="board-cycle"
+              :title="`Ver as tarefas de ${currentCycle.name}`"
+              @click="showCycle(currentCycle.id)"
+            >
+              <IterationCw :size="13" aria-hidden="true" />
+              {{ currentCycle.name }}
+            </button>
           </div>
 
           <!-- etiquetas como abas (Todos, Design, Back-end…) e o modo de visualização -->
@@ -503,6 +556,13 @@ function clearFilters() {
             class="sm:w-40"
           />
           <UiSelect
+            v-if="cycles.length"
+            v-model="filters.cycle"
+            aria-label="Ciclo"
+            :options="cycleFilterOptions"
+            class="sm:w-40"
+          />
+          <UiSelect
             v-if="labels.length"
             v-model="filters.label"
             aria-label="Etiqueta"
@@ -526,6 +586,20 @@ function clearFilters() {
           class="ui-rise -mx-4 min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:-mx-8 sm:px-8"
         >
           <ProjectMeetings :sector-id="sector.id" :can-edit="canEdit" :people="people" />
+        </div>
+
+        <div
+          v-else-if="view === 'cycles' && sector"
+          class="ui-rise -mx-4 min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:-mx-8 sm:px-8"
+        >
+          <ProjectCycles
+            v-model:cycles="cycles"
+            :sector-id="sector.id"
+            :tasks="kanban.tasks"
+            :statuses="kanban.statuses"
+            :can-edit="canEdit"
+            @show="showCycle"
+          />
         </div>
 
         <div
@@ -580,6 +654,21 @@ function clearFilters() {
           />
         </div>
 
+        <TaskTimeline
+          v-else-if="view === 'timeline'"
+          class="ui-rise min-h-0 flex-1 pb-4"
+          :tasks="visible"
+          :statuses="kanban.statuses"
+          :cycles="
+            filters.cycle && filters.cycle !== 'none'
+              ? cycles.filter((c) => c.id === filters.cycle)
+              : cycles
+          "
+          :can-edit="canEdit"
+          @open="openDetails"
+          @reschedule="reschedule"
+        />
+
         <div v-else-if="view === 'list'" class="ui-rise min-h-0 flex-1 overflow-y-auto pb-4">
           <TaskListView :statuses="kanban.statuses" :tasks-of="tasksOf" @open="openDetails" />
         </div>
@@ -604,6 +693,7 @@ function clearFilters() {
       :sector-name="sector.name"
       :people="people"
       :labels="labels"
+      :cycles="cycles"
       :initial-status="newStatus"
       :can-edit="canEdit"
       :can-manage="canManage"
@@ -834,6 +924,34 @@ function clearFilters() {
   .board-view-label {
     display: inline;
   }
+}
+
+.board-cycle {
+  display: inline-flex;
+  height: 24px;
+  flex-shrink: 0;
+  cursor: pointer;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgb(249 159 17 / 0.4);
+  border-radius: 999px;
+  background: rgb(249 159 17 / 0.12);
+  padding-inline: 10px;
+  font-size: var(--text-12);
+  color: #fab13f;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.board-cycle:hover {
+  border-color: rgb(249 159 17 / 0.7);
+  background: rgb(249 159 17 / 0.2);
+}
+
+.board-cycle:focus-visible {
+  outline: 2px solid #f99f11;
+  outline-offset: 2px;
 }
 
 .board-search input {

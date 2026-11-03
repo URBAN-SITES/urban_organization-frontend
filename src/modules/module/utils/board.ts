@@ -11,9 +11,17 @@ export interface BoardFilters {
   due: '' | 'overdue' | 'today' | 'week' | 'none'
   /** id de uma etiqueta */
   label: string
+  /** '' todos · 'none' fora de ciclos · ou o id de um ciclo */
+  cycle: string
 }
 
-export const NO_FILTERS: BoardFilters = { assignee: '', priority: '', due: '', label: '' }
+export const NO_FILTERS: BoardFilters = {
+  assignee: '',
+  priority: '',
+  due: '',
+  label: '',
+  cycle: '',
+}
 
 export const activeFilters = (f: BoardFilters) => Object.values(f).filter(Boolean).length
 
@@ -47,8 +55,10 @@ export function filterTasks(
 ): Task[] {
   const needle = norm(search.trim())
   return tasks.filter((task) => {
-    const { assignee, priority, due, label } = filters
+    const { assignee, priority, due, label, cycle } = filters
     if (label && !task.labels.some((item) => item.id === label)) return false
+    if (cycle === 'none' && task.cycle_id) return false
+    if (cycle && cycle !== 'none' && task.cycle_id !== cycle) return false
     if (assignee === 'me' && task.assignee_id !== userId) return false
     if (assignee === 'none' && task.assignee_id) return false
     if (assignee && assignee !== 'me' && assignee !== 'none' && task.assignee_id !== assignee)
@@ -102,7 +112,7 @@ export function serverFilters(
   now = new Date(),
 ): TaskFilters {
   const params: TaskFilters = { parent__isnull: true }
-  const { assignee, priority, due, label } = filters
+  const { assignee, priority, due, label, cycle } = filters
   if (assignee === 'me' && userId) params.assignee = userId
   else if (assignee === 'none') params.assignee__isnull = true
   else if (assignee && assignee !== 'me') params.assignee = assignee
@@ -117,6 +127,8 @@ export function serverFilters(
     params.due_before = isoDay(end)
   }
   if (label) params.label = label
+  if (cycle === 'none') params.cycle__isnull = true
+  else if (cycle) params.cycle = cycle
   if (search.trim()) params.search = search.trim()
   return params
 }
