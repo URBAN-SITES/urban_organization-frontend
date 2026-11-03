@@ -43,7 +43,7 @@ const playing = (segment: TranscriptSegment) =>
       >
         <button
           type="button"
-          class="shrink-0 cursor-pointer rounded-control font-mono text-13 text-fg-muted tabular-nums underline-offset-2 hover:text-fg hover:underline focus-visible:outline-2 focus-visible:outline-accent"
+          class="shrink-0 cursor-pointer rounded-control font-mono text-13 text-fg-muted tabular-nums ui-link hover:text-fg focus-visible:outline-2 focus-visible:outline-accent"
           :aria-label="`Ir para ${clock(segment.start)} no vídeo`"
           @click="emit('seek', segment.start)"
         >

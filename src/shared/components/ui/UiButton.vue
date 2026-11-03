@@ -29,13 +29,15 @@ const {
   href?: string
 }>()
 
+// o hover é o mesmo das telas de acesso: um tom mais claro (--sweep) preenche da esquerda
+// para a direita (.ui-sweep, em assets/interactions.css); o fundo de repouso não muda
 const VARIANTS = {
   primary:
-    'bg-accent text-accent-fg not-disabled:hover:bg-accent-hover not-disabled:hover:shadow-[0_8px_22px_-10px_var(--ds-accent)]',
+    'bg-accent text-accent-fg [--sweep:var(--ds-accent-hover)] not-disabled:hover:shadow-[0_8px_22px_-10px_var(--ds-accent)]',
   secondary:
-    'border border-border bg-surface-1 text-fg hover:bg-surface-2 hover:border-border-strong',
-  ghost: 'text-fg hover:bg-surface-2',
-  danger: 'bg-danger text-white hover:brightness-110 dark:text-bg',
+    'border border-border bg-surface-1 text-fg [--sweep:var(--ds-surface-2)] not-disabled:hover:border-border-strong',
+  ghost: 'text-fg [--sweep:var(--ds-surface-2)]',
+  danger: 'bg-danger text-white [--sweep:rgb(255_255_255/0.14)] dark:text-bg',
 } as const
 
 const SIZES = {
@@ -55,7 +57,7 @@ const SIZES = {
     :disabled="href ? undefined : disabled || loading"
     :aria-busy="loading || undefined"
     :class="[
-      'relative inline-flex shrink-0 items-center justify-center rounded-control font-medium whitespace-nowrap select-none',
+      'ui-sweep relative inline-flex shrink-0 items-center justify-center rounded-control font-medium whitespace-nowrap select-none',
       'transition-[background-color,border-color,color,box-shadow,scale] duration-(--dur-fast) ease-out',
       'not-disabled:active:scale-[0.98] not-disabled:active:duration-(--dur-instant)',
       'disabled:cursor-not-allowed',

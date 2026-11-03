@@ -55,7 +55,7 @@ onBeforeUnmount(() => {
   <div v-if="clientId" class="w-full">
     <!-- Visual próprio, igual aos outros botões; o botão oficial do Google fica
          invisível por cima, ampliado para cobrir a área toda, e recebe o clique. -->
-    <div :class="['auth-social overflow-hidden', { 'opacity-60': setupMessage || isLoading }]">
+    <div :class="['auth-social ui-sweep', { 'opacity-60': setupMessage || isLoading }]">
       <svg class="size-[18px] shrink-0" viewBox="0 0 48 48" aria-hidden="true">
         <path
           fill="#FFC107"
