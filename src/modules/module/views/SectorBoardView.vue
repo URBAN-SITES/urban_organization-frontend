@@ -1,5 +1,5 @@
 <script lang="ts">
-import type { Cycle, Label, Person, Sector, SectorRole } from '../types'
+import type { CustomField, Cycle, Label, Person, Sector, SectorRole, TaskTemplate } from '../types'
 
 // último estado visto de cada projeto, fora da instância (sobrevive a sair e voltar):
 // reabrir um projeto mostra na hora o que já havia e atualiza por trás, sem trocar o quadro
@@ -9,6 +9,8 @@ type Snapshot = {
   people: Person[]
   labels: Label[]
   cycles: Cycle[]
+  fields: CustomField[]
+  templates: TaskTemplate[]
 }
 const snapshots = new Map<string, Snapshot>()
 </script>
@@ -57,16 +59,26 @@ import {
 } from '@/shared/components'
 import { fetchAllPages } from '@/shared/utils'
 import BoardColumn from '../components/boardColumn.vue'
+import BulkBar from '../components/bulkBar.vue'
 import ProjectBin from '../components/projectBin.vue'
 import ProjectCycles from '../components/projectCycles.vue'
 import ProjectIcon from '../components/projectIcon.vue'
+import SavedViews from '../components/savedViews.vue'
 import TaskDetail from '../components/taskDetail.vue'
 import TaskListView from '../components/taskListView.vue'
 import TaskTableView from '../components/taskTableView.vue'
 import TaskTimeline from '../components/taskTimeline.vue'
-import { getSector, listCycles, listLabels, listSectorPeople, setSectorFavorite } from '../services'
+import {
+  getSector,
+  listCustomFields,
+  listCycles,
+  listLabels,
+  listSectorPeople,
+  listTemplates,
+  setSectorFavorite,
+} from '../services'
 import { useKanbanStore, useSectorsStore } from '../stores'
-import type { Task, UpdateTaskRequest } from '../types'
+import type { SavedView, Task, UpdateTaskRequest, ViewLayout } from '../types'
 import {
   NO_FILTERS,
   activeFilters,
@@ -91,6 +103,10 @@ const sector = ref<(Sector & { my_role: SectorRole }) | null>(null)
 const people = ref<Person[]>([])
 const labels = ref<Label[]>([])
 const cycles = ref<Cycle[]>([])
+const fields = ref<CustomField[]>([])
+const templates = ref<TaskTemplate[]>([])
+const selected = ref<string[]>([])
+const activeView = ref('')
 const loading = ref(true)
 const error = ref('')
 const search = ref('')
@@ -237,15 +253,21 @@ async function load(id: string) {
   people.value = cached?.people ?? []
   labels.value = cached?.labels ?? []
   cycles.value = cached?.cycles ?? []
+  fields.value = cached?.fields ?? []
+  templates.value = cached?.templates ?? []
+  selected.value = []
+  activeView.value = ''
   panelOpen.value = false
   filters.value = { ...NO_FILTERS }
   search.value = ''
   try {
-    const [detail, peopleRows, labelRows, cycleRows] = await Promise.all([
+    const [detail, peopleRows, labelRows, cycleRows, fieldRows, templateRows] = await Promise.all([
       getSector(id),
       fetchAllPages((page) => listSectorPeople(id, page)),
       fetchAllPages((page) => listLabels(id, page)),
       fetchAllPages((page) => listCycles(id, page)),
+      listCustomFields(id).catch(() => []),
+      listTemplates(id).catch(() => []),
       kanban.load(id),
     ])
     if (id !== props.sectorId) return
@@ -253,7 +275,16 @@ async function load(id: string) {
     people.value = peopleRows
     labels.value = labelRows
     cycles.value = cycleRows
-    snapshots.set(id, { sector: detail, people: peopleRows, labels: labelRows, cycles: cycleRows })
+    fields.value = fieldRows
+    templates.value = templateRows
+    snapshots.set(id, {
+      sector: detail,
+      people: peopleRows,
+      labels: labelRows,
+      cycles: cycleRows,
+      fields: fieldRows,
+      templates: templateRows,
+    })
     // link direto (dashboard, calendário, notificações): /setores/:id?task=<id>
     const task = route.query.task
     if (typeof task === 'string' && kanban.tasks.some((t) => t.id === task)) openDetails(task)
@@ -276,10 +307,53 @@ watch(
   },
 )
 
-watch(cycles, (rows) => {
+watch([cycles, templates], ([cycleRows, templateRows]) => {
   const cached = snapshots.get(props.sectorId)
-  if (cached) cached.cycles = rows
+  if (cached) Object.assign(cached, { cycles: cycleRows, templates: templateRows })
 })
+// a seleção vale só na lista e só para tarefas ainda visíveis
+watch([view, visible], () => {
+  if (view.value !== 'list') selected.value = []
+  else selected.value = selected.value.filter((id) => visible.value.some((t) => t.id === id))
+})
+
+// visões salvas: o estado atual (filtros, busca, modo) e como voltar a ele
+const LAYOUTS: ViewLayout[] = ['board', 'list', 'table', 'timeline']
+const currentView = computed(() => ({
+  layout: (LAYOUTS.includes(view.value as ViewLayout) ? view.value : 'board') as ViewLayout,
+  filters: Object.fromEntries(Object.entries(filters.value).filter(([, value]) => value)),
+  search: search.value.trim(),
+  sort: [] as string[],
+}))
+function applyView(saved: SavedView) {
+  filters.value = { ...NO_FILTERS, ...pickFilters(saved.filters) }
+  search.value = saved.search
+  view.value = saved.layout
+  activeView.value = saved.id
+  filtersOpen.value = activeFilters(filters.value) > 0
+}
+const pickFilters = (raw: Record<string, string>) =>
+  Object.fromEntries(
+    Object.keys(NO_FILTERS)
+      .filter((key) => typeof raw[key] === 'string')
+      .map((key) => [key, raw[key]]),
+  ) as Partial<BoardFilters>
+// mexer nos filtros depois de abrir uma visão deixa de ser aquela visão
+watch(
+  () => JSON.stringify(currentView.value),
+  () => {
+    if (!activeView.value) return
+    queueMicrotask(() => {
+      const cached = savedSnapshot.value
+      if (cached && cached !== JSON.stringify(currentView.value)) activeView.value = ''
+    })
+  },
+)
+const savedSnapshot = ref('')
+watch(
+  activeView,
+  () => void nextTick(() => (savedSnapshot.value = JSON.stringify(currentView.value))),
+)
 
 watch(panelOpen, (open) => {
   if (open) return
@@ -414,6 +488,15 @@ function clearFilters() {
                 <span class="hidden sm:inline">Compartilhar</span>
                 <span class="sr-only sm:hidden">Copiar link do projeto</span>
               </button>
+              <SavedViews
+                v-if="!TASKLESS.includes(view)"
+                :sector-id="sector.id"
+                :can-edit="canEdit"
+                :can-manage="canManage"
+                :current="currentView"
+                :active-id="activeView"
+                @apply="applyView"
+              />
               <button
                 v-if="!TASKLESS.includes(view)"
                 type="button"
@@ -700,7 +783,13 @@ function clearFilters() {
         />
 
         <div v-else-if="view === 'list'" class="ui-rise min-h-0 flex-1 overflow-y-auto pb-4">
-          <TaskListView :statuses="kanban.statuses" :tasks-of="tasksOf" @open="openDetails" />
+          <TaskListView
+            v-model:selected="selected"
+            :statuses="kanban.statuses"
+            :tasks-of="tasksOf"
+            :selectable="canEdit"
+            @open="openDetails"
+          />
         </div>
 
         <div v-else class="ui-rise min-h-0 flex-1 overflow-y-auto pb-4">
@@ -716,6 +805,12 @@ function clearFilters() {
     </main>
 
     <ProjectBin v-if="sector && canEdit" v-model:open="binOpen" :sector="sector" />
+    <BulkBar
+      v-if="canEdit && view === 'list'"
+      v-model:selected="selected"
+      :people="people"
+      :cycles="cycles"
+    />
 
     <TaskDetail
       v-if="sector"
@@ -726,9 +821,12 @@ function clearFilters() {
       :people="people"
       :labels="labels"
       :cycles="cycles"
+      :fields="fields"
+      :templates="templates"
       :initial-status="newStatus"
       :can-edit="canEdit"
       :can-manage="canManage"
+      @template-saved="templates = [...templates, $event]"
       @label-created="labels = [...labels, $event].sort((a, b) => a.name.localeCompare(b.name))"
     />
   </div>
