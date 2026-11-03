@@ -3,18 +3,15 @@ import {
   CornerDownLeft,
   FileText,
   LogOut,
-  Moon,
   Plus,
   Search,
   SquareCheck,
   SquareKanban,
-  Sun,
   UserRound,
 } from '@lucide/vue'
 import { useEventListener, watchDebounced } from '@vueuse/core'
 import { computed, nextTick, ref, useId, useTemplateRef, watch, type Component } from 'vue'
 import { useRouter } from 'vue-router'
-import { useTheme } from '@/app/composables/useTheme'
 import { useSectorsStore } from '@/modules/module'
 import { useOrganizationsStore } from '@/modules/organizations'
 import { useSearchStore } from '@/modules/search'
@@ -38,7 +35,6 @@ const emit = defineEmits<{ signOut: [] }>()
 
 const router = useRouter()
 const sectors = useSectorsStore()
-const { isDark, toggleTheme } = useTheme()
 const organizations = useOrganizationsStore()
 const search = useSearchStore()
 
@@ -67,14 +63,6 @@ const commands = computed<Command[]>(() => [
     keywords: 'setor projeto quadro kanban',
     run: () => void router.push(`/setores/${sector.id}`),
   })),
-  {
-    id: 'action:theme',
-    group: 'Ações',
-    label: isDark.value ? 'Usar tema claro' : 'Usar tema escuro',
-    icon: isDark.value ? Sun : Moon,
-    keywords: 'tema claro escuro aparencia',
-    run: toggleTheme,
-  },
   {
     id: 'action:new-org',
     group: 'Ações',

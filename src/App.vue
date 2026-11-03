@@ -5,10 +5,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { bootFailed } from '@/app/boot'
 import ConnectionStatus from '@/app/components/ConnectionStatus.vue'
 import RouteProgress from '@/app/components/RouteProgress.vue'
-import { useTheme } from '@/app/composables/useTheme'
 
-// o tema do Toaster acompanha o tema da aplicação
-const { isDark } = useTheme()
 import { AuthTransitionOverlay, useAuthStore } from '@/modules/auth'
 import { finishGoogleConnect } from '@/modules/calendar_sync'
 import { useNotificationSession } from '@/modules/notifications'
@@ -82,7 +79,7 @@ finishGoogleConnect()
   </RouterView>
   <!-- até 3 toasts visíveis; os seguintes esperam na fila do vue-sonner -->
   <Toaster
-    :theme="isDark ? 'dark' : 'light'"
+    theme="dark"
     position="bottom-right"
     :visible-toasts="3"
     close-button

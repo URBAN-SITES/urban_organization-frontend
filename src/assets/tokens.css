@@ -1,6 +1,6 @@
 /*
  * Design tokens do Inceptum (Fase 1).
- * Cores semânticas trocam com o tema (.dark); o resto é fixo.
+ * Tema único (escuro). Cores semânticas e movimento ficam no :root.
  * Use as utilidades geradas pelo Tailwind: bg-surface-1, text-fg-muted, border-border,
  * rounded-control, text-13, shadow-float, duration-(--dur-fast), ease-out...
  * Constantes equivalentes para JS ficam em src/shared/motion.
@@ -12,57 +12,9 @@
  */
 
 :root,
-.light {
-  --ds-bg: #fafaf9;
-  --ds-surface-1: #ffffff;
-  --ds-surface-2: #f4f4f3;
-  --ds-surface-3: #ebebe9;
-  --ds-border: #e5e5e3;
-  --ds-border-strong: #d4d4d1;
-  --ds-fg: #18181b;
-  --ds-fg-muted: #6b6b73;
-  /* cor da marca Urban Organization; texto preto sobre ela (10,6:1) */
-  --ds-accent: #f99f11;
-  --ds-accent-hover: #e08e0a;
-  --ds-accent-fg: #000000;
-  --ds-accent-soft: rgb(249 159 17 / 0.14);
-  --ds-danger: #c42b2b;
-  --ds-danger-soft: rgb(196 43 43 / 0.1);
-  --ds-success: #1f7a4d;
-  --ds-success-soft: rgb(31 122 77 / 0.1);
-  --ds-warning: #8a5a00;
-  --ds-warning-soft: rgb(176 115 0 / 0.12);
-  --ds-overlay: rgb(24 24 27 / 0.4);
-  --ds-shadow-color: 24 24 27;
-  --ds-bg-2: #f4f4f3;
-  --ds-glow: rgb(249 159 17 / 0.12);
-  --ds-card-sheen: rgb(255 255 255 / 0.6);
-
-  /* motion */
-  --dur-instant: 80ms;
-  --dur-fast: 140ms;
-  --dur-base: 220ms;
-  --dur-slow: 320ms;
-  /* saídas ~30% mais rápidas que as entradas */
-  --dur-fast-exit: 100ms;
-  --dur-base-exit: 150ms;
-  --dur-slow-exit: 220ms;
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
-  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
-  /* deslocamento das entradas; zera com prefers-reduced-motion */
-  --motion-distance: 6px;
-  --motion-scale: 0.98;
-  /* troca horizontal de contexto (ex.: entrar <-> criar conta) */
-  --motion-slide: 32px;
-  /* 1 com movimento, 0 com prefers-reduced-motion (ex.: drawer entra só com fade) */
-  --motion-on: 1;
-
-  color-scheme: light;
-}
-
 .dark {
-  /* identidade Urban Organization: preto profundo, superfícies em camadas e bordas de luz */
+  /* tema único, escuro: identidade Urban Organization com preto profundo, superfícies em
+     camadas e bordas de luz. A classe .dark fica fixa no <html> para os utilitários dark: */
   --ds-bg: #000000;
   --ds-bg-2: #080808;
   --ds-surface-1: #101010;
@@ -90,6 +42,28 @@
   --ds-card-sheen: rgb(255 255 255 / 0.035);
 
   color-scheme: dark;
+}
+
+:root {
+  /* motion */
+  --dur-instant: 80ms;
+  --dur-fast: 140ms;
+  --dur-base: 220ms;
+  --dur-slow: 320ms;
+  /* saídas ~30% mais rápidas que as entradas */
+  --dur-fast-exit: 100ms;
+  --dur-base-exit: 150ms;
+  --dur-slow-exit: 220ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  /* deslocamento das entradas; zera com prefers-reduced-motion */
+  --motion-distance: 6px;
+  --motion-scale: 0.98;
+  /* troca horizontal de contexto (ex.: entrar <-> criar conta) */
+  --motion-slide: 32px;
+  /* 1 com movimento, 0 com prefers-reduced-motion (ex.: drawer entra só com fade) */
+  --motion-on: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
