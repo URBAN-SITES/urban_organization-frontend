@@ -15,8 +15,11 @@ import type {
   CreateSectorRequest,
   CreateStatusRequest,
   CreateTaskRequest,
+  Burndown,
   CreateCycleRequest,
   Cycle,
+  FollowState,
+  TrashedTask,
   Dashboard,
   RelationKind,
   TaskRelations,
@@ -345,4 +348,33 @@ export async function addTaskRelation(
 
 export async function removeTaskRelation(taskId: string, otherId: string): Promise<void> {
   await api.delete(`/tasks/${enc(taskId)}/relations/${enc(otherId)}/`)
+}
+
+// ── Lixeira, arquivo, seguir e burndown ────────────────────────────────────
+export async function listTrash(sectorId: string, page = 1): Promise<Page<TrashedTask>> {
+  return (
+    await api.get<Page<TrashedTask>>(`/sectors/${enc(sectorId)}/trash/`, { params: { page } })
+  ).data
+}
+
+export async function restoreTask(id: string): Promise<Task> {
+  return (await api.post<Task>(`/tasks/${enc(id)}/restore/`)).data
+}
+
+export async function setTaskArchived(id: string, archived: boolean): Promise<Task> {
+  const url = `/tasks/${enc(id)}/archive/`
+  return (archived ? await api.put<Task>(url) : await api.delete<Task>(url)).data
+}
+
+export async function getFollow(taskId: string): Promise<FollowState> {
+  return (await api.get<FollowState>(`/tasks/${enc(taskId)}/follow/`)).data
+}
+
+export async function setFollow(taskId: string, following: boolean): Promise<FollowState> {
+  const url = `/tasks/${enc(taskId)}/follow/`
+  return (following ? await api.put<FollowState>(url) : await api.delete<FollowState>(url)).data
+}
+
+export async function getBurndown(cycleId: string): Promise<Burndown> {
+  return (await api.get<Burndown>(`/cycles/${enc(cycleId)}/burndown/`)).data
 }

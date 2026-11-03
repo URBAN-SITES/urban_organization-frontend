@@ -35,6 +35,9 @@ const task = (over: Partial<Task>): Task => ({
   start_date: null,
   cycle_id: null,
   is_blocked: false,
+  key: null,
+  estimate: null,
+  archived_at: null,
   created_at: '',
   ...over,
 })
