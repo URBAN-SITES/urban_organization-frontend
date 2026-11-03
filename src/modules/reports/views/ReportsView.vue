@@ -2,7 +2,6 @@
 import { ChartColumn } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
-import { useTheme } from '@/app/composables/useTheme'
 import { getErrorMessage } from '@/app/plugins/axios'
 import { BaseButton, CardComp, ChartComp, PageLayout } from '@/shared/components'
 import { avatar } from '@/shared/utils/people'
@@ -14,7 +13,6 @@ import { kpis, peopleCsv, periods } from '../utils'
 import { BADGE, BADGE_BASE, TOOLBAR_BUTTON } from '../utils/ui'
 
 const organizations = useOrganizationsStore()
-const { isDark } = useTheme()
 
 const days = ref<ReportDays>(30)
 const report = ref<Report | null>(null)
@@ -48,7 +46,7 @@ const weeklyData = computed(() => ({
     {
       label: 'Tarefas concluídas',
       data: weeks.value.map((w) => w.done),
-      backgroundColor: inkWithAccent(weeks.value.length, isDark.value),
+      backgroundColor: inkWithAccent(weeks.value.length),
     },
   ],
 }))

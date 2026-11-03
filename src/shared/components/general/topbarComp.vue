@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { Bell, ChevronRight, LogOut, Moon, Search, Settings, Sun } from '@lucide/vue'
+import { Bell, ChevronRight, LogOut, Search, Settings } from '@lucide/vue'
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useTheme } from '@/app/composables/useTheme'
 import { useShell } from '../../composables/shell'
 import UiAvatar from '../ui/UiAvatar.vue'
 import UiIcon from '../ui/UiIcon.vue'
@@ -27,7 +26,6 @@ const props = withDefaults(
 const search = defineModel<string>('search', { default: '' })
 const shell = useShell()
 const router = useRouter()
-const { isDark, toggleTheme } = useTheme()
 const path = computed(() =>
   shell.organization.value ? [shell.organization.value, ...props.crumbs] : props.crumbs,
 )
@@ -103,12 +101,6 @@ const userMenu = computed<MenuItem[]>(() => [
       label="Buscar ou ir para"
       class="sm:hidden"
       @click="shell.openPalette()"
-    />
-
-    <UiIconButton
-      :icon="isDark ? Sun : Moon"
-      :label="isDark ? 'Usar tema claro' : 'Usar tema escuro'"
-      @click="toggleTheme"
     />
 
     <RouterLink
