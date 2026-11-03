@@ -1,3 +1,13 @@
+<script lang="ts">
+import type { Label, Person, Sector, SectorRole } from '../types'
+
+// último estado visto de cada projeto, fora da instância (sobrevive a sair e voltar):
+// reabrir um projeto mostra na hora o que já havia e atualiza por trás, sem trocar o quadro
+// por esqueletos. As colunas e tarefas ficam no kanban store.
+type Snapshot = { sector: Sector & { my_role: SectorRole }; people: Person[]; labels: Label[] }
+const snapshots = new Map<string, Snapshot>()
+</script>
+
 <script setup lang="ts">
 import {
   ArrowRight,
@@ -44,7 +54,7 @@ import TaskListView from '../components/taskListView.vue'
 import TaskTableView from '../components/taskTableView.vue'
 import { getSector, listLabels, listSectorPeople, setSectorFavorite } from '../services'
 import { useKanbanStore, useSectorsStore } from '../stores'
-import type { Label, Person, Sector, SectorRole, Task } from '../types'
+import type { Task } from '../types'
 import {
   NO_FILTERS,
   activeFilters,
@@ -164,9 +174,13 @@ const labelOptions = computed(() => [
 ])
 
 async function load(id: string) {
-  loading.value = true
+  const cached = snapshots.get(id)
+  const warm = !!cached && kanban.sectorId === id && kanban.statuses.length > 0
+  loading.value = !warm
   error.value = ''
-  sector.value = null
+  sector.value = cached?.sector ?? null
+  people.value = cached?.people ?? []
+  labels.value = cached?.labels ?? []
   panelOpen.value = false
   filters.value = { ...NO_FILTERS }
   search.value = ''
@@ -181,12 +195,15 @@ async function load(id: string) {
     sector.value = detail
     people.value = peopleRows
     labels.value = labelRows
+    snapshots.set(id, { sector: detail, people: peopleRows, labels: labelRows })
     // link direto (dashboard, calendário, notificações): /setores/:id?task=<id>
     const task = route.query.task
     if (typeof task === 'string' && kanban.tasks.some((t) => t.id === task)) openDetails(task)
   } catch (cause) {
-    if (id === props.sectorId)
-      error.value = getErrorMessage(cause, 'Confira se o projeto existe e se você tem acesso.')
+    if (id !== props.sectorId) return
+    snapshots.delete(id)
+    sector.value = null
+    error.value = getErrorMessage(cause, 'Confira se o projeto existe e se você tem acesso.')
   } finally {
     if (id === props.sectorId) loading.value = false
   }
