@@ -13,7 +13,7 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/modules/auth'
 import { useNotificationsStore } from '@/modules/notifications'
-import { UiAvatar, UiMenu, UiTooltip, type MenuItem } from '@/shared/components'
+import { UiAvatar, UiMenu, type MenuItem } from '@/shared/components'
 import { useShell } from '@/shared/composables/shell'
 
 /** Pé da barra: notificações e a pessoa logada, com o menu da conta. */
@@ -63,30 +63,22 @@ const menu = computed<MenuItem[]>(() => [
 
 <template>
   <div v-if="auth.user" :class="['sb-footer', { 'is-collapsed': collapsed }]">
-    <UiTooltip
-      :text="bellLabel"
-      placement="right"
-      :disabled="!collapsed"
-      :delay="250"
-      class="flex w-full"
+    <RouterLink
+      to="/notificacoes"
+      :aria-label="bellLabel"
+      :aria-current="onNotifications ? 'page' : undefined"
+      :data-active="onNotifications || undefined"
+      class="sb-link sb-bell group h-9 text-13"
     >
-      <RouterLink
-        to="/notificacoes"
-        :aria-label="bellLabel"
-        :aria-current="onNotifications ? 'page' : undefined"
-        :data-active="onNotifications || undefined"
-        class="sb-link sb-bell group h-9 text-13"
-      >
-        <span class="sb-link-icon" aria-hidden="true">
-          <Bell :size="18" :stroke-width="1.75" :class="['shrink-0', { 'sb-ring': unread }]" />
-          <span v-if="unread && collapsed" :key="unread" class="sb-dot" />
-        </span>
-        <span class="sidebar-label min-w-0 flex-1 truncate">Notificações</span>
-        <span v-if="unread && !collapsed" :key="unread" class="sb-count sidebar-label">
-          {{ unread > 99 ? '99+' : unread }}
-        </span>
-      </RouterLink>
-    </UiTooltip>
+      <span class="sb-link-icon" aria-hidden="true">
+        <Bell :size="18" :stroke-width="1.75" :class="['shrink-0', { 'sb-ring': unread }]" />
+        <span v-if="unread && collapsed" :key="unread" class="sb-dot" />
+      </span>
+      <span class="sidebar-label min-w-0 flex-1 truncate">Notificações</span>
+      <span v-if="unread && !collapsed" :key="unread" class="sb-count sidebar-label">
+        {{ unread > 99 ? '99+' : unread }}
+      </span>
+    </RouterLink>
 
     <UiMenu
       :items="menu"
@@ -95,36 +87,28 @@ const menu = computed<MenuItem[]>(() => [
       class="flex w-full"
     >
       <template #trigger="{ props: trigger, open }">
-        <UiTooltip
-          :text="auth.user.name"
-          placement="right"
-          :disabled="!collapsed || open"
-          :delay="250"
-          class="flex w-full"
+        <button
+          v-bind="trigger"
+          type="button"
+          data-ui="profile-menu"
+          :aria-label="`${auth.user.name}: menu da conta`"
+          :class="['sb-profile', { 'is-open': open }]"
         >
-          <button
-            v-bind="trigger"
-            type="button"
-            data-ui="profile-menu"
-            :aria-label="`${auth.user.name}: menu da conta`"
-            :class="['sb-profile', { 'is-open': open }]"
-          >
-            <UiAvatar :name="auth.user.name" :src="auth.user.avatar_url" size="md" />
-            <span class="sidebar-label min-w-0 flex-1 text-left">
-              <span class="block truncate text-13 leading-4 font-medium text-white">
-                {{ auth.user.name }}
-              </span>
-              <span class="block truncate text-12 leading-4 text-[var(--sb-muted)]">
-                {{ auth.user.email }}
-              </span>
+          <UiAvatar :name="auth.user.name" :src="auth.user.avatar_url" size="md" />
+          <span class="sidebar-label min-w-0 flex-1 text-left">
+            <span class="block truncate text-13 leading-4 font-medium text-white">
+              {{ auth.user.name }}
             </span>
-            <ChevronsUpDown
-              :size="14"
-              class="sidebar-label shrink-0 text-[var(--sb-muted)]"
-              aria-hidden="true"
-            />
-          </button>
-        </UiTooltip>
+            <span class="block truncate text-12 leading-4 text-[var(--sb-muted)]">
+              {{ auth.user.email }}
+            </span>
+          </span>
+          <ChevronsUpDown
+            :size="14"
+            class="sidebar-label shrink-0 text-[var(--sb-muted)]"
+            aria-hidden="true"
+          />
+        </button>
       </template>
     </UiMenu>
   </div>

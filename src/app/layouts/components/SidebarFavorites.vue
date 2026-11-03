@@ -5,7 +5,6 @@ import { computed, useId } from 'vue'
 import { useRoute } from 'vue-router'
 import { ProjectIcon, useSectorsStore } from '@/modules/module'
 import { useOrganizationsStore } from '@/modules/organizations'
-import { UiTooltip } from '@/shared/components'
 
 /** Projetos fixados (estrela) da organização atual, com a seção recolhível. */
 const { collapsed = false, size = 'md' } = defineProps<{
@@ -50,26 +49,18 @@ const isOpen = (id: string) => route.path === `/setores/${id}`
       <div class="min-h-0">
         <ul v-if="favorites.length" class="sb-favorites grid gap-0.5">
           <li v-for="sector in shown" :key="sector.id">
-            <UiTooltip
-              :text="sector.name"
-              placement="right"
-              :disabled="!collapsed"
-              :delay="250"
-              class="flex w-full"
+            <RouterLink
+              :to="`/setores/${sector.id}`"
+              :aria-current="isOpen(sector.id) ? 'page' : undefined"
+              :aria-label="collapsed ? sector.name : undefined"
+              :data-current="isOpen(sector.id) || undefined"
+              :class="['sb-project group', size === 'lg' ? 'h-11 text-14' : 'h-9 text-13']"
+              :style="{ '--project': sector.color || 'var(--sb-muted)' }"
             >
-              <RouterLink
-                :to="`/setores/${sector.id}`"
-                :aria-current="isOpen(sector.id) ? 'page' : undefined"
-                :aria-label="collapsed ? sector.name : undefined"
-                :data-current="isOpen(sector.id) || undefined"
-                :class="['sb-project group', size === 'lg' ? 'h-11 text-14' : 'h-9 text-13']"
-                :style="{ '--project': sector.color || 'var(--sb-muted)' }"
-              >
-                <ProjectIcon :icon="sector.icon" :color="sector.color" size="sm" />
-                <span class="sidebar-label min-w-0 flex-1 truncate">{{ sector.name }}</span>
-                <span class="sb-project-mark sidebar-label" aria-hidden="true" />
-              </RouterLink>
-            </UiTooltip>
+              <ProjectIcon :icon="sector.icon" :color="sector.color" size="sm" />
+              <span class="sidebar-label min-w-0 flex-1 truncate">{{ sector.name }}</span>
+              <span class="sb-project-mark sidebar-label" aria-hidden="true" />
+            </RouterLink>
           </li>
         </ul>
         <RouterLink v-else :to="projectsPath" class="sb-empty sidebar-label">

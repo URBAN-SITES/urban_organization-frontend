@@ -35,7 +35,7 @@ const label = (source: SummarySource) => `Ir para ${clock(source.start)} no víd
           <button
             v-if="topic.source"
             type="button"
-            class="shrink-0 cursor-pointer rounded-control font-mono text-13 text-fg-muted tabular-nums underline-offset-2 hover:text-fg hover:underline focus-visible:outline-2 focus-visible:outline-accent"
+            class="shrink-0 cursor-pointer rounded-control font-mono text-13 text-fg-muted tabular-nums ui-link hover:text-fg focus-visible:outline-2 focus-visible:outline-accent"
             :aria-label="label(topic.source)"
             @click="emit('seek', topic.source.start)"
           >
@@ -53,7 +53,7 @@ const label = (source: SummarySource) => `Ir para ${clock(source.start)} no víd
           <button
             v-if="item.source"
             type="button"
-            class="shrink-0 cursor-pointer rounded-control font-mono text-13 text-fg-muted tabular-nums underline-offset-2 hover:text-fg hover:underline focus-visible:outline-2 focus-visible:outline-accent"
+            class="shrink-0 cursor-pointer rounded-control font-mono text-13 text-fg-muted tabular-nums ui-link hover:text-fg focus-visible:outline-2 focus-visible:outline-accent"
             :aria-label="label(item.source)"
             :title="item.source.quote"
             @click="emit('seek', item.source.start)"

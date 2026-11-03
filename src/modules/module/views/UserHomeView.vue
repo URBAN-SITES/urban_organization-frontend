@@ -270,7 +270,7 @@ const enter = (index: number) => ({ animationDelay: `${staggerDelay(index)}ms` }
             :style="enter(4)"
           >
             <template #action>
-              <RouterLink :to="projectsPath" class="panel-link">
+              <RouterLink :to="projectsPath" class="panel-link ui-link">
                 Ver todos <ArrowRight :size="14" aria-hidden="true" />
               </RouterLink>
             </template>
@@ -332,7 +332,7 @@ const enter = (index: number) => ({ animationDelay: `${staggerDelay(index)}ms` }
               <RouterLink
                 v-if="data?.today[0]"
                 :to="`/setores/${data.today[0].sector_id}?view=list`"
-                class="panel-link"
+                class="panel-link ui-link"
               >
                 Ver todas <ArrowRight :size="14" aria-hidden="true" />
               </RouterLink>
@@ -404,7 +404,7 @@ const enter = (index: number) => ({ animationDelay: `${staggerDelay(index)}ms` }
             :style="enter(6)"
           >
             <template #action>
-              <RouterLink to="/calendario" class="panel-link">
+              <RouterLink to="/calendario" class="panel-link ui-link">
                 Ver calendário <ArrowRight :size="14" aria-hidden="true" />
               </RouterLink>
             </template>

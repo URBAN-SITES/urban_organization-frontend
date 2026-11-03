@@ -199,7 +199,7 @@ const enter = (meeting: Meeting) => router.push(`/reunioes/${meeting.id}`)
               <button
                 v-if="meeting.recording_count && meeting.can_join"
                 type="button"
-                class="w-fit cursor-pointer rounded-control text-13 text-fg-muted underline-offset-2 hover:text-fg hover:underline focus-visible:outline-2 focus-visible:outline-accent"
+                class="w-fit cursor-pointer rounded-control text-13 text-fg-muted ui-link hover:text-fg focus-visible:outline-2 focus-visible:outline-accent"
                 :aria-expanded="expanded === meeting.id"
                 @click="expanded = expanded === meeting.id ? null : meeting.id"
               >
