@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Bell, ChevronRight, LogOut, Moon, Receipt, Search, Settings, Sun } from '@lucide/vue'
+import { Bell, ChevronRight, LogOut, Moon, Search, Settings, Sun } from '@lucide/vue'
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTheme } from '@/app/composables/useTheme'
@@ -10,7 +10,7 @@ import UiIconButton from '../ui/UiIconButton.vue'
 import UiMenu, { type MenuItem } from '../ui/UiMenu.vue'
 
 /* COMO USAR:
-  <TopbarComp :crumbs="['Conta', 'Planos']" />
+  <TopbarComp :crumbs="['Conta', 'Configurações']" />
   Cabeçalho das telas: caminho (a organização atual vem na frente), busca global
   (Ctrl/Cmd+K), tema, notificações e menu do usuário. `showSearch` adiciona um
   filtro local da tela, ligado a v-model:search.
@@ -35,7 +35,6 @@ const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigat
 
 const userMenu = computed<MenuItem[]>(() => [
   { label: 'Configurações', icon: Settings, onSelect: () => void router.push('/configuracoes') },
-  { label: 'Faturamento', icon: Receipt, onSelect: () => void router.push('/faturamento') },
   {
     label: 'Sair da conta',
     icon: LogOut,
