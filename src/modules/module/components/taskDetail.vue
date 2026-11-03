@@ -1,5 +1,15 @@
 <script setup lang="ts">
-import { ArrowLeft, Ban, CalendarClock, Check, Trash2 } from '@lucide/vue'
+import {
+  Archive,
+  ArchiveRestore,
+  ArrowLeft,
+  Ban,
+  Bell,
+  BellOff,
+  CalendarClock,
+  Check,
+  Trash2,
+} from '@lucide/vue'
 import { computed, reactive, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { getErrorMessage } from '@/app/plugins/axios'
@@ -15,6 +25,7 @@ import {
   UiTextarea,
 } from '@/shared/components'
 import { useConfirm } from '@/shared/composables/confirm'
+import { getFollow, setFollow } from '../services'
 import { useKanbanStore } from '../stores'
 import type { Cycle, Label, Person, Task, UpdateTaskRequest } from '../types'
 import LabelChip from './labelChip.vue'
@@ -71,6 +82,7 @@ const form = reactive({
   start: '',
   due: '',
   cycle: '',
+  estimate: '',
   labels: [] as string[],
 })
 const titleError = ref('')
@@ -101,6 +113,58 @@ function saveDates() {
   if (start === task.value.start_date && due === task.value.due_date) return
   void save({ start_date: start, due_date: due })
 }
+// escala de Fibonacci, como no planejamento em pontos
+const ESTIMATES = [0, 1, 2, 3, 5, 8, 13, 21]
+const estimateOptions = computed(() => {
+  const values = [...ESTIMATES]
+  const current = task.value?.estimate
+  if (current !== null && current !== undefined && !values.includes(current)) values.push(current)
+  return [
+    { value: '', label: 'Sem estimativa' },
+    ...values.sort((a, b) => a - b).map((v) => ({ value: String(v), label: `${v} pontos` })),
+  ]
+})
+
+// seguir: avisos de comentários e de mudança de status
+const follow = ref<{ following: boolean; followers: number } | null>(null)
+watch(
+  () => (open.value ? task.value?.id : undefined),
+  async (id) => {
+    follow.value = null
+    if (!id) return
+    const state = await getFollow(id).catch(() => null)
+    if (task.value?.id === id) follow.value = state
+  },
+  { immediate: true },
+)
+async function toggleFollow() {
+  const id = task.value?.id
+  if (!id || !follow.value) return
+  try {
+    follow.value = await setFollow(id, !follow.value.following)
+    toast.success(
+      follow.value.following
+        ? 'Você vai receber os avisos desta tarefa.'
+        : 'Você deixou de seguir esta tarefa.',
+    )
+  } catch (cause) {
+    toast.error(getErrorMessage(cause, 'Não foi possível mudar o acompanhamento.'))
+  }
+}
+
+async function archive() {
+  const t = task.value
+  if (!t) return
+  try {
+    await kanban.archive(t.id, true)
+    open.value = false
+    toast.success('Tarefa arquivada.', {
+      action: { label: 'Desfazer', onClick: () => void kanban.archive(t.id, false) },
+    })
+  } catch (cause) {
+    toast.error(getErrorMessage(cause, 'Não foi possível arquivar a tarefa.'))
+  }
+}
 const chosenLabels = computed(() => props.labels.filter((l) => form.labels.includes(l.id)))
 const readOnly = computed(() => !props.canEdit)
 
@@ -115,6 +179,7 @@ function fill() {
     start: t?.start_date ?? '',
     due: t?.due_date ?? '',
     cycle: t?.cycle_id ?? '',
+    estimate: t?.estimate === null || t?.estimate === undefined ? '' : String(t.estimate),
     labels: t?.labels.map((label) => label.id) ?? [],
   })
   titleError.value = ''
@@ -187,16 +252,25 @@ async function remove() {
   const ok = await confirm({
     title: `Excluir “${t.title}”?`,
     description: t.subtask_total
-      ? 'A tarefa e as subtarefas dela saem do projeto para todos.'
-      : 'A tarefa sai do projeto para todos.',
+      ? 'A tarefa e as subtarefas dela vão para a lixeira do projeto por 30 dias.'
+      : 'A tarefa vai para a lixeira do projeto por 30 dias.',
     confirmLabel: 'Excluir tarefa',
     danger: true,
   })
   if (!ok) return
   try {
     await kanban.removeTask(t.id)
-    toast.success('Tarefa excluída.')
     open.value = false
+    toast.success('Tarefa excluída.', {
+      action: {
+        label: 'Desfazer',
+        onClick: () =>
+          void kanban
+            .restore(t.id)
+            .then(() => toast.success('Tarefa restaurada.'))
+            .catch((cause) => toast.error(getErrorMessage(cause, 'Não foi possível restaurar.'))),
+      },
+    })
   } catch (cause) {
     toast.error(getErrorMessage(cause, 'Não foi possível excluir a tarefa.'))
   }
@@ -235,7 +309,7 @@ const refresh = () => task.value && kanban.reload(task.value.id).catch(() => und
 <template>
   <UiDrawer
     v-model:open="open"
-    :title="task ? 'Tarefa' : 'Nova tarefa'"
+    :title="task ? (task.key ?? 'Tarefa') : 'Nova tarefa'"
     :description="sectorName"
     width="lg"
   >
@@ -370,16 +444,14 @@ const refresh = () => task.value && kanban.reload(task.value.id).catch(() => und
           label="Responsável"
           :options="peopleOptions"
           :disabled="readOnly"
-          :class="cycles.length || task.cycle_id ? '' : 'sm:col-span-2'"
           @update:model-value="save({ assignee: $event || null })"
         />
         <UiSelect
-          v-if="cycles.length || task.cycle_id"
-          v-model="form.cycle"
-          label="Ciclo"
-          :options="cycleOptions"
+          v-model="form.estimate"
+          label="Estimativa"
+          :options="estimateOptions"
           :disabled="readOnly"
-          @update:model-value="save({ cycle: $event || null })"
+          @update:model-value="save({ estimate: $event === '' ? null : Number($event) })"
         />
         <UiInput
           v-model="form.start"
@@ -396,6 +468,15 @@ const refresh = () => task.value && kanban.reload(task.value.id).catch(() => und
           :error="datesError"
           :hint="task.is_overdue ? 'Atrasada' : undefined"
           @change="saveDates"
+        />
+        <UiSelect
+          v-if="cycles.length || task.cycle_id"
+          v-model="form.cycle"
+          label="Ciclo"
+          class="sm:col-span-2"
+          :options="cycleOptions"
+          :disabled="readOnly"
+          @update:model-value="save({ cycle: $event || null })"
         />
       </div>
 
@@ -442,12 +523,37 @@ const refresh = () => task.value && kanban.reload(task.value.id).catch(() => und
         @changed="refresh"
       />
 
-      <div v-if="canEdit" class="flex justify-between gap-2 border-t border-border pt-4">
+      <div class="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
         <span class="text-12 text-fg-muted">
           Criada {{ task.created_by_name ? `por ${task.created_by_name}` : '' }} em
           {{ new Date(task.created_at).toLocaleDateString('pt-BR') }}
         </span>
-        <UiButton variant="danger" size="sm" :icon="Trash2" @click="remove">Excluir</UiButton>
+        <div class="flex flex-wrap gap-2">
+          <UiButton
+            v-if="follow"
+            size="sm"
+            :icon="follow.following ? BellOff : Bell"
+            :aria-pressed="follow.following"
+            :title="`${follow.followers} ${follow.followers === 1 ? 'pessoa segue' : 'pessoas seguem'}`"
+            @click="toggleFollow"
+          >
+            {{ follow.following ? 'Deixar de seguir' : 'Seguir' }}
+          </UiButton>
+          <UiButton
+            v-if="canEdit && task.archived_at"
+            size="sm"
+            :icon="ArchiveRestore"
+            @click="kanban.archive(task.id, false)"
+          >
+            Desarquivar
+          </UiButton>
+          <UiButton v-else-if="canEdit" size="sm" :icon="Archive" @click="archive">
+            Arquivar
+          </UiButton>
+          <UiButton v-if="canEdit" variant="danger" size="sm" :icon="Trash2" @click="remove">
+            Excluir
+          </UiButton>
+        </div>
       </div>
     </div>
 

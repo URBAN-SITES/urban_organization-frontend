@@ -11,6 +11,7 @@ import { useInvitationsStore } from '@/modules/invitations'
 import { useAuthStore } from '@/modules/auth'
 import { useNotificationsStore } from '@/modules/notifications'
 import { useOrganizationsStore } from '@/modules/organizations'
+import { QuickTaskDialog, ShortcutsDialog } from '@/modules/module'
 
 const notifications = useNotificationsStore()
 const organizations = useOrganizationsStore()
@@ -79,5 +80,9 @@ provide(ShellKey, {
     </div>
     <MobileNav />
     <CommandPalette v-if="auth.user" v-model:open="paletteOpen" @sign-out="signOut" />
+    <template v-if="auth.user">
+      <QuickTaskDialog />
+      <ShortcutsDialog />
+    </template>
   </div>
 </template>

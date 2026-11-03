@@ -14,6 +14,8 @@ import {
   listStatuses,
   listTasks,
   moveTask,
+  restoreTask,
+  setTaskArchived,
   updateSector,
   updateStatus,
   updateTask,
@@ -138,7 +140,24 @@ export const useKanbanStore = defineStore('kanban', () => {
 
   async function removeTask(id: string): Promise<void> {
     await deleteTask(id)
-    tasks.value = tasks.value.filter((t) => t.id !== id)
+    tasks.value = tasks.value.filter((t) => t.id !== id && t.parent_id !== id)
+  }
+
+  // volta da lixeira (com as subtarefas): recarrega a lista do projeto
+  async function restore(id: string): Promise<void> {
+    const sector = requireSector()
+    await restoreTask(id)
+    await refreshTasks(sector)
+  }
+
+  // arquivada sai do quadro; desarquivar volta a mostrar
+  async function archive(id: string, archived: boolean): Promise<void> {
+    const sector = requireSector()
+    const updated = await setTaskArchived(id, archived)
+    if (sectorId.value !== sector) return
+    tasks.value = archived
+      ? tasks.value.filter((t) => t.id !== id)
+      : [...tasks.value.filter((t) => t.id !== id), updated]
   }
 
   // Atualização otimista; em erro volta ao estado anterior e relança.
@@ -206,6 +225,8 @@ export const useKanbanStore = defineStore('kanban', () => {
     addTask,
     editTask,
     removeTask,
+    restore,
+    archive,
     reload,
     move,
   }

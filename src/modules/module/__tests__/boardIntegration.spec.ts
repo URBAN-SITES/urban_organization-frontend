@@ -59,6 +59,8 @@ const hooks = registerHooks({
         'listStatuses',
         'listTasks',
         'moveTask',
+        'restoreTask',
+        'setTaskArchived',
         'updateSector',
         'updateStatus',
         'updateTask',

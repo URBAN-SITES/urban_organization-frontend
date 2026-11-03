@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  Keyboard,
   CornerDownLeft,
   FileText,
   LogOut,
@@ -12,7 +13,7 @@ import {
 import { useEventListener, watchDebounced } from '@vueuse/core'
 import { computed, nextTick, ref, useId, useTemplateRef, watch, type Component } from 'vue'
 import { useRouter } from 'vue-router'
-import { useSectorsStore } from '@/modules/module'
+import { useQuickActionsStore, useSectorsStore } from '@/modules/module'
 import { useOrganizationsStore } from '@/modules/organizations'
 import { useSearchStore } from '@/modules/search'
 import { UiIcon, UiSpinner } from '@/shared/components'
@@ -35,6 +36,7 @@ const emit = defineEmits<{ signOut: [] }>()
 
 const router = useRouter()
 const sectors = useSectorsStore()
+const quick = useQuickActionsStore()
 const organizations = useOrganizationsStore()
 const search = useSearchStore()
 
@@ -63,6 +65,24 @@ const commands = computed<Command[]>(() => [
     keywords: 'setor projeto quadro kanban',
     run: () => void router.push(`/setores/${sector.id}`),
   })),
+  {
+    id: 'action:new-task',
+    group: 'Ações',
+    label: 'Nova tarefa',
+    hint: 'N',
+    icon: Plus,
+    keywords: 'criar tarefa rapida',
+    run: () => (quick.taskOpen = true),
+  },
+  {
+    id: 'action:shortcuts',
+    group: 'Ações',
+    label: 'Atalhos do teclado',
+    hint: '?',
+    icon: Keyboard,
+    keywords: 'teclas ajuda atalho',
+    run: () => (quick.shortcutsOpen = true),
+  },
   {
     id: 'action:new-org',
     group: 'Ações',

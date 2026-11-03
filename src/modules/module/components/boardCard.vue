@@ -51,6 +51,7 @@ watch(
       </span>
     </div>
 
+    <span v-if="task.key" class="-mb-1.5 font-mono text-12 text-fg-muted">{{ task.key }}</span>
     <h4 class="pr-7 text-14 leading-5 font-medium break-words text-fg">
       <a
         href="#"
@@ -121,6 +122,13 @@ watch(
         <CalendarClock :size="14" aria-hidden="true" />
         <span class="sr-only">{{ task.is_overdue ? 'Atrasada, prazo' : 'Prazo' }}</span>
         {{ shortDate(task.due_date) }}
+      </span>
+      <span
+        v-if="task.estimate !== null"
+        class="inline-flex h-5 items-center rounded-full bg-surface-2 px-1.5 font-mono"
+        :title="`Estimativa: ${task.estimate} pontos`"
+      >
+        {{ task.estimate }} pts
       </span>
       <span v-if="task.subtask_total" class="inline-flex items-center gap-1">
         <GitBranch :size="14" aria-hidden="true" />
