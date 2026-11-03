@@ -68,7 +68,6 @@ export interface ActiveSession {
 }
 
 export interface PreferenceSettings {
-  theme: UserSettings['theme']
   date_format: UserSettings['date_format']
   week_start: UserSettings['week_start']
   compact_cards: boolean

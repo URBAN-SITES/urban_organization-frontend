@@ -4,7 +4,6 @@ import { Settings } from '@lucide/vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { toast } from 'vue-sonner'
-import { useTheme } from '@/app/composables/useTheme'
 import { getErrorMessage } from '@/app/plugins/axios'
 import { useAuthStore } from '@/modules/auth'
 import { useOrganizationsStore } from '@/modules/organizations'
@@ -93,8 +92,6 @@ const LANGUAGES: SelectOption[] = [
   { value: 'es', label: 'Español' },
 ]
 
-const { theme, setTheme } = useTheme()
-
 // ?aba=preferences abre direto na aba (atalhos do menu do perfil)
 const route = useRoute()
 const tabFromQuery = (): ConfigTabId | null => {
@@ -136,7 +133,6 @@ const saved = {
     push_enabled: true,
   }),
   preferences: ref<PreferenceSettings>({
-    theme: theme.value,
     date_format: 'dd/mm/yyyy',
     week_start: 'sunday',
     compact_cards: false,
@@ -167,12 +163,6 @@ const sessions = computed<ActiveSession[]>(() =>
 )
 const preferences = ref(clone(saved.preferences.value))
 
-// o tema é aplicado na hora, para a pessoa ver o resultado antes de salvar
-watch(
-  () => preferences.value.theme,
-  (value) => setTheme(value),
-)
-
 async function loadProfile(): Promise<void> {
   isLoading.value = true
   loadError.value = ''
@@ -192,14 +182,12 @@ async function loadProfile(): Promise<void> {
     saved.notifications.value = notificationSettings(settings)
     notifications.value = clone(saved.notifications.value)
     saved.preferences.value = {
-      theme: settings.theme,
       date_format: settings.date_format,
       week_start: settings.week_start,
       compact_cards: settings.compact_cards,
       show_completed: settings.show_completed,
     }
     preferences.value = clone(saved.preferences.value)
-    setTheme(settings.theme)
   } catch (error) {
     loadError.value = getErrorMessage(error, 'Não foi possível carregar seu perfil.')
   } finally {
@@ -212,9 +200,6 @@ onBeforeUnmount(() => {
   disposed = true
   avatarUpload?.abort()
   clearPendingAvatar()
-  if (preferences.value.theme !== saved.preferences.value.theme) {
-    setTheme(saved.preferences.value.theme)
-  }
 })
 
 function selectAvatar(file: File): void {
@@ -341,14 +326,12 @@ async function handleSave(): Promise<void> {
     } else {
       const settings = await updateSettings({ ...preferences.value })
       saved.preferences.value = {
-        theme: settings.theme,
         date_format: settings.date_format,
         week_start: settings.week_start,
         compact_cards: settings.compact_cards,
         show_completed: settings.show_completed,
       }
       preferences.value = clone(saved.preferences.value)
-      setTheme(settings.theme)
     }
     if (!disposed) toast.success('Alterações salvas.')
   } catch (error) {
@@ -368,10 +351,7 @@ function handleCancel() {
     profile.value = clone(saved.profile.value)
   }
   if (activeTab.value === 'notifications') notifications.value = clone(saved.notifications.value)
-  if (activeTab.value === 'preferences') {
-    preferences.value = clone(saved.preferences.value)
-    setTheme(preferences.value.theme)
-  }
+  if (activeTab.value === 'preferences') preferences.value = clone(saved.preferences.value)
 }
 </script>
 
