@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { fetchAllPages } from '@/shared/utils'
 import {
+  bulkEditTasks,
   createSector,
   createStatus,
   createTask,
@@ -21,6 +22,7 @@ import {
   updateTask,
 } from '../services'
 import type {
+  BulkRequest,
   CreateSectorRequest,
   CreateStatusRequest,
   CreateTaskRequest,
@@ -196,6 +198,14 @@ export const useKanbanStore = defineStore('kanban', () => {
     }
   }
 
+  // várias de uma vez: o servidor aplica as mesmas regras e a lista volta inteira
+  async function bulk(payload: Omit<BulkRequest, 'task_ids'>, ids: string[]): Promise<number> {
+    const sector = requireSector()
+    const count = await bulkEditTasks(sector, { ...payload, task_ids: ids })
+    await refreshTasks(sector)
+    return count
+  }
+
   async function refreshTasks(sector: string): Promise<void> {
     const rows = await fetchAllPages((page) =>
       listTasks(sector, { page, ordering: 'position' }),
@@ -227,6 +237,7 @@ export const useKanbanStore = defineStore('kanban', () => {
     removeTask,
     restore,
     archive,
+    bulk,
     reload,
     move,
   }
