@@ -1,0 +1,632 @@
+/*
+ * Barra lateral (AppSidebar no desktop/tablet e o painel do menu no celular).
+ * Identidade das telas de entrada: preto, grafite, bordas translúcidas e o laranja #F99F11
+ * só no que importa (rota atual, avisos). Sempre escura, em qualquer tema.
+ *
+ * Compacta (data-collapsed) ela mostra só os ícones, todos na mesma coluna central da barra
+ * de 72px; aberta, a largura cresce e os rótulos entram depois, com fade e um deslize curto.
+ * Nada muda de lugar ao abrir ou fechar: só a largura e a opacidade dos rótulos.
+ */
+.sb-host,
+.sb-drawer {
+  --sb-bg: #0a0a0a;
+  --sb-border: rgb(255 255 255 / 0.07);
+  --sb-border-strong: rgb(255 255 255 / 0.12);
+  --sb-text: #d4d4d8;
+  --sb-muted: #8a8a92;
+  --sb-accent: #f99f11;
+  /* desacelera longo no fim: a barra "assenta" em vez de parar seco */
+  --sb-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --sb-open: 380ms;
+  --sb-close: 280ms;
+  --sb-rail: 72px;
+  --sb-wide: 264px;
+}
+
+.sb-host {
+  width: var(--sb-rail);
+}
+
+.app-sidebar {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  display: flex;
+  width: var(--sb-wide);
+  flex-direction: column;
+  overflow: hidden;
+  /* uma luz quente bem discreta atrás da marca */
+  background:
+    radial-gradient(120% 40% at 0% 0%, rgb(249 159 17 / 0.07), transparent 60%), var(--sb-bg);
+  color: var(--sb-text);
+  transition:
+    width var(--sb-open) var(--sb-ease),
+    box-shadow var(--sb-open) var(--sb-ease);
+}
+
+/* borda direita desenhada por cima: uma border de verdade tiraria 1px da largura e os ícones
+   sairiam meio pixel do centro da barra compacta */
+.app-sidebar::after {
+  position: absolute;
+  inset-block: 0;
+  right: 0;
+  width: 1px;
+  content: '';
+  background: var(--sb-border);
+  pointer-events: none;
+  transition: background-color var(--sb-open) var(--sb-ease);
+}
+
+.app-sidebar.is-open::after {
+  background: var(--sb-border-strong);
+}
+
+/* fechar é um pouco mais rápido que abrir */
+.app-sidebar[data-collapsed] {
+  width: var(--sb-rail);
+  transition-duration: var(--sb-close);
+}
+
+/* aberta por cima da página: sombra longa e um fio laranja quase invisível na borda */
+.app-sidebar.is-open {
+  box-shadow:
+    28px 0 56px -20px rgb(0 0 0 / 0.6),
+    1px 0 0 rgb(249 159 17 / 0.08);
+}
+
+/* ---------- marca ---------- */
+.sb-header {
+  position: relative;
+  display: flex;
+  height: 92px;
+  flex-shrink: 0;
+  align-items: center;
+  padding-inline: 20px;
+  margin-bottom: 12px;
+}
+
+.sb-header::after {
+  content: '';
+  position: absolute;
+  inset-inline: 16px;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, var(--sb-border-strong), transparent);
+}
+
+.sb-brand {
+  position: relative;
+  display: block;
+  height: 64px;
+  width: 96px;
+  border-radius: 8px;
+}
+
+.sb-brand:focus-visible {
+  outline: 2px solid var(--sb-accent);
+  outline-offset: 4px;
+}
+
+.sb-brand img {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  translate: 0 -50%;
+  transition:
+    opacity 240ms ease-out,
+    transform var(--sb-open) var(--sb-ease);
+}
+
+/* proporção original da logo (258x173): 94px de largura, ~63px de altura */
+.sb-brand-full {
+  width: 94px;
+}
+
+.sb-brand .sb-brand-mark {
+  /* centro exato da barra compacta: 20px de recuo do cabeçalho + 16px = metade de 72px */
+  left: 16px;
+  translate: -50% -50%;
+  width: 32px;
+  border-radius: 8px;
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+[data-collapsed] .sb-brand-full {
+  opacity: 0;
+  transform: scale(0.92);
+}
+
+[data-collapsed] .sb-brand-mark {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.sb-icon-button {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--sb-muted);
+  cursor: pointer;
+  transition:
+    background-color 160ms ease-out,
+    color 160ms ease-out;
+}
+
+.sb-icon-button:hover {
+  background: rgb(255 255 255 / 0.06);
+  color: #fff;
+}
+
+/* ---------- organização ---------- */
+.sb-org {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+  border: 1px solid var(--sb-border);
+  border-radius: 12px;
+  background: rgb(255 255 255 / 0.025);
+  padding-inline: 9px 10px;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease-out,
+    border-color 160ms ease-out,
+    scale 120ms ease-out;
+}
+
+.sb-org:hover,
+.sb-org.is-open {
+  border-color: var(--sb-border-strong);
+  background: rgb(255 255 255 / 0.05);
+}
+
+.sb-org:active {
+  scale: 0.985;
+}
+
+.sb-org:focus-visible {
+  outline: 2px solid var(--sb-accent);
+  outline-offset: 2px;
+}
+
+.sb-org-mark {
+  position: relative;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 8px;
+  background: linear-gradient(140deg, #2a2a2d, #151517);
+  box-shadow: inset 0 0 0 1px var(--sb-border-strong);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ---------- grupos ---------- */
+.sb-scroll {
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-bottom: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: #2a2a2d transparent;
+}
+
+/* compacta, a barra de rolagem some: no Windows ela ocupa largura e tira os ícones do centro */
+[data-collapsed] .sb-scroll {
+  scrollbar-width: none;
+}
+
+[data-collapsed] .sb-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* coluna única que encolhe: rótulos longos não alargam a barra recolhida */
+.app-sidebar ul.grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.sb-group + .sb-group {
+  margin-top: 14px;
+}
+
+/* altura fixa: ao recolher o título só some, os ícones não sobem nem descem */
+.sb-group-title {
+  display: flex;
+  height: 24px;
+  align-items: center;
+  margin-bottom: 2px;
+  /* alinhado à coluna dos ícones (mesmo recuo dos itens) */
+  padding-inline: 15px;
+  color: #6c6c74;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* compacta: no lugar do título, um traço curto centralizado separa os grupos */
+.sb-group-title {
+  position: relative;
+}
+
+.sb-group-title::before {
+  position: absolute;
+  top: 50%;
+  left: calc(50% - 10px);
+  width: 20px;
+  height: 1px;
+  content: '';
+  background: var(--sb-border-strong);
+  opacity: 0;
+  transition: opacity 160ms ease-out;
+  pointer-events: none;
+}
+
+[data-collapsed] .sb-group + .sb-group .sb-group-title::before {
+  opacity: 1;
+  transition-delay: 120ms;
+}
+
+.sb-section-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: -2px;
+  border-radius: 6px;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  transition: color 160ms ease-out;
+}
+
+.sb-section-toggle:hover {
+  color: #b5b5bb;
+}
+
+.sb-section-toggle:focus-visible {
+  outline: 2px solid var(--sb-accent);
+  outline-offset: 2px;
+}
+
+.sb-chevron {
+  transition: transform 220ms var(--sb-ease);
+}
+
+.sb-section-toggle[aria-expanded='true'] .sb-chevron {
+  transform: rotate(90deg);
+}
+
+.sb-section-count {
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.06);
+  padding: 0 6px;
+  font-size: 10px;
+  letter-spacing: 0;
+  line-height: 16px;
+}
+
+/* abre e fecha a seção animando a altura (grid 0fr -> 1fr) */
+.sb-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 260ms var(--sb-ease),
+    opacity 200ms ease-out;
+}
+
+.sb-collapse[data-open] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.sb-collapse > div {
+  overflow: hidden;
+}
+
+/* ---------- itens ---------- */
+.sb-link,
+.sb-project {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+  overflow: hidden;
+  border-radius: 10px;
+  padding-inline: 15px 10px;
+  color: var(--sb-text);
+  font-weight: 500;
+  white-space: nowrap;
+  user-select: none;
+  transition:
+    background-color 180ms ease-out,
+    color 180ms ease-out,
+    box-shadow 180ms ease-out,
+    scale 120ms ease-out;
+}
+
+.sb-project {
+  padding-inline: 12px 10px;
+}
+
+/* hover no padrão do app: um véu claro preenche da esquerda para a direita (.ui-sweep) */
+.sb-link,
+.sb-project {
+  --sweep: rgb(255 255 255 / 0.06);
+}
+
+.sb-link:hover,
+.sb-project:hover {
+  color: #fff;
+}
+
+.sb-link:active,
+.sb-project:active {
+  scale: 0.985;
+}
+
+.sb-link:focus-visible,
+.sb-project:focus-visible {
+  outline: 2px solid var(--sb-accent);
+  outline-offset: -2px;
+}
+
+.sb-link-icon {
+  position: relative;
+  display: grid;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  place-items: center;
+  color: var(--sb-muted);
+  transition:
+    color 180ms ease-out,
+    transform 220ms var(--sb-ease);
+}
+
+.sb-link:hover .sb-link-icon {
+  color: #fff;
+  transform: scale(1.08);
+}
+
+/* rota atual: fundo laranja escuro, ícone na cor da marca, texto branco */
+.sb-link[data-active] {
+  background: linear-gradient(90deg, rgb(249 159 17 / 0.15), rgb(249 159 17 / 0.04) 70%);
+  box-shadow: inset 0 0 0 1px rgb(249 159 17 / 0.14);
+  color: #fff;
+}
+
+.sb-link[data-active] .sb-link-icon {
+  color: var(--sb-accent);
+  filter: drop-shadow(0 0 6px rgb(249 159 17 / 0.45));
+}
+
+.sb-indicator {
+  position: absolute;
+  top: 0;
+  left: 3px;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--sb-accent);
+  box-shadow: 0 0 10px rgb(249 159 17 / 0.7);
+  transition:
+    transform 340ms var(--sb-ease),
+    height 340ms var(--sb-ease);
+  pointer-events: none;
+}
+
+.sb-count {
+  min-width: 20px;
+  border-radius: 999px;
+  background: var(--sb-accent);
+  padding: 0 6px;
+  color: #000;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  animation: sb-pop 360ms var(--sb-ease);
+}
+
+.sb-dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--sb-accent);
+  box-shadow: 0 0 0 2px var(--sb-bg);
+  animation: sb-pop 360ms var(--sb-ease);
+}
+
+.sb-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--sb-accent);
+  animation: sb-ping 1.6s ease-out 2;
+}
+
+/* sino balança uma vez quando chega aviso novo */
+.sb-ring {
+  transform-origin: 50% 2px;
+  animation: sb-ring 900ms var(--sb-ease);
+}
+
+@keyframes sb-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+}
+
+@keyframes sb-ping {
+  to {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+}
+
+@keyframes sb-ring {
+  20% {
+    transform: rotate(14deg);
+  }
+  40% {
+    transform: rotate(-10deg);
+  }
+  60% {
+    transform: rotate(6deg);
+  }
+  80% {
+    transform: rotate(-3deg);
+  }
+}
+
+/* ---------- favoritos ---------- */
+.sb-project .sb-project-mark {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--project);
+  opacity: 0.55;
+  transition:
+    opacity 180ms ease-out,
+    box-shadow 180ms ease-out;
+}
+
+.sb-project[data-current] {
+  background: rgb(255 255 255 / 0.06);
+  box-shadow: inset 2px 0 0 var(--project);
+  color: #fff;
+}
+
+.sb-project[data-current] .sb-project-mark {
+  opacity: 1;
+  box-shadow: 0 0 8px var(--project);
+}
+
+.sb-project > span:first-child {
+  border-color: var(--sb-border-strong);
+  background: rgb(255 255 255 / 0.03);
+  transition: transform 220ms var(--sb-ease);
+}
+
+.sb-project:hover > span:first-child {
+  transform: scale(1.06);
+}
+
+/* muitos fixados: a lista rola em vez de empurrar o resto da barra */
+.sb-favorites {
+  max-height: calc(6 * 2.375rem);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.sb-empty {
+  display: flex;
+  gap: 8px;
+  margin-inline: 4px;
+  border: 1px dashed var(--sb-border-strong);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--sb-muted);
+  font-size: 12px;
+  line-height: 16px;
+  white-space: normal;
+  transition:
+    border-color 160ms ease-out,
+    color 160ms ease-out;
+}
+
+.sb-empty:hover {
+  border-color: rgb(249 159 17 / 0.45);
+  color: #fff;
+}
+
+/* ---------- rodapé ---------- */
+.sb-footer {
+  display: grid;
+  flex-shrink: 0;
+  gap: 4px;
+  border-top: 1px solid var(--sb-border);
+  padding: 10px 12px 12px;
+}
+
+.sb-profile {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+  border-radius: 12px;
+  padding: 6px 10px 6px 8px;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease-out,
+    box-shadow 160ms ease-out,
+    scale 120ms ease-out;
+}
+
+.sb-profile:hover,
+.sb-profile.is-open {
+  background: rgb(255 255 255 / 0.05);
+  box-shadow: inset 0 0 0 1px var(--sb-border);
+}
+
+.sb-profile:active {
+  scale: 0.985;
+}
+
+.sb-profile:focus-visible {
+  outline: 2px solid var(--sb-accent);
+  outline-offset: -2px;
+}
+
+/* ---------- rótulos: entram depois que a barra começou a abrir e saem logo ao fechar ---------- */
+.sidebar-label {
+  transition:
+    opacity 260ms ease-out 90ms,
+    transform var(--sb-open) var(--sb-ease) 60ms,
+    visibility 0s;
+}
+
+[data-collapsed] .sidebar-label {
+  visibility: hidden;
+  opacity: 0;
+  transform: translateX(calc(-8px * var(--motion-on)));
+  transition:
+    opacity 110ms ease-in,
+    transform 140ms ease-in,
+    visibility 0s linear 140ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-sidebar,
+  .sb-brand img,
+  .sb-indicator,
+  .sb-collapse {
+    transition: none;
+  }
+
+  .sb-ring,
+  .sb-dot::after {
+    animation: none;
+  }
+}

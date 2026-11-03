@@ -44,3 +44,6 @@ defineEmits<{ close: [] }>()
     <SidebarProfile :collapsed="collapsed" />
   </div>
 </template>
+
+<!-- estilos da barra inteira (desktop e menu do celular) -->
+<style src="./sidebar.css"></style>
