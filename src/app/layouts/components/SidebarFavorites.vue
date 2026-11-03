@@ -54,7 +54,7 @@ const isOpen = (id: string) => route.path === `/setores/${id}`
               :aria-current="isOpen(sector.id) ? 'page' : undefined"
               :aria-label="collapsed ? sector.name : undefined"
               :data-current="isOpen(sector.id) || undefined"
-              :class="['sb-project group', size === 'lg' ? 'h-11 text-14' : 'h-9 text-13']"
+              :class="['sb-project ui-sweep group', size === 'lg' ? 'h-11 text-14' : 'h-9 text-13']"
               :style="{ '--project': sector.color || 'var(--sb-muted)' }"
             >
               <ProjectIcon :icon="sector.icon" :color="sector.color" size="sm" />

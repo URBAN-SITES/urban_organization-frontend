@@ -62,13 +62,13 @@ const menu = computed<MenuItem[]>(() => [
 </script>
 
 <template>
-  <div v-if="auth.user" :class="['sb-footer', { 'is-collapsed': collapsed }]">
+  <div v-if="auth.user" class="sb-footer">
     <RouterLink
       to="/notificacoes"
       :aria-label="bellLabel"
       :aria-current="onNotifications ? 'page' : undefined"
       :data-active="onNotifications || undefined"
-      class="sb-link sb-bell group h-9 text-13"
+      class="sb-link ui-sweep group h-9 text-13"
     >
       <span class="sb-link-icon" aria-hidden="true">
         <Bell :size="18" :stroke-width="1.75" :class="['shrink-0', { 'sb-ring': unread }]" />

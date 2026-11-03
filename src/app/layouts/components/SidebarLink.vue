@@ -27,7 +27,7 @@ const {
     :aria-current="active ? 'page' : undefined"
     :aria-label="collapsed ? (badge ? `${label}, ${badge} não lidas` : label) : undefined"
     :data-active="active || undefined"
-    :class="['sb-link group', size === 'lg' ? 'h-11 text-14' : 'h-9 text-13']"
+    :class="['sb-link ui-sweep group', size === 'lg' ? 'h-11 text-14' : 'h-9 text-13']"
   >
     <span class="sb-link-icon" aria-hidden="true">
       <component :is="icon" :size="18" :stroke-width="1.75" class="shrink-0" />
