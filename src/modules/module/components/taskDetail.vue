@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowLeft, CalendarClock, Check, Trash2 } from '@lucide/vue'
+import { ArrowLeft, Ban, CalendarClock, Check, Trash2 } from '@lucide/vue'
 import { computed, reactive, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { getErrorMessage } from '@/app/plugins/axios'
@@ -16,13 +16,14 @@ import {
 } from '@/shared/components'
 import { useConfirm } from '@/shared/composables/confirm'
 import { useKanbanStore } from '../stores'
-import type { Label, Person, Task, UpdateTaskRequest } from '../types'
+import type { Cycle, Label, Person, Task, UpdateTaskRequest } from '../types'
 import LabelChip from './labelChip.vue'
 import LabelPicker from './labelPicker.vue'
 import { PRIORITIES, PRIORITY_TEXT, priorityOf, shortDate } from './priority'
 import TaskAttachments from './taskAttachments.vue'
 import TaskChecklist from './taskChecklist.vue'
 import TaskConversation from './taskConversation.vue'
+import TaskRelations from './taskRelations.vue'
 import TaskSubtasks from './taskSubtasks.vue'
 
 /**
@@ -36,6 +37,7 @@ const props = defineProps<{
   sectorName: string
   people: Person[]
   labels: Label[]
+  cycles: Cycle[]
   initialStatus: string
   canEdit: boolean
   canManage: boolean
@@ -66,7 +68,9 @@ const form = reactive({
   status: '',
   priority: 'medium' as Task['priority'],
   assignee: '',
+  start: '',
   due: '',
+  cycle: '',
   labels: [] as string[],
 })
 const titleError = ref('')
@@ -81,6 +85,22 @@ const peopleOptions = computed(() => [
   { value: '', label: 'Sem responsável' },
   ...props.people.map((person) => ({ value: person.id, label: person.name || person.email })),
 ])
+const cycleOptions = computed(() => [
+  { value: '', label: 'Sem ciclo' },
+  ...props.cycles
+    .filter((cycle) => cycle.state !== 'completed' || cycle.id === form.cycle)
+    .map((cycle) => ({ value: cycle.id, label: cycle.name })),
+])
+const datesError = computed(() =>
+  form.start && form.due && form.start > form.due ? 'O início precisa ser antes do prazo.' : '',
+)
+function saveDates() {
+  if (!task.value || datesError.value) return
+  const start = form.start || null
+  const due = form.due || null
+  if (start === task.value.start_date && due === task.value.due_date) return
+  void save({ start_date: start, due_date: due })
+}
 const chosenLabels = computed(() => props.labels.filter((l) => form.labels.includes(l.id)))
 const readOnly = computed(() => !props.canEdit)
 
@@ -92,7 +112,9 @@ function fill() {
     status: t?.status_id ?? (props.initialStatus || kanban.statuses[0]?.id || ''),
     priority: t?.priority ?? 'medium',
     assignee: t?.assignee_id ?? '',
+    start: t?.start_date ?? '',
     due: t?.due_date ?? '',
+    cycle: t?.cycle_id ?? '',
     labels: t?.labels.map((label) => label.id) ?? [],
   })
   titleError.value = ''
@@ -184,14 +206,16 @@ async function remove() {
 async function create() {
   const title = form.title.trim()
   titleError.value = title ? '' : 'Dê um título para a tarefa.'
-  if (titleError.value || creating.value) return
+  if (titleError.value || datesError.value || creating.value) return
   creating.value = true
   try {
     const created = await kanban.addTask({
       title: title.slice(0, 255),
       description: form.description,
       priority: form.priority,
+      start_date: form.start || null,
       due_date: form.due || null,
+      cycle: form.cycle || null,
       assignee: form.assignee || null,
       label_ids: form.labels,
       ...(form.status && { status: form.status }),
@@ -230,8 +254,15 @@ const refresh = () => task.value && kanban.reload(task.value.id).catch(() => und
       <div class="grid gap-4 sm:grid-cols-2">
         <UiSelect v-model="form.status" label="Status" :options="statusOptions" />
         <UiSelect v-model="form.priority" label="Prioridade" :options="priorityOptions" />
-        <UiSelect v-model="form.assignee" label="Responsável" :options="peopleOptions" />
-        <UiInput v-model="form.due" type="date" label="Prazo" />
+        <UiSelect
+          v-model="form.assignee"
+          label="Responsável"
+          :options="peopleOptions"
+          :class="cycles.length ? '' : 'sm:col-span-2'"
+        />
+        <UiSelect v-if="cycles.length" v-model="form.cycle" label="Ciclo" :options="cycleOptions" />
+        <UiInput v-model="form.start" type="date" label="Início" />
+        <UiInput v-model="form.due" type="date" label="Prazo" :error="datesError" />
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <LabelChip v-for="label in chosenLabels" :key="label.id" :label="label" />
@@ -303,6 +334,10 @@ const refresh = () => task.value && kanban.reload(task.value.id).catch(() => und
           {{ task.is_overdue && !task.completed_at ? 'Atrasada · ' : ''
           }}{{ shortDate(task.due_date) }}
         </li>
+        <li v-if="task.is_blocked && !task.completed_at" class="text-danger">
+          <Ban :size="14" aria-hidden="true" />
+          Bloqueada
+        </li>
         <li v-if="task.assignee_name">
           <UiAvatar :name="task.assignee_name" size="xs" />
           {{ task.assignee_name }}
@@ -335,15 +370,32 @@ const refresh = () => task.value && kanban.reload(task.value.id).catch(() => und
           label="Responsável"
           :options="peopleOptions"
           :disabled="readOnly"
+          :class="cycles.length || task.cycle_id ? '' : 'sm:col-span-2'"
           @update:model-value="save({ assignee: $event || null })"
+        />
+        <UiSelect
+          v-if="cycles.length || task.cycle_id"
+          v-model="form.cycle"
+          label="Ciclo"
+          :options="cycleOptions"
+          :disabled="readOnly"
+          @update:model-value="save({ cycle: $event || null })"
+        />
+        <UiInput
+          v-model="form.start"
+          type="date"
+          label="Início"
+          :disabled="readOnly"
+          @change="saveDates"
         />
         <UiInput
           v-model="form.due"
           type="date"
           label="Prazo"
           :disabled="readOnly"
+          :error="datesError"
           :hint="task.is_overdue ? 'Atrasada' : undefined"
-          @change="save({ due_date: form.due || null })"
+          @change="saveDates"
         />
       </div>
 
@@ -377,6 +429,7 @@ const refresh = () => task.value && kanban.reload(task.value.id).catch(() => und
         :can-edit="canEdit"
         @open="taskId = $event"
       />
+      <TaskRelations :task-id="task.id" :can-edit="canEdit" @open="taskId = $event" />
       <TaskChecklist :task-id="task.id" :can-edit="canEdit" @changed="refresh" />
       <TaskAttachments :task-id="task.id" :due-date="task.due_date ?? ''" :can-edit="canEdit" />
       <TaskGitHubLinks :task-id="task.id" :can-edit="canEdit" />

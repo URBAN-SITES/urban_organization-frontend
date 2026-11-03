@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CalendarClock, Check, GitBranch, MessageSquare, MoreHorizontal } from '@lucide/vue'
+import { Ban, CalendarClock, Check, GitBranch, MessageSquare, MoreHorizontal } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 import { UiAvatar, UiIconButton, UiMenu, type MenuItem } from '@/shared/components'
 import type { Task } from '../types'
@@ -97,6 +97,13 @@ watch(
     </div>
 
     <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-12 text-fg-muted">
+      <span
+        v-if="task.is_blocked && !task.completed_at"
+        class="inline-flex items-center gap-1 text-danger"
+        title="Espera outra tarefa ser concluída"
+      >
+        <Ban :size="14" aria-hidden="true" /> Bloqueada
+      </span>
       <span
         v-if="task.priority !== 'medium'"
         :class="['inline-flex items-center gap-1', PRIORITY_TEXT[priority.tone]]"
