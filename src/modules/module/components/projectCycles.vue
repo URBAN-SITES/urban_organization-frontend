@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { ArrowRight, MoreHorizontal, Pencil, Plus, RefreshCcw, Trash2 } from '@lucide/vue'
+import {
+  ArrowRight,
+  ChartLine,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  RefreshCcw,
+  Trash2,
+} from '@lucide/vue'
 import { computed, reactive, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { getErrorMessage } from '@/app/plugins/axios'
@@ -17,6 +25,7 @@ import { useConfirm } from '@/shared/composables/confirm'
 import { createCycle, deleteCycle, updateCycle } from '../services'
 import type { Cycle, CycleState, Status, Task } from '../types'
 import { addDays, cycleProgress, localToday } from '../utils/timeline'
+import CycleBurndown from './cycleBurndown.vue'
 import { shortDate } from './priority'
 
 /** Ciclos (sprints) do projeto: períodos com as tarefas que entram neles e o andamento. */
@@ -52,7 +61,16 @@ function breakdown(cycle: Cycle) {
   const done = rows.filter((task) => task.completed_at).length
   const doing = rows.filter((task) => !task.completed_at && category(task) === 'in_progress').length
   const blocked = rows.filter((task) => !task.completed_at && task.is_blocked).length
-  return { total: rows.length, done, doing, todo: rows.length - done - doing, blocked }
+  const points = (list: Task[]) => list.reduce((sum, task) => sum + (task.estimate ?? 0), 0)
+  return {
+    total: rows.length,
+    done,
+    doing,
+    todo: rows.length - done - doing,
+    blocked,
+    points: points(rows),
+    pointsDone: points(rows.filter((task) => task.completed_at)),
+  }
 }
 const pct = (part: number, total: number) => (total ? (part * 100) / total : 0)
 
@@ -124,6 +142,13 @@ async function remove(cycle: Cycle) {
   } catch (cause) {
     toast.error(getErrorMessage(cause, 'Não foi possível excluir o ciclo.'))
   }
+}
+
+const chartFor = ref<Cycle | null>(null)
+const chartOpen = ref(false)
+function openChart(cycle: Cycle) {
+  chartFor.value = cycle
+  chartOpen.value = true
 }
 
 const actions = (cycle: Cycle): MenuItem[] => [
@@ -199,7 +224,12 @@ const actions = (cycle: Cycle): MenuItem[] => [
                 >
                 concluído
               </span>
-              <span>{{ cycle.stats.done }} de {{ cycle.stats.total }} tarefas</span>
+              <span>
+                {{ cycle.stats.done }} de {{ cycle.stats.total }} tarefas
+                <template v-if="cycle.stats.points">
+                  · {{ cycle.stats.pointsDone }}/{{ cycle.stats.points }} pts
+                </template>
+              </span>
             </div>
             <div
               class="cy-stack"
@@ -241,19 +271,38 @@ const actions = (cycle: Cycle): MenuItem[] => [
             tempo
           </div>
 
-          <UiButton
-            size="sm"
-            variant="secondary"
-            :icon="ArrowRight"
-            :disabled="!cycle.stats.total"
-            class="justify-self-start"
-            @click="emit('show', cycle.id)"
-          >
-            {{ cycle.stats.total ? 'Ver tarefas no quadro' : 'Sem tarefas ainda' }}
-          </UiButton>
+          <div class="flex flex-wrap gap-2">
+            <UiButton
+              size="sm"
+              variant="secondary"
+              :icon="ArrowRight"
+              :disabled="!cycle.stats.total"
+              @click="emit('show', cycle.id)"
+            >
+              {{ cycle.stats.total ? 'Ver tarefas no quadro' : 'Sem tarefas ainda' }}
+            </UiButton>
+            <UiButton
+              v-if="cycle.state !== 'upcoming' && cycle.stats.total"
+              size="sm"
+              variant="ghost"
+              :icon="ChartLine"
+              @click="openChart(cycle)"
+            >
+              Burndown
+            </UiButton>
+          </div>
         </article>
       </div>
     </div>
+
+    <UiDialog
+      v-model:open="chartOpen"
+      :title="`Burndown · ${chartFor?.name ?? ''}`"
+      description="Quanto ainda faltava no fim de cada dia do ciclo."
+      size="lg"
+    >
+      <CycleBurndown v-if="chartFor" :cycle-id="chartFor.id" />
+    </UiDialog>
 
     <UiDialog
       v-model:open="dialogOpen"
