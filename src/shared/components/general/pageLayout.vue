@@ -3,7 +3,7 @@ import { computed, type Component } from 'vue'
 import TopbarComp from './topbarComp.vue'
 
 /* COMO USAR:
-  <PageLayout :crumbs="['Conta', 'Planos']" title="Planos" description="..." :icon="CreditCard">
+  <PageLayout :crumbs="['Conta', 'Configurações']" title="Configurações" description="..." :icon="Settings">
     <template #actions><UiButton>...</UiButton></template>
     conteúdo
   </PageLayout>
