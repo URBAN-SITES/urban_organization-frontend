@@ -16,6 +16,15 @@ import type {
   CreateStatusRequest,
   CreateTaskRequest,
   Burndown,
+  BulkRequest,
+  CustomField,
+  FieldValue,
+  SaveViewRequest,
+  SavedView,
+  TaskFieldValue,
+  TaskTemplate,
+  WriteCustomFieldRequest,
+  WriteTemplateRequest,
   CreateCycleRequest,
   Cycle,
   FollowState,
@@ -377,4 +386,75 @@ export async function setFollow(taskId: string, following: boolean): Promise<Fol
 
 export async function getBurndown(cycleId: string): Promise<Burndown> {
   return (await api.get<Burndown>(`/cycles/${enc(cycleId)}/burndown/`)).data
+}
+
+// ── Visões salvas, campos personalizados, modelos e edição em massa ─────────
+export async function listSavedViews(sectorId: string): Promise<SavedView[]> {
+  return (await api.get<SavedView[]>(`/sectors/${enc(sectorId)}/views/`)).data
+}
+
+export async function createSavedView(
+  sectorId: string,
+  payload: SaveViewRequest,
+): Promise<SavedView> {
+  return (await api.post<SavedView>(`/sectors/${enc(sectorId)}/views/`, payload)).data
+}
+
+export async function deleteSavedView(id: string): Promise<void> {
+  await api.delete(`/views/${enc(id)}/`)
+}
+
+export async function listCustomFields(sectorId: string): Promise<CustomField[]> {
+  return (await api.get<CustomField[]>(`/sectors/${enc(sectorId)}/fields/`)).data
+}
+
+export async function createCustomField(
+  sectorId: string,
+  payload: WriteCustomFieldRequest,
+): Promise<CustomField> {
+  return (await api.post<CustomField>(`/sectors/${enc(sectorId)}/fields/`, payload)).data
+}
+
+export async function updateCustomField(
+  id: string,
+  payload: Partial<WriteCustomFieldRequest>,
+): Promise<CustomField> {
+  return (await api.patch<CustomField>(`/fields/${enc(id)}/`, payload)).data
+}
+
+export async function deleteCustomField(id: string): Promise<void> {
+  await api.delete(`/fields/${enc(id)}/`)
+}
+
+export async function listTaskFieldValues(taskId: string): Promise<TaskFieldValue[]> {
+  return (await api.get<TaskFieldValue[]>(`/tasks/${enc(taskId)}/fields/`)).data
+}
+
+export async function setTaskFieldValue(
+  taskId: string,
+  fieldId: string,
+  value: FieldValue,
+): Promise<TaskFieldValue> {
+  return (await api.put<TaskFieldValue>(`/tasks/${enc(taskId)}/fields/${enc(fieldId)}/`, { value }))
+    .data
+}
+
+export async function listTemplates(sectorId: string): Promise<TaskTemplate[]> {
+  return (await api.get<TaskTemplate[]>(`/sectors/${enc(sectorId)}/templates/`)).data
+}
+
+export async function createTemplate(
+  sectorId: string,
+  payload: WriteTemplateRequest,
+): Promise<TaskTemplate> {
+  return (await api.post<TaskTemplate>(`/sectors/${enc(sectorId)}/templates/`, payload)).data
+}
+
+export async function deleteTemplate(id: string): Promise<void> {
+  await api.delete(`/templates/${enc(id)}/`)
+}
+
+export async function bulkEditTasks(sectorId: string, payload: BulkRequest): Promise<number> {
+  return (await api.post<{ updated: number }>(`/sectors/${enc(sectorId)}/tasks/bulk/`, payload))
+    .data.updated
 }

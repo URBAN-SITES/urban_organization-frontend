@@ -61,6 +61,7 @@ const hooks = registerHooks({
         'moveTask',
         'restoreTask',
         'setTaskArchived',
+        'bulkEditTasks',
         'updateSector',
         'updateStatus',
         'updateTask',

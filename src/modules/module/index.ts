@@ -36,3 +36,4 @@ export { PROJECT_COLORS, PROJECT_ICONS, projectPercent } from './utils/projectAp
 export { useQuickActionsStore } from './stores/quick'
 export { default as QuickTaskDialog } from './components/quickTaskDialog.vue'
 export { default as ShortcutsDialog } from './components/shortcutsDialog.vue'
+export { default as ProjectFieldsSettings } from './components/projectFieldsSettings.vue'

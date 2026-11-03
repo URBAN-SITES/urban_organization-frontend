@@ -1,10 +1,18 @@
 <script setup lang="ts">
-import { Ban, CalendarClock, Check, GitBranch, MessageSquare, MoreHorizontal } from '@lucide/vue'
+import {
+  Ban,
+  CalendarClock,
+  Check,
+  GitBranch,
+  MessageSquare,
+  MoreHorizontal,
+  Repeat,
+} from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 import { UiAvatar, UiIconButton, UiMenu, type MenuItem } from '@/shared/components'
 import type { Task } from '../types'
 import LabelChip from './labelChip.vue'
-import { PRIORITY_TEXT, priorityOf, shortDate } from './priority'
+import { PRIORITY_TEXT, REPEAT_TEXT, priorityOf, shortDate } from './priority'
 
 /** Cartão do quadro. Arrasta com o mouse; pelo teclado, "Mover para" no menu de ações. */
 const props = defineProps<{ task: Task; draggable: boolean; moveItems: MenuItem[] }>()
@@ -122,6 +130,14 @@ watch(
         <CalendarClock :size="14" aria-hidden="true" />
         <span class="sr-only">{{ task.is_overdue ? 'Atrasada, prazo' : 'Prazo' }}</span>
         {{ shortDate(task.due_date) }}
+      </span>
+      <span
+        v-if="task.recurrence"
+        class="inline-flex items-center"
+        :title="`Repete ${REPEAT_TEXT[task.recurrence]}`"
+      >
+        <Repeat :size="14" aria-hidden="true" />
+        <span class="sr-only">Repete {{ REPEAT_TEXT[task.recurrence] }}</span>
       </span>
       <span
         v-if="task.estimate !== null"
