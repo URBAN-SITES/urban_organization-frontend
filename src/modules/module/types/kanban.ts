@@ -20,6 +20,11 @@ export interface Task extends ITasks {
   cycle_id: UUID | null
   /** alguma tarefa que bloqueia esta ainda está aberta */
   is_blocked: boolean
+  /** código curto do projeto + número (ex.: DEV-12) */
+  key: string | null
+  /** pontos de esforço */
+  estimate: number | null
+  archived_at: ISODateTime | null
 }
 export type CycleState = 'upcoming' | 'current' | 'completed'
 /** Ciclo (sprint) do projeto: um período com as tarefas que entram nele. */
@@ -33,7 +38,26 @@ export interface Cycle {
   state: CycleState
   task_total: number
   task_done: number
+  points_total: number
+  points_done: number
   created_at: ISODateTime
+}
+export interface Burndown {
+  start_date: ISODate
+  end_date: ISODate
+  total: number
+  total_points: number
+  days: { date: ISODate; remaining: number; remaining_points: number }[]
+}
+export interface TrashedTask {
+  id: UUID
+  title: string
+  deleted_at: ISODateTime
+  subtask_count: number
+}
+export interface FollowState {
+  following: boolean
+  followers: number
 }
 export interface CreateCycleRequest {
   name: string
@@ -81,6 +105,10 @@ export interface Sector {
   icon: string
   color: string
   is_private: boolean
+  /** prefixo dos códigos das tarefas (ex.: DEV) */
+  identifier?: string
+  /** concluídas saem do quadro depois de N dias (null: nunca) */
+  auto_archive_days?: number | null
   archived_at: ISODateTime | null
   /** os campos abaixo vêm da listagem e do detalhe; ausentes em respostas de escrita antigas */
   is_favorite?: boolean
@@ -103,6 +131,8 @@ export interface CreateSectorRequest {
   icon?: string
   color?: string
   is_private?: boolean
+  identifier?: string
+  auto_archive_days?: number | null
 }
 export type UpdateSectorRequest = Partial<CreateSectorRequest>
 export interface SectorMember {
@@ -156,6 +186,7 @@ export interface CreateTaskRequest {
   due_date?: ISODate | null
   assignee?: UUID | null
   cycle?: UUID | null
+  estimate?: number | null
   status?: UUID
   parent?: UUID
   label_ids?: UUID[]
@@ -220,6 +251,8 @@ export interface TaskFilters {
   due_after?: string
   overdue?: boolean
   completed?: boolean
+  archived?: boolean
+  key?: string
   search?: string
   ordering?: string
   page?: number

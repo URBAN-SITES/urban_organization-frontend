@@ -41,7 +41,15 @@ const sector = ref<(Sector & { my_role: SectorRole }) | null>(null)
 const missing = ref(false)
 const loading = ref(false)
 const saving = ref(false)
-const form = ref({ name: '', description: '', color: COLORS[0]!, isPrivate: true, wip: '' })
+const form = ref({
+  name: '',
+  description: '',
+  color: COLORS[0]!,
+  isPrivate: true,
+  wip: '',
+  identifier: '',
+  archiveDays: '',
+})
 const newColumn = ref('')
 const adding = ref(false)
 const candidate = ref('')
@@ -69,6 +77,8 @@ async function load() {
       color: loaded.color || COLORS[0]!,
       isPrivate: loaded.is_private,
       wip: '',
+      identifier: loaded.identifier ?? '',
+      archiveDays: loaded.auto_archive_days ? String(loaded.auto_archive_days) : '',
     }
     await Promise.all([
       access.load(props.id),
@@ -96,6 +106,8 @@ async function save() {
       description: form.value.description,
       color: form.value.color,
       is_private: form.value.isPrivate,
+      identifier: form.value.identifier.trim().toUpperCase(),
+      auto_archive_days: form.value.archiveDays.trim() ? Number(form.value.archiveDays) : null,
     })
     const wip = form.value.wip.trim() ? Number(form.value.wip) : null
     if (inProgress.value && wip !== inProgress.value.wip_limit) {
@@ -317,6 +329,34 @@ const field =
                 <option :value="true">Somente membros do setor</option>
                 <option :value="false">Toda a organização</option>
               </select>
+            </label>
+            <label class="grid gap-[6px] text-[13px] font-medium">
+              Código das tarefas
+              <input
+                v-model="form.identifier"
+                maxlength="6"
+                pattern="[A-Za-z0-9]{1,6}"
+                placeholder="Ex.: DEV"
+                :disabled="!canEdit"
+                :class="[field, 'font-normal font-mono uppercase']"
+              />
+              <span class="text-[12px] font-normal text-fg-muted">
+                As tarefas aparecem como {{ (form.identifier || 'DEV').toUpperCase() }}-12.
+              </span>
+            </label>
+            <label class="grid gap-[6px] text-[13px] font-medium">
+              Arquivar concluídas após
+              <input
+                v-model="form.archiveDays"
+                type="number"
+                min="1"
+                max="365"
+                inputmode="numeric"
+                placeholder="Nunca"
+                :disabled="!canEdit"
+                :class="[field, 'font-normal']"
+              />
+              <span class="text-[12px] font-normal text-fg-muted">dias depois de concluídas.</span>
             </label>
           </div>
         </form>

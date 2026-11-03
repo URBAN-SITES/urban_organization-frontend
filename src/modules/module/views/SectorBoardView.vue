@@ -15,6 +15,7 @@ const snapshots = new Map<string, Snapshot>()
 
 <script setup lang="ts">
 import {
+  Archive,
   ArrowRight,
   CalendarDays,
   ChartGantt,
@@ -34,7 +35,8 @@ import {
   X,
   type LucideIcon,
 } from '@lucide/vue'
-import { computed, ref, watch } from 'vue'
+import { useEventListener } from '@vueuse/core'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { getErrorMessage } from '@/app/plugins/axios'
@@ -55,6 +57,7 @@ import {
 } from '@/shared/components'
 import { fetchAllPages } from '@/shared/utils'
 import BoardColumn from '../components/boardColumn.vue'
+import ProjectBin from '../components/projectBin.vue'
 import ProjectCycles from '../components/projectCycles.vue'
 import ProjectIcon from '../components/projectIcon.vue'
 import TaskDetail from '../components/taskDetail.vue'
@@ -71,6 +74,7 @@ import {
   serverFilters,
   type BoardFilters,
 } from '../utils/board'
+import { isPlainShortcut, modalIsOpen } from '../utils/shortcuts'
 
 type View = 'board' | 'list' | 'table' | 'timeline' | 'cycles' | 'meetings' | 'github'
 // abas que não mostram tarefas (sem filtros)
@@ -115,6 +119,22 @@ const VIEW_ICONS: Record<View, LucideIcon> = {
   github: GitBranch,
 }
 const filtersOpen = ref(false)
+const binOpen = ref(false)
+
+// atalhos do projeto (a lista completa aparece com a tecla ?)
+useEventListener(document, 'keydown', (event: KeyboardEvent) => {
+  if (!sector.value || !isPlainShortcut(event, modalIsOpen())) return
+  const key = event.key.toLowerCase()
+  const index = Number(key) - 1
+  if (key === 'c' && canEdit.value && kanban.statuses.length) openCreate()
+  else if (key === 'f' && !TASKLESS.includes(view.value)) filtersOpen.value = !filtersOpen.value
+  else if (key === '/' && !TASKLESS.includes(view.value))
+    void nextTick(() => document.querySelector<HTMLInputElement>('.board-search input')?.focus())
+  else if (Number.isInteger(index) && index >= 0 && index < VIEWS.length)
+    view.value = VIEWS[index]!.value as View
+  else return
+  event.preventDefault()
+})
 
 async function share() {
   try {
@@ -419,6 +439,16 @@ function clearFilters() {
                 />
               </button>
               <button
+                v-if="canEdit"
+                type="button"
+                class="board-glass board-glass-icon"
+                aria-label="Arquivadas e lixeira"
+                title="Arquivadas e lixeira"
+                @click="binOpen = true"
+              >
+                <Archive :size="16" aria-hidden="true" />
+              </button>
+              <button
                 v-if="canManage"
                 type="button"
                 class="board-glass board-glass-icon"
@@ -684,6 +714,8 @@ function clearFilters() {
         </div>
       </template>
     </main>
+
+    <ProjectBin v-if="sector && canEdit" v-model:open="binOpen" :sector="sector" />
 
     <TaskDetail
       v-if="sector"
