@@ -342,6 +342,7 @@ const KEEP = ['LoginView', 'RegisterView']
 <style>
 /* Botões sociais (Google, GitHub): contorno com reflexo laranja, seta que avança no hover. */
 .auth-social {
+  --sweep: rgb(249 159 17 / 0.08);
   position: relative;
   display: flex;
   height: 2.75rem;
@@ -422,131 +423,49 @@ const KEEP = ['LoginView', 'RegisterView']
 }
 
 /*
- * Hover das telas de acesso: um tom mais claro preenche da esquerda para a direita
- * (botões, botões sociais e campos) e a linha dos links cresce no mesmo sentido.
- * O preenchimento fica atrás do conteúdo (z-index -1 dentro do próprio elemento).
+ * Hover das telas de acesso. Botões (UiButton), links (.ui-link) e o contorno dos campos usam
+ * as regras globais de assets/interactions.css; aqui ficam só os ajustes destas telas:
+ * a cor do preenchimento dos botões sociais (--sweep, acima) e o dos campos translúcidos.
  */
-.auth-shell [data-ui='button'],
-.auth-social {
+.auth-shell [data-ui='input'] {
   isolation: isolate;
-  overflow: hidden;
 }
 
-.auth-shell [data-ui='button']::before,
-.auth-social::before,
 .auth-shell [data-ui='input']::before {
   position: absolute;
   inset: 0;
   z-index: -1;
   border-radius: inherit;
   content: '';
-  background: var(--auth-sweep, rgb(255 255 255 / 0.06));
+  background: rgb(255 255 255 / 0.06);
   pointer-events: none;
   transform: scaleX(0);
   transform-origin: left center;
-  transition: transform 460ms cubic-bezier(0.65, 0, 0.35, 1);
+  transition: transform var(--dur-draw) var(--ease-draw);
 }
 
-.auth-shell [data-ui='button']:hover:not(:disabled)::before,
-.auth-social:hover::before,
 .auth-shell [data-ui='input']:hover:has(input:not(:disabled))::before,
 .auth-shell [data-ui='input']:focus-within::before {
   transform: scaleX(1);
 }
 
-/* no botão principal o tom mais claro é o laranja de hover, que agora entra varrendo */
-.auth-shell [data-ui='button'].bg-accent {
-  --auth-sweep: var(--ds-accent-hover);
-}
-
-.auth-shell [data-ui='button'].bg-accent:hover:not(:disabled) {
-  background-color: var(--ds-accent);
-}
-
-/* secundário e fantasma mantêm o fundo de repouso; quem clareia é o preenchimento */
-.auth-shell [data-ui='button'].bg-surface-1:hover:not(:disabled) {
-  background-color: var(--ds-surface-1);
-}
-
-.auth-shell [data-ui='button']:not(.bg-accent, .bg-surface-1):hover:not(:disabled) {
-  background-color: transparent;
-}
-
-.auth-social {
-  --auth-sweep: rgb(249 159 17 / 0.08);
-}
-
-/* campos: o preenchimento fica sob o fundo translúcido; no foco, o contorno laranja inteiro
-   (borda e halo) é desenhado da esquerda para a direita, revelado por um recorte que se abre */
-.auth-shell [data-ui='input'] {
-  isolation: isolate;
-  border-radius: var(--radius-control);
-}
-
-.auth-shell [data-ui='input'] input:focus-visible {
-  border-color: var(--ds-border);
-  box-shadow: none;
-}
-
-.auth-shell [data-ui='input'] input[aria-invalid='true']:focus-visible {
-  border-color: var(--ds-danger);
-}
-
-.auth-shell [data-ui='input']::after {
-  --auth-ring: var(--ds-accent);
-  --auth-halo: var(--ds-accent-soft);
-  position: absolute;
-  inset: 0;
-  border: 1px solid var(--auth-ring);
-  border-radius: inherit;
-  content: '';
-  box-shadow: 0 0 0 3px var(--auth-halo);
-  pointer-events: none;
-  clip-path: inset(-4px calc(100% + 4px) -4px -4px round var(--radius-control));
-  transition: clip-path 460ms cubic-bezier(0.65, 0, 0.35, 1);
-}
-
-.auth-shell [data-ui='input']:focus-within::after {
-  clip-path: inset(-4px -4px -4px -4px round var(--radius-control));
-}
-
-.auth-shell [data-ui='input']:has([aria-invalid='true'])::after {
-  --auth-ring: var(--ds-danger);
-  --auth-halo: var(--ds-danger-soft);
-}
-
-/* links: a linha de baixo cresce da esquerda para a direita sobre um traço apagado */
+/* links de destaque: laranja, com um traço apagado em repouso que a linha cobre no hover */
 .auth-cta {
+  --link-track: rgb(249 159 17 / 0.35);
   border-radius: 4px;
   font-weight: 500;
   color: var(--ds-accent);
-  text-decoration: none;
-  background:
-    linear-gradient(var(--ds-accent), var(--ds-accent)) left bottom / 0% 1px no-repeat,
-    linear-gradient(rgb(249 159 17 / 0.35), rgb(249 159 17 / 0.35)) left bottom / 100% 1px no-repeat;
-  padding-bottom: 2px;
-  transition: background-size 460ms cubic-bezier(0.65, 0, 0.35, 1);
-}
-
-.auth-cta:hover {
-  background-size:
-    100% 1px,
-    100% 1px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .auth-shell [data-ui='button']::before,
-  .auth-social::before,
-  .auth-shell [data-ui='input']::before,
-  .auth-shell [data-ui='input']::after,
-  .auth-cta {
-    transition: none;
-  }
 }
 
 .auth-cta:focus-visible {
   outline: 2px solid var(--ds-accent);
   outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-shell [data-ui='input']::before {
+    transition: none;
+  }
 }
 </style>
 

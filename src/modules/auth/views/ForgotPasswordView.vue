@@ -114,7 +114,7 @@ function useAnotherEmail() {
           </UiButton>
         </div>
 
-        <button type="button" class="auth-cta mt-6 text-13" @click="useAnotherEmail">
+        <button type="button" class="auth-cta ui-link mt-6 text-13" @click="useAnotherEmail">
           Usar outro e-mail
         </button>
       </div>

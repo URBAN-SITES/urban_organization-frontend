@@ -1,0 +1,106 @@
+/*
+ * Interações padrão do app, as mesmas das telas de acesso. Sem camada (como surfaces.css),
+ * para valer por cima dos utilitários do Tailwind.
+ *
+ * - .ui-sweep: no hover um tom mais claro preenche o elemento da esquerda para a direita.
+ *   A cor vem de --sweep (padrão: a cor do texto a 10%). O elemento precisa de position
+ *   (relative, absolute...); aqui não se define para não brigar com utilitários. O UiButton já usa.
+ * - .ui-link: a linha de baixo cresce da esquerda para a direita, na cor do texto.
+ *   --link-track desenha um traço apagado em repouso (opcional).
+ * - Campos (UiInput, data-ui="input"): no foco o contorno inteiro, borda e halo, é desenhado
+ *   da esquerda para a direita.
+ */
+:root {
+  --ease-draw: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-draw: 460ms;
+}
+
+/* ---------- preenchimento da esquerda para a direita ---------- */
+.ui-sweep {
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.ui-sweep::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  content: '';
+  background: var(--sweep, color-mix(in srgb, currentColor 10%, transparent));
+  pointer-events: none;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--dur-draw) var(--ease-draw);
+}
+
+.ui-sweep:hover:not(:disabled, [aria-disabled='true'], [aria-busy='true'])::before {
+  transform: scaleX(1);
+}
+
+/* ---------- link com a linha crescendo ---------- */
+.ui-link {
+  text-decoration: none;
+  background:
+    linear-gradient(currentColor, currentColor) left bottom / 0% 1px no-repeat,
+    linear-gradient(var(--link-track, transparent), var(--link-track, transparent)) left bottom /
+      100% 1px no-repeat;
+  padding-bottom: 1px;
+  transition:
+    background-size var(--dur-draw) var(--ease-draw),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.ui-link:hover,
+.ui-link:focus-visible {
+  background-size:
+    100% 1px,
+    100% 1px;
+}
+
+/* ---------- contorno do campo desenhado no foco ---------- */
+[data-ui='input'] {
+  border-radius: var(--radius-control);
+}
+
+/* o contorno estático do foco sai; quem marca o foco é o desenho abaixo */
+[data-ui='input'] input:focus-visible {
+  border-color: var(--ds-border-strong);
+  box-shadow: none;
+}
+
+[data-ui='input'] input[aria-invalid='true']:focus-visible {
+  border-color: var(--ds-danger);
+}
+
+[data-ui='input']::after {
+  --ring: var(--ds-accent);
+  --halo: var(--ds-accent-soft);
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--ring);
+  border-radius: inherit;
+  content: '';
+  box-shadow: 0 0 0 3px var(--halo);
+  pointer-events: none;
+  /* fechado, o recorte começa além da borda esquerda (inclui o halo de 3px) */
+  clip-path: inset(-4px calc(100% + 4px) -4px -4px round var(--radius-control));
+  transition: clip-path var(--dur-draw) var(--ease-draw);
+}
+
+[data-ui='input']:has(input:focus-visible)::after {
+  clip-path: inset(-4px -4px -4px -4px round var(--radius-control));
+}
+
+[data-ui='input']:has([aria-invalid='true'])::after {
+  --ring: var(--ds-danger);
+  --halo: var(--ds-danger-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-sweep::before,
+  .ui-link,
+  [data-ui='input']::after {
+    transition: none;
+  }
+}

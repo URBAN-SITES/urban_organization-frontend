@@ -25,7 +25,7 @@ import { House } from '@lucide/vue'
         O endereço pode ter mudado ou a página não existe mais. Verifique o link ou volte para o
         início.
       </p>
-      <RouterLink to="/" class="notfound-action">
+      <RouterLink to="/" class="notfound-action ui-sweep">
         <House :size="16" aria-hidden="true" />
         Voltar ao início
       </RouterLink>
@@ -66,6 +66,8 @@ import { House } from '@lucide/vue'
 }
 
 .notfound-action {
+  --sweep: #fab13f;
+  position: relative;
   display: inline-flex;
   height: 40px;
   align-items: center;
@@ -81,10 +83,6 @@ import { House } from '@lucide/vue'
   transition:
     background-color var(--dur-fast) var(--ease-out),
     transform var(--dur-fast) var(--ease-out);
-}
-
-.notfound-action:hover {
-  background: #fab13f;
 }
 
 .notfound-action:active {

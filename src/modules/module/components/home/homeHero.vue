@@ -62,17 +62,17 @@ const shell = useShell()
             <CircleAlert :size="16" aria-hidden="true" />
             {{ data.overdue }} {{ data.overdue === 1 ? 'atrasada' : 'atrasadas' }}
           </span>
-          <RouterLink :to="projectsTo" class="hero-action">
+          <RouterLink :to="projectsTo" class="hero-action ui-sweep">
             <FolderKanban :size="16" aria-hidden="true" />
             Projetos
           </RouterLink>
-          <RouterLink to="/calendario" class="hero-action">
+          <RouterLink to="/calendario" class="hero-action ui-sweep">
             <CalendarDays :size="16" aria-hidden="true" />
             Calendário
           </RouterLink>
           <button
             type="button"
-            class="hero-action hero-action-primary"
+            class="hero-action hero-action-primary ui-sweep"
             aria-keyshortcuts="Control+K Meta+K"
             @click="shell.openPalette()"
           >
@@ -131,6 +131,8 @@ const shell = useShell()
 }
 
 .hero-action {
+  --sweep: rgb(255 255 255 / 0.1);
+  position: relative;
   display: inline-flex;
   height: 36px;
   cursor: pointer;
@@ -151,7 +153,6 @@ const shell = useShell()
 
 .hero-action:hover {
   border-color: rgb(255 255 255 / 0.26);
-  background: rgb(255 255 255 / 0.12);
 }
 
 .hero-action:active {
@@ -164,6 +165,7 @@ const shell = useShell()
 }
 
 .hero-action-primary {
+  --sweep: #fab13f;
   border-color: transparent;
   background: #f99f11;
   font-weight: 500;
@@ -173,7 +175,6 @@ const shell = useShell()
 
 .hero-action-primary:hover {
   border-color: transparent;
-  background: #fab13f;
 }
 
 @media (prefers-reduced-motion: reduce) {

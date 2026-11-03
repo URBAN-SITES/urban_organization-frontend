@@ -121,7 +121,7 @@ function exportInvoices() {
           <h2 class="text-16 font-semibold text-fg">Faturas</h2>
           <button
             type="button"
-            class="cursor-pointer text-[13px] font-medium text-accent hover:underline"
+            class="cursor-pointer text-[13px] font-medium text-accent ui-link"
             @click="exportInvoices"
           >
             Exportar
@@ -159,7 +159,7 @@ function exportInvoices() {
                   <button
                     type="button"
                     :class="[
-                      'cursor-pointer hover:underline',
+                      'cursor-pointer ui-link',
                       invoice.status === 'paid' ? 'text-fg-muted' : 'font-semibold',
                     ]"
                     @click="handleInvoice(invoice)"
@@ -178,7 +178,7 @@ function exportInvoices() {
           <h2 class="text-16 font-semibold text-fg">Método de pagamento</h2>
           <button
             type="button"
-            class="cursor-pointer text-[13px] font-medium text-accent hover:underline"
+            class="cursor-pointer text-[13px] font-medium text-accent ui-link"
             @click="router.push({ name: 'Payment' })"
           >
             Alterar

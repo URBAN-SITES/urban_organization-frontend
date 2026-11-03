@@ -327,7 +327,7 @@ const field =
             <button
               v-if="canEdit"
               type="button"
-              class="cursor-pointer text-[13px] font-medium text-accent hover:underline"
+              class="cursor-pointer text-[13px] font-medium text-accent ui-link"
               @click="adding = !adding"
             >
               Adicionar

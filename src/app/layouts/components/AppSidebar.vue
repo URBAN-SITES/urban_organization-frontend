@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import { ChevronLeft } from '@lucide/vue'
-import { onKeyStroke, useMediaQuery, useStorage } from '@vueuse/core'
-import { computed, onMounted, ref, watch } from 'vue'
+import { onClickOutside, onKeyStroke, useMutationObserver } from '@vueuse/core'
+import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/modules/auth'
 import { useSectorsStore } from '@/modules/module'
 import { useOrganizationsStore } from '@/modules/organizations'
-import { UiTooltip } from '@/shared/components'
 import SidebarPanel from './SidebarPanel.vue'
 
 const auth = useAuthStore()
@@ -14,29 +12,70 @@ const organizations = useOrganizationsStore()
 const sectors = useSectorsStore()
 const route = useRoute()
 
-// desktop: recolhida ou não é preferência do usuário, guardada no navegador.
-// tablet: fica compacta e abre por cima do conteúdo só quando pedida.
-const collapsed = useStorage('inceptum:sidebar-collapsed', false)
-const isTablet = useMediaQuery('(max-width: 1023.98px)')
-const tabletOpen = ref(false)
-const isCollapsed = computed(() => (isTablet.value ? !tabletOpen.value : collapsed.value))
-const overlay = computed(() => isTablet.value && tabletOpen.value)
-const toggleLabel = computed(() =>
-  isCollapsed.value ? 'Expandir barra lateral' : 'Recolher barra lateral',
+/*
+ * A barra fica sempre compacta (só ícones) e abre por cima do conteúdo, sem empurrar a página:
+ * - mouse: abre ao passar por cima e fecha ao sair, com um pequeno atraso para não piscar
+ *   quando o cursor só cruza a barra;
+ * - teclado: abre quando o foco (Tab) entra nela e fecha quando sai;
+ * - toque: um toque no fundo da barra abre; tocar fora, Esc ou trocar de tela fecha;
+ * - menus da organização e da conta abertos seguram a barra aberta até fecharem.
+ */
+const OPEN_DELAY = 110
+const CLOSE_DELAY = 240
+
+const aside = useTemplateRef<HTMLElement>('aside')
+const hovering = ref(false)
+const keyboardFocus = ref(false)
+const touchOpen = ref(false)
+const menuOpen = ref(false)
+const expanded = computed(
+  () => hovering.value || keyboardFocus.value || touchOpen.value || menuOpen.value,
 )
 
-function toggle() {
-  if (isTablet.value) tabletOpen.value = !tabletOpen.value
-  else collapsed.value = !collapsed.value
+let timer: ReturnType<typeof setTimeout> | undefined
+function setHover(value: boolean) {
+  clearTimeout(timer)
+  timer = setTimeout(() => (hovering.value = value), value ? OPEN_DELAY : CLOSE_DELAY)
+}
+onBeforeUnmount(() => clearTimeout(timer))
+
+function onPointerEnter(event: PointerEvent) {
+  if (event.pointerType !== 'touch') setHover(true)
+}
+function onPointerLeave(event: PointerEvent) {
+  if (event.pointerType !== 'touch') setHover(false)
+}
+// toque no fundo da barra (fora de links e botões) abre; nos ícones segue navegando direto
+function onPointerDown(event: PointerEvent) {
+  if (event.pointerType !== 'touch' || expanded.value) return
+  if (!(event.target as Element).closest('a, button')) touchOpen.value = true
+}
+onClickOutside(aside, () => (touchOpen.value = false))
+
+function onFocusIn(event: FocusEvent) {
+  if ((event.target as Element).matches(':focus-visible')) keyboardFocus.value = true
+}
+function onFocusOut(event: FocusEvent) {
+  if (!aside.value?.contains(event.relatedTarget as Node | null)) keyboardFocus.value = false
 }
 
+// os menus vão para o <body>: o estado aberto vem do aria-expanded dos gatilhos
+useMutationObserver(
+  aside,
+  () => (menuOpen.value = !!aside.value?.querySelector('[aria-haspopup][aria-expanded="true"]')),
+  { subtree: true, attributes: true, attributeFilter: ['aria-expanded'] },
+)
+
+function close() {
+  clearTimeout(timer)
+  hovering.value = keyboardFocus.value = touchOpen.value = false
+}
 watch(
   () => route.fullPath,
-  () => (tabletOpen.value = false),
+  () => (touchOpen.value = false),
 )
-watch(isTablet, () => (tabletOpen.value = false))
 onKeyStroke('Escape', () => {
-  if (overlay.value) tabletOpen.value = false
+  if (expanded.value && !menuOpen.value) close()
 })
 
 // páginas sem guard abrem sem o usuário carregado: confere a sessão
@@ -58,41 +97,22 @@ watch(
 </script>
 
 <template>
-  <div
-    class="sb-host sticky top-0 z-40 hidden h-dvh shrink-0 md:block"
-    :data-collapsed="isCollapsed || undefined"
-    :data-tablet="isTablet || undefined"
-  >
-    <Transition name="ui-fade">
-      <div
-        v-if="overlay"
-        class="fixed inset-0 bg-black/60 backdrop-blur-[2px]"
-        aria-hidden="true"
-        @click="tabletOpen = false"
-      />
-    </Transition>
-
+  <!-- o espaço reservado é sempre o da barra compacta: abrir não empurra o conteúdo -->
+  <div class="sb-host sticky top-0 z-40 hidden h-dvh shrink-0 md:block">
     <aside
+      ref="aside"
       class="app-sidebar dark"
-      :class="{ 'is-overlay': overlay }"
-      :data-collapsed="isCollapsed || undefined"
+      :class="{ 'is-open': expanded }"
+      :data-collapsed="!expanded || undefined"
       aria-label="Barra lateral"
+      @pointerenter="onPointerEnter"
+      @pointerleave="onPointerLeave"
+      @pointerdown="onPointerDown"
+      @focusin="onFocusIn"
+      @focusout="onFocusOut"
     >
-      <SidebarPanel :collapsed="isCollapsed" />
+      <SidebarPanel :collapsed="!expanded" />
     </aside>
-
-    <UiTooltip :text="toggleLabel" placement="right" :delay="300" class="sb-toggle-anchor">
-      <button
-        type="button"
-        data-ui="sidebar-toggle"
-        class="sb-toggle"
-        :aria-label="toggleLabel"
-        :aria-expanded="!isCollapsed"
-        @click="toggle"
-      >
-        <ChevronLeft :size="14" :stroke-width="2.25" aria-hidden="true" />
-      </button>
-    </UiTooltip>
   </div>
 </template>
 
@@ -117,12 +137,6 @@ watch(
 }
 
 .sb-host {
-  width: var(--sb-wide);
-  transition: width 300ms var(--sb-ease);
-}
-
-.sb-host[data-collapsed],
-.sb-host[data-tablet] {
   width: var(--sb-rail);
 }
 
@@ -140,71 +154,21 @@ watch(
     radial-gradient(120% 40% at 0% 0%, rgb(249 159 17 / 0.07), transparent 60%), var(--sb-bg);
   color: var(--sb-text);
   transition:
-    width 300ms var(--sb-ease),
-    box-shadow 300ms var(--sb-ease);
+    width 280ms var(--sb-ease),
+    box-shadow 280ms var(--sb-ease),
+    border-color 280ms var(--sb-ease);
 }
 
 .app-sidebar[data-collapsed] {
   width: var(--sb-rail);
 }
 
-.app-sidebar.is-overlay {
-  box-shadow: 24px 0 48px -12px rgb(0 0 0 / 0.6);
-}
-
-/* botão de recolher: preso na borda, aparece com mais força ao passar o mouse na barra */
-.sb-toggle-anchor {
-  position: absolute;
-  top: 26px;
-  right: -12px;
-  z-index: 2;
-}
-
-.sb-toggle {
-  display: grid;
-  width: 24px;
-  height: 24px;
-  place-items: center;
-  border: 1px solid var(--sb-border-strong);
-  border-radius: 999px;
-  background: var(--sb-surface);
-  color: var(--sb-muted);
-  cursor: pointer;
-  opacity: 0.7;
-  transition:
-    opacity 160ms ease-out,
-    color 160ms ease-out,
-    border-color 160ms ease-out,
-    box-shadow 200ms ease-out,
-    scale 120ms ease-out;
-}
-
-.sb-host:hover .sb-toggle,
-.sb-toggle:focus-visible {
-  opacity: 1;
-}
-
-.sb-toggle:hover {
-  border-color: rgb(249 159 17 / 0.6);
-  color: var(--sb-accent);
-  box-shadow: 0 0 0 4px rgb(249 159 17 / 0.1);
-}
-
-.sb-toggle:active {
-  scale: 0.92;
-}
-
-.sb-toggle:focus-visible {
-  outline: 2px solid var(--sb-accent);
-  outline-offset: 2px;
-}
-
-.sb-toggle svg {
-  transition: transform 300ms var(--sb-ease);
-}
-
-.sb-host[data-collapsed] .sb-toggle svg {
-  transform: rotate(180deg);
+/* aberta por cima da página: sombra longa e borda um pouco mais clara */
+.app-sidebar.is-open {
+  border-right-color: var(--sb-border-strong);
+  box-shadow:
+    24px 0 48px -16px rgb(0 0 0 / 0.55),
+    1px 0 0 rgb(249 159 17 / 0.08);
 }
 
 /* ---------- marca ---------- */
@@ -371,6 +335,29 @@ watch(
   text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
+}
+
+/* compacta: no lugar do título, um traço curto centralizado separa os grupos */
+.sb-group-title {
+  position: relative;
+}
+
+.sb-group-title::before {
+  position: absolute;
+  top: 50%;
+  left: calc(50% - 10px);
+  width: 20px;
+  height: 1px;
+  content: '';
+  background: var(--sb-border-strong);
+  opacity: 0;
+  transition: opacity 160ms ease-out;
+  pointer-events: none;
+}
+
+[data-collapsed] .sb-group + .sb-group .sb-group-title::before {
+  opacity: 1;
+  transition-delay: 120ms;
 }
 
 .sb-section-toggle {

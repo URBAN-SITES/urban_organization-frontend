@@ -155,11 +155,11 @@ async function handleGoogleCredential(credential: string) {
           <template #label>
             <span class="text-13 text-fg-muted">
               Aceito os
-              <RouterLink :to="{ name: 'TermsOfService' }" target="_blank" class="auth-cta"
+              <RouterLink :to="{ name: 'TermsOfService' }" target="_blank" class="auth-cta ui-link"
                 >Termos de uso</RouterLink
               >
               e a
-              <RouterLink :to="{ name: 'PrivacyPolicy' }" target="_blank" class="auth-cta"
+              <RouterLink :to="{ name: 'PrivacyPolicy' }" target="_blank" class="auth-cta ui-link"
                 >Política de privacidade</RouterLink
               >
             </span>
@@ -189,7 +189,7 @@ async function handleGoogleCredential(credential: string) {
 
     <p class="mt-7 text-center text-14 text-fg-muted">
       Já tem uma conta?
-      <RouterLink :to="navigation.to('Login')" class="auth-cta">Entrar</RouterLink>
+      <RouterLink :to="navigation.to('Login')" class="auth-cta ui-link">Entrar</RouterLink>
     </p>
   </section>
 </template>

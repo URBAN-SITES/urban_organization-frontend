@@ -134,7 +134,7 @@ async function handleGoogleCredential(credential: string) {
             <span class="text-13 text-fg-muted">Lembrar de mim</span>
           </template>
         </UiCheckbox>
-        <RouterLink :to="navigation.to('ForgotPassword')" class="auth-cta text-13">
+        <RouterLink :to="navigation.to('ForgotPassword')" class="auth-cta ui-link text-13">
           Esqueceu sua senha?
         </RouterLink>
       </div>
@@ -158,7 +158,7 @@ async function handleGoogleCredential(credential: string) {
 
     <p class="mt-7 text-center text-14 text-fg-muted">
       Ainda não tem uma conta?
-      <RouterLink :to="navigation.to('Register')" class="auth-cta">Criar conta</RouterLink>
+      <RouterLink :to="navigation.to('Register')" class="auth-cta ui-link">Criar conta</RouterLink>
     </p>
   </section>
 </template>
