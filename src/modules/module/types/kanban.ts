@@ -15,7 +15,45 @@ export interface Task extends ITasks {
   labels: Label[]
   subtask_total: number
   subtask_done: number
+  /** início planejado (linha do tempo); o fim é o due_date */
+  start_date: ISODate | null
+  cycle_id: UUID | null
+  /** alguma tarefa que bloqueia esta ainda está aberta */
+  is_blocked: boolean
 }
+export type CycleState = 'upcoming' | 'current' | 'completed'
+/** Ciclo (sprint) do projeto: um período com as tarefas que entram nele. */
+export interface Cycle {
+  id: UUID
+  sector_id: UUID
+  name: string
+  description: string
+  start_date: ISODate
+  end_date: ISODate
+  state: CycleState
+  task_total: number
+  task_done: number
+  created_at: ISODateTime
+}
+export interface CreateCycleRequest {
+  name: string
+  description?: string
+  start_date: ISODate
+  end_date: ISODate
+}
+export type UpdateCycleRequest = Partial<CreateCycleRequest>
+export interface RelatedTask {
+  id: UUID
+  title: string
+  status_name: string
+  is_done: boolean
+}
+/** "Bloqueada por" e "bloqueando": os dois lados do mesmo vínculo. */
+export interface TaskRelations {
+  blocked_by: RelatedTask[]
+  blocking: RelatedTask[]
+}
+export type RelationKind = keyof TaskRelations
 /** Quem pode ver o projeto: opções de responsável e de @menção. */
 export interface Person {
   id: UUID
@@ -114,8 +152,10 @@ export interface CreateTaskRequest {
   title: string
   description?: string
   priority?: Task['priority']
+  start_date?: ISODate | null
   due_date?: ISODate | null
   assignee?: UUID | null
+  cycle?: UUID | null
   status?: UUID
   parent?: UUID
   label_ids?: UUID[]
@@ -174,6 +214,8 @@ export interface TaskFilters {
   due_date__isnull?: boolean
   parent?: string
   parent__isnull?: boolean
+  cycle?: string
+  cycle__isnull?: boolean
   due_before?: string
   due_after?: string
   overdue?: boolean

@@ -32,6 +32,9 @@ const task = (over: Partial<Task>): Task => ({
   subtask_total: 0,
   subtask_done: 0,
   labels: [],
+  start_date: null,
+  cycle_id: null,
+  is_blocked: false,
   created_at: '',
   ...over,
 })
@@ -127,4 +130,15 @@ test('maps board filters to API params for the server-side table', () => {
     assignee__isnull: true,
     due_date__isnull: true,
   })
+})
+
+test('filtra por ciclo, fora de ciclos, e envia o mesmo para a API', () => {
+  const rows = [task({ id: 'a', cycle_id: 'c1' }), task({ id: 'b' })]
+  const pick = (cycle: string) =>
+    filterTasks(rows, { ...NO_FILTERS, cycle }, '', null).map((t) => t.id)
+  assert.deepEqual(pick('c1'), ['a'])
+  assert.deepEqual(pick('none'), ['b'])
+  assert.deepEqual(pick(''), ['a', 'b'])
+  assert.equal(serverFilters({ ...NO_FILTERS, cycle: 'c1' }, '', null).cycle, 'c1')
+  assert.equal(serverFilters({ ...NO_FILTERS, cycle: 'none' }, '', null).cycle__isnull, true)
 })
