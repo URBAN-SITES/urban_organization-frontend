@@ -32,6 +32,7 @@ import { useKanbanStore } from '../stores'
 import type {
   CustomField,
   Cycle,
+  Epic,
   Label,
   Person,
   Recurrence,
@@ -61,6 +62,7 @@ const props = defineProps<{
   people: Person[]
   labels: Label[]
   cycles: Cycle[]
+  epics: Epic[]
   fields: CustomField[]
   templates: TaskTemplate[]
   initialStatus: string
@@ -99,6 +101,7 @@ const form = reactive({
   start: '',
   due: '',
   cycle: '',
+  epic: '',
   estimate: '',
   recurrence: '' as Recurrence,
   labels: [] as string[],
@@ -163,6 +166,12 @@ const cycleOptions = computed(() => [
   ...props.cycles
     .filter((cycle) => cycle.state !== 'completed' || cycle.id === form.cycle)
     .map((cycle) => ({ value: cycle.id, label: cycle.name })),
+])
+const epicOptions = computed(() => [
+  { value: '', label: 'Sem épico' },
+  ...props.epics
+    .filter((epic) => !['done', 'cancelled'].includes(epic.state) || epic.id === form.epic)
+    .map((epic) => ({ value: epic.id, label: epic.name })),
 ])
 const datesError = computed(() =>
   form.start && form.due && form.start > form.due ? 'O início precisa ser antes do prazo.' : '',
@@ -240,6 +249,7 @@ function fill() {
     start: t?.start_date ?? '',
     due: t?.due_date ?? '',
     cycle: t?.cycle_id ?? '',
+    epic: t?.epic_id ?? '',
     estimate: t?.estimate === null || t?.estimate === undefined ? '' : String(t.estimate),
     recurrence: t?.recurrence ?? '',
     labels: t?.labels.map((label) => label.id) ?? [],
@@ -353,6 +363,7 @@ async function create() {
       start_date: form.start || null,
       due_date: form.due || null,
       cycle: form.cycle || null,
+      epic: form.epic || null,
       assignee: form.assignee || null,
       label_ids: form.labels,
       estimate: form.estimate === '' ? null : Number(form.estimate),
@@ -416,6 +427,13 @@ const refresh = () => task.value && kanban.reload(task.value.id).catch(() => und
         <UiInput v-model="form.start" type="date" label="Início" />
         <UiInput v-model="form.due" type="date" label="Prazo" :error="datesError" />
         <UiSelect v-model="form.estimate" label="Estimativa" :options="estimateOptions" />
+        <UiSelect
+          v-if="epics.length"
+          v-model="form.epic"
+          label="Épico"
+          class="sm:col-span-2"
+          :options="epicOptions"
+        />
         <UiSelect v-model="form.recurrence" label="Repetir" :options="REPEAT_OPTIONS" />
       </div>
       <div class="flex flex-wrap items-center gap-2">
@@ -567,6 +585,15 @@ const refresh = () => task.value && kanban.reload(task.value.id).catch(() => und
           @update:model-value="save({ recurrence: $event as Recurrence })"
         />
       </div>
+
+      <UiSelect
+        v-if="epics.length || task.epic_id"
+        v-model="form.epic"
+        label="Épico"
+        :options="epicOptions"
+        :disabled="readOnly"
+        @update:model-value="save({ epic: $event || null })"
+      />
 
       <TaskFields :task-id="task.id" :fields="fields" :can-edit="canEdit" />
 

@@ -6,12 +6,12 @@ import { getErrorMessage } from '@/app/plugins/axios'
 import { UiButton, UiIconButton, UiSelect } from '@/shared/components'
 import { useConfirm } from '@/shared/composables/confirm'
 import { useKanbanStore } from '../stores'
-import type { BulkRequest, Cycle, Person } from '../types'
+import type { BulkRequest, Cycle, Epic, Person } from '../types'
 import { PRIORITIES } from './priority'
 
 /** Barra flutuante da seleção: muda, arquiva ou exclui várias tarefas de uma vez. */
 const selected = defineModel<string[]>('selected', { required: true })
-const props = defineProps<{ people: Person[]; cycles: Cycle[] }>()
+const props = defineProps<{ people: Person[]; cycles: Cycle[]; epics: Epic[] }>()
 const kanban = useKanbanStore()
 const confirm = useConfirm()
 const busy = ref(false)
@@ -61,6 +61,15 @@ const pickAssignee = (value: string) =>
   value && apply({ assignee: value === 'none' ? null : value }, 'atualizadas')
 const pickPriority = (value: string) =>
   value && apply({ priority: value as BulkRequest['priority'] }, 'atualizadas')
+const epicOptions = computed(() => [
+  { value: '', label: 'Épico…' },
+  { value: 'none', label: 'Sem épico' },
+  ...props.epics
+    .filter((epic) => !['done', 'cancelled'].includes(epic.state))
+    .map((epic) => ({ value: epic.id, label: epic.name })),
+])
+const pickEpic = (value: string) =>
+  value && apply({ epic: value === 'none' ? null : value }, 'atualizadas')
 const pickCycle = (value: string) =>
   value && apply({ cycle: value === 'none' ? null : value }, 'atualizadas')
 
@@ -120,6 +129,15 @@ async function remove() {
           :disabled="busy"
           class="w-32"
           @update:model-value="pickCycle"
+        />
+        <UiSelect
+          v-if="epics.length"
+          model-value=""
+          aria-label="Épico"
+          :options="epicOptions"
+          :disabled="busy"
+          class="w-32"
+          @update:model-value="pickEpic"
         />
         <UiButton
           size="sm"

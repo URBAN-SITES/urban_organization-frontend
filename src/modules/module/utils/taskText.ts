@@ -83,6 +83,13 @@ export function historyLines(entry: Pick<TaskActivity, 'action' | 'changes'>): s
     else if (field === 'status') lines.push(`moveu de ${from ?? '—'} para ${to ?? '—'}`)
     else if (field === 'labels')
       lines.push(to ? `mudou as etiquetas para ${to}` : 'removeu as etiquetas')
+    else if (field === 'start_date')
+      lines.push(to ? `mudou o início para ${day(to)}` : 'removeu o início')
+    else if (field === 'cycle') lines.push(to ? `colocou no ciclo ${to}` : 'tirou do ciclo')
+    else if (field === 'epic') lines.push(to ? `colocou no épico ${to}` : 'tirou do épico')
+    else if (field === 'estimate')
+      lines.push(to === null ? 'removeu a estimativa' : `estimou em ${to} pontos`)
+    else if (field === 'repeats') lines.push('repetiu a tarefa')
   }
   return lines.length ? lines : ['atualizou a tarefa']
 }

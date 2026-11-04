@@ -16,6 +16,11 @@ import type {
   CreateStatusRequest,
   CreateTaskRequest,
   Burndown,
+  Epic,
+  IntakeRequest,
+  PageSummary,
+  ProjectPage,
+  WriteEpicRequest,
   BulkRequest,
   CustomField,
   FieldValue,
@@ -457,4 +462,69 @@ export async function deleteTemplate(id: string): Promise<void> {
 export async function bulkEditTasks(sectorId: string, payload: BulkRequest): Promise<number> {
   return (await api.post<{ updated: number }>(`/sectors/${enc(sectorId)}/tasks/bulk/`, payload))
     .data.updated
+}
+
+// ── Épicos, páginas e pedidos ────────────────────────────────────────────────
+export async function listEpics(sectorId: string): Promise<Epic[]> {
+  return (await api.get<Epic[]>(`/sectors/${enc(sectorId)}/epics/`)).data
+}
+
+export async function createEpic(sectorId: string, payload: WriteEpicRequest): Promise<Epic> {
+  return (await api.post<Epic>(`/sectors/${enc(sectorId)}/epics/`, payload)).data
+}
+
+export async function updateEpic(id: string, payload: Partial<WriteEpicRequest>): Promise<Epic> {
+  return (await api.patch<Epic>(`/epics/${enc(id)}/`, payload)).data
+}
+
+export async function deleteEpic(id: string): Promise<void> {
+  await api.delete(`/epics/${enc(id)}/`)
+}
+
+export async function listPages(sectorId: string): Promise<PageSummary[]> {
+  return (await api.get<PageSummary[]>(`/sectors/${enc(sectorId)}/pages/`)).data
+}
+
+export async function getPage(id: string): Promise<ProjectPage> {
+  return (await api.get<ProjectPage>(`/pages/${enc(id)}/`)).data
+}
+
+export async function createPage(
+  sectorId: string,
+  payload: Pick<ProjectPage, 'title'> & Partial<Pick<ProjectPage, 'content'>>,
+): Promise<ProjectPage> {
+  return (await api.post<ProjectPage>(`/sectors/${enc(sectorId)}/pages/`, payload)).data
+}
+
+export async function updatePage(
+  id: string,
+  payload: Partial<Pick<ProjectPage, 'title' | 'content' | 'is_pinned'>>,
+): Promise<ProjectPage> {
+  return (await api.patch<ProjectPage>(`/pages/${enc(id)}/`, payload)).data
+}
+
+export async function deletePage(id: string): Promise<void> {
+  await api.delete(`/pages/${enc(id)}/`)
+}
+
+export async function listIntake(sectorId: string): Promise<IntakeRequest[]> {
+  return (await api.get<IntakeRequest[]>(`/sectors/${enc(sectorId)}/intake/`)).data
+}
+
+export async function createIntake(
+  sectorId: string,
+  payload: { title: string; description?: string },
+): Promise<IntakeRequest> {
+  return (await api.post<IntakeRequest>(`/sectors/${enc(sectorId)}/intake/`, payload)).data
+}
+
+export async function acceptIntake(
+  id: string,
+  payload: { status?: string; priority?: Task['priority']; assignee?: string | null },
+): Promise<IntakeRequest> {
+  return (await api.post<IntakeRequest>(`/intake/${enc(id)}/accept/`, payload)).data
+}
+
+export async function declineIntake(id: string, note: string): Promise<IntakeRequest> {
+  return (await api.post<IntakeRequest>(`/intake/${enc(id)}/decline/`, { note })).data
 }
