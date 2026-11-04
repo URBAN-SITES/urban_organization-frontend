@@ -1,5 +1,14 @@
 <script lang="ts">
-import type { CustomField, Cycle, Label, Person, Sector, SectorRole, TaskTemplate } from '../types'
+import type {
+  CustomField,
+  Cycle,
+  Epic,
+  Label,
+  Person,
+  Sector,
+  SectorRole,
+  TaskTemplate,
+} from '../types'
 
 // último estado visto de cada projeto, fora da instância (sobrevive a sair e voltar):
 // reabrir um projeto mostra na hora o que já havia e atualiza por trás, sem trocar o quadro
@@ -11,6 +20,7 @@ type Snapshot = {
   cycles: Cycle[]
   fields: CustomField[]
   templates: TaskTemplate[]
+  epics: Epic[]
 }
 const snapshots = new Map<string, Snapshot>()
 </script>
@@ -21,7 +31,10 @@ import {
   ArrowRight,
   CalendarDays,
   ChartGantt,
+  FileText,
   FolderKanban,
+  Inbox,
+  Milestone,
   IterationCw,
   GitBranch,
   LayoutList,
@@ -62,6 +75,9 @@ import BoardColumn from '../components/boardColumn.vue'
 import BulkBar from '../components/bulkBar.vue'
 import ProjectBin from '../components/projectBin.vue'
 import ProjectCycles from '../components/projectCycles.vue'
+import ProjectEpics from '../components/projectEpics.vue'
+import ProjectIntake from '../components/projectIntake.vue'
+import ProjectPages from '../components/projectPages.vue'
 import ProjectIcon from '../components/projectIcon.vue'
 import SavedViews from '../components/savedViews.vue'
 import TaskDetail from '../components/taskDetail.vue'
@@ -72,6 +88,7 @@ import {
   getSector,
   listCustomFields,
   listCycles,
+  listEpics,
   listLabels,
   listSectorPeople,
   listTemplates,
@@ -88,9 +105,19 @@ import {
 } from '../utils/board'
 import { isPlainShortcut, modalIsOpen } from '../utils/shortcuts'
 
-type View = 'board' | 'list' | 'table' | 'timeline' | 'cycles' | 'meetings' | 'github'
+type View =
+  | 'board'
+  | 'list'
+  | 'table'
+  | 'timeline'
+  | 'cycles'
+  | 'epics'
+  | 'pages'
+  | 'intake'
+  | 'meetings'
+  | 'github'
 // abas que não mostram tarefas (sem filtros)
-const TASKLESS: View[] = ['cycles', 'meetings', 'github']
+const TASKLESS: View[] = ['cycles', 'epics', 'pages', 'intake', 'meetings', 'github']
 
 const props = defineProps<{ sectorId: string }>()
 const router = useRouter()
@@ -105,6 +132,7 @@ const labels = ref<Label[]>([])
 const cycles = ref<Cycle[]>([])
 const fields = ref<CustomField[]>([])
 const templates = ref<TaskTemplate[]>([])
+const epics = ref<Epic[]>([])
 const selected = ref<string[]>([])
 const activeView = ref('')
 const loading = ref(true)
@@ -122,6 +150,9 @@ const VIEWS = [
   { value: 'table', label: 'Tabela' },
   { value: 'timeline', label: 'Linha do tempo' },
   { value: 'cycles', label: 'Ciclos' },
+  { value: 'epics', label: 'Épicos' },
+  { value: 'pages', label: 'Páginas' },
+  { value: 'intake', label: 'Pedidos' },
   { value: 'meetings', label: 'Reuniões' },
   { value: 'github', label: 'GitHub' },
 ]
@@ -131,6 +162,9 @@ const VIEW_ICONS: Record<View, LucideIcon> = {
   table: Table2,
   timeline: ChartGantt,
   cycles: IterationCw,
+  epics: Milestone,
+  pages: FileText,
+  intake: Inbox,
   meetings: Video,
   github: GitBranch,
 }
@@ -225,6 +259,17 @@ const cycleFilterOptions = computed(() => [
 ])
 const currentCycle = computed(() => cycles.value.find((cycle) => cycle.state === 'current'))
 
+function showEpic(epicId: string) {
+  filters.value = { ...NO_FILTERS, epic: epicId }
+  search.value = ''
+  view.value = 'board'
+}
+const epicFilterOptions = computed(() => [
+  { value: '', label: 'Épico: todos' },
+  { value: 'none', label: 'Fora de épicos' },
+  ...epics.value.map((epic) => ({ value: epic.id, label: epic.name })),
+])
+
 function showCycle(cycleId: string) {
   filters.value = { ...NO_FILTERS, cycle: cycleId }
   search.value = ''
@@ -255,21 +300,24 @@ async function load(id: string) {
   cycles.value = cached?.cycles ?? []
   fields.value = cached?.fields ?? []
   templates.value = cached?.templates ?? []
+  epics.value = cached?.epics ?? []
   selected.value = []
   activeView.value = ''
   panelOpen.value = false
   filters.value = { ...NO_FILTERS }
   search.value = ''
   try {
-    const [detail, peopleRows, labelRows, cycleRows, fieldRows, templateRows] = await Promise.all([
-      getSector(id),
-      fetchAllPages((page) => listSectorPeople(id, page)),
-      fetchAllPages((page) => listLabels(id, page)),
-      fetchAllPages((page) => listCycles(id, page)),
-      listCustomFields(id).catch(() => []),
-      listTemplates(id).catch(() => []),
-      kanban.load(id),
-    ])
+    const [detail, peopleRows, labelRows, cycleRows, fieldRows, templateRows, epicRows] =
+      await Promise.all([
+        getSector(id),
+        fetchAllPages((page) => listSectorPeople(id, page)),
+        fetchAllPages((page) => listLabels(id, page)),
+        fetchAllPages((page) => listCycles(id, page)),
+        listCustomFields(id).catch(() => []),
+        listTemplates(id).catch(() => []),
+        listEpics(id).catch(() => []),
+        kanban.load(id),
+      ])
     if (id !== props.sectorId) return
     sector.value = detail
     people.value = peopleRows
@@ -277,6 +325,7 @@ async function load(id: string) {
     cycles.value = cycleRows
     fields.value = fieldRows
     templates.value = templateRows
+    epics.value = epicRows
     snapshots.set(id, {
       sector: detail,
       people: peopleRows,
@@ -284,6 +333,7 @@ async function load(id: string) {
       cycles: cycleRows,
       fields: fieldRows,
       templates: templateRows,
+      epics: epicRows,
     })
     // link direto (dashboard, calendário, notificações): /setores/:id?task=<id>
     const task = route.query.task
@@ -307,9 +357,9 @@ watch(
   },
 )
 
-watch([cycles, templates], ([cycleRows, templateRows]) => {
+watch([cycles, templates, epics], ([cycleRows, templateRows, epicRows]) => {
   const cached = snapshots.get(props.sectorId)
-  if (cached) Object.assign(cached, { cycles: cycleRows, templates: templateRows })
+  if (cached) Object.assign(cached, { cycles: cycleRows, templates: templateRows, epics: epicRows })
 })
 // a seleção vale só na lista e só para tarefas ainda visíveis
 watch([view, visible], () => {
@@ -676,6 +726,13 @@ function clearFilters() {
             class="sm:w-40"
           />
           <UiSelect
+            v-if="epics.length"
+            v-model="filters.epic"
+            aria-label="Épico"
+            :options="epicFilterOptions"
+            class="sm:w-40"
+          />
+          <UiSelect
             v-if="labels.length"
             v-model="filters.label"
             aria-label="Etiqueta"
@@ -712,6 +769,39 @@ function clearFilters() {
             :statuses="kanban.statuses"
             :can-edit="canEdit"
             @show="showCycle"
+          />
+        </div>
+
+        <div
+          v-else-if="view === 'epics' && sector"
+          class="ui-rise -mx-4 min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:-mx-8 sm:px-8"
+        >
+          <ProjectEpics
+            v-model:epics="epics"
+            :sector-id="sector.id"
+            :tasks="kanban.tasks"
+            :people="people"
+            :can-edit="canEdit"
+            @show="showEpic"
+          />
+        </div>
+
+        <div
+          v-else-if="view === 'pages' && sector"
+          class="ui-rise -mx-4 min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:-mx-8 sm:px-8"
+        >
+          <ProjectPages :sector-id="sector.id" :can-edit="canEdit" />
+        </div>
+
+        <div
+          v-else-if="view === 'intake' && sector"
+          class="ui-rise -mx-4 min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:-mx-8 sm:px-8"
+        >
+          <ProjectIntake
+            :sector-id="sector.id"
+            :can-edit="canEdit"
+            :people="people"
+            @open="openDetails"
           />
         </div>
 
@@ -810,6 +900,7 @@ function clearFilters() {
       v-model:selected="selected"
       :people="people"
       :cycles="cycles"
+      :epics="epics"
     />
 
     <TaskDetail
@@ -821,6 +912,7 @@ function clearFilters() {
       :people="people"
       :labels="labels"
       :cycles="cycles"
+      :epics="epics"
       :fields="fields"
       :templates="templates"
       :initial-status="newStatus"
