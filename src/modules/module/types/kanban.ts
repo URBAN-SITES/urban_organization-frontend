@@ -18,6 +18,7 @@ export interface Task extends ITasks {
   /** início planejado (linha do tempo); o fim é o due_date */
   start_date: ISODate | null
   cycle_id: UUID | null
+  epic_id: UUID | null
   /** alguma tarefa que bloqueia esta ainda está aberta */
   is_blocked: boolean
   /** código curto do projeto + número (ex.: DEV-12) */
@@ -90,11 +91,73 @@ export interface BulkRequest {
   status?: UUID
   assignee?: UUID | null
   cycle?: UUID | null
+  epic?: UUID | null
   priority?: Task['priority']
   due_date?: ISODate | null
   add_label?: UUID
   archive?: boolean
   delete?: boolean
+}
+export type EpicState = 'planned' | 'in_progress' | 'paused' | 'done' | 'cancelled'
+/** Épico (módulo): um objetivo maior que agrupa tarefas do projeto. */
+export interface Epic {
+  id: UUID
+  name: string
+  description: string
+  state: EpicState
+  lead_id: UUID | null
+  lead_name: string | null
+  color: string
+  start_date: ISODate | null
+  target_date: ISODate | null
+  task_total: number
+  task_done: number
+  points_total: number
+  points_done: number
+  created_at: ISODateTime
+}
+export interface WriteEpicRequest {
+  name: string
+  description?: string
+  state?: EpicState
+  lead?: UUID | null
+  color?: string
+  start_date?: ISODate | null
+  target_date?: ISODate | null
+}
+/** Página (wiki) do projeto, em Markdown. */
+export interface PageSummary {
+  id: UUID
+  title: string
+  is_pinned: boolean
+  excerpt: string
+  updated_by_name: string | null
+  updated_at: ISODateTime
+}
+export interface ProjectPage {
+  id: UUID
+  title: string
+  content: string
+  is_pinned: boolean
+  created_by_name: string | null
+  updated_by_name: string | null
+  created_at: ISODateTime
+  updated_at: ISODateTime
+}
+export type IntakeState = 'pending' | 'accepted' | 'declined'
+/** Pedido enviado ao projeto: quem edita aceita (vira tarefa) ou recusa. */
+export interface IntakeRequest {
+  id: UUID
+  title: string
+  description: string
+  state: IntakeState
+  requester_name: string | null
+  decided_by_name: string | null
+  decision_note: string
+  decided_at: ISODateTime | null
+  task_id: UUID | null
+  task_key: string | null
+  created_at: ISODateTime
 }
 export type CycleState = 'upcoming' | 'current' | 'completed'
 /** Ciclo (sprint) do projeto: um período com as tarefas que entram nele. */
@@ -256,6 +319,7 @@ export interface CreateTaskRequest {
   due_date?: ISODate | null
   assignee?: UUID | null
   cycle?: UUID | null
+  epic?: UUID | null
   estimate?: number | null
   recurrence?: Recurrence
   status?: UUID
@@ -320,6 +384,8 @@ export interface TaskFilters {
   parent__isnull?: boolean
   cycle?: string
   cycle__isnull?: boolean
+  epic?: string
+  epic__isnull?: boolean
   due_before?: string
   due_after?: string
   overdue?: boolean
