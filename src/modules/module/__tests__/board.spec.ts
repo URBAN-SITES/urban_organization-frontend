@@ -37,6 +37,7 @@ const task = (over: Partial<Task>): Task => ({
   is_blocked: false,
   key: null,
   estimate: null,
+  epic_id: null,
   recurrence: '',
   archived_at: null,
   created_at: '',
