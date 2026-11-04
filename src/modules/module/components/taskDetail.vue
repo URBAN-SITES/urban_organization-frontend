@@ -49,6 +49,7 @@ import TaskConversation from './taskConversation.vue'
 import TaskFields from './taskFields.vue'
 import TaskRelations from './taskRelations.vue'
 import TaskSubtasks from './taskSubtasks.vue'
+import TaskTime from './taskTime.vue'
 
 /**
  * Painel lateral da tarefa. Sem `taskId` cria uma tarefa; com `taskId` mostra os detalhes
@@ -629,6 +630,7 @@ const refresh = () => task.value && kanban.reload(task.value.id).catch(() => und
       />
       <TaskRelations :task-id="task.id" :can-edit="canEdit" @open="taskId = $event" />
       <TaskChecklist :task-id="task.id" :can-edit="canEdit" @changed="refresh" />
+      <TaskTime :task-id="task.id" :can-edit="canEdit" />
       <TaskAttachments :task-id="task.id" :due-date="task.due_date ?? ''" :can-edit="canEdit" />
       <TaskGitHubLinks :task-id="task.id" :can-edit="canEdit" />
       <TaskCharges :task-id="task.id" :can-edit="canEdit" />

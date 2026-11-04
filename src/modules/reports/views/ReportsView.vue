@@ -7,7 +7,7 @@ import { BaseButton, CardComp, ChartComp, PageLayout } from '@/shared/components
 import { avatar } from '@/shared/utils/people'
 import { categoryColors, inkWithAccent } from '@/shared/utils/chartColors'
 import { useOrganizationsStore } from '@/modules/organizations'
-import { getReport } from '../services'
+import { downloadReportPdf, getReport } from '../services'
 import type { Report, ReportDays } from '../types'
 import { kpis, peopleCsv, periods } from '../utils'
 import { BADGE, BADGE_BASE, TOOLBAR_BUTTON } from '../utils/ui'
@@ -77,6 +77,26 @@ function exportCsv() {
   Object.assign(document.createElement('a'), { href: url, download: 'desempenho.csv' }).click()
   URL.revokeObjectURL(url)
 }
+
+const exportingPdf = ref(false)
+async function exportPdf() {
+  const organization = organizations.current
+  if (!organization || exportingPdf.value) return
+  exportingPdf.value = true
+  try {
+    const blob = await downloadReportPdf(organization.id, days.value)
+    const url = URL.createObjectURL(blob)
+    Object.assign(document.createElement('a'), {
+      href: url,
+      download: `relatorio-${days.value}-dias.pdf`,
+    }).click()
+    URL.revokeObjectURL(url)
+  } catch (error) {
+    toast.error(getErrorMessage(error, 'Não foi possível gerar o PDF.'))
+  } finally {
+    exportingPdf.value = false
+  }
+}
 </script>
 
 <template>
@@ -112,6 +132,16 @@ function exportCsv() {
           :full-width="false"
           :class="TOOLBAR_BUTTON"
           @click="exportCsv"
+        />
+        <BaseButton
+          variant="secondary"
+          label="Baixar PDF"
+          icon="picture_as_pdf"
+          icon-position="left"
+          :full-width="false"
+          :loading="exportingPdf"
+          :class="TOOLBAR_BUTTON"
+          @click="exportPdf"
         />
       </div>
     </template>

@@ -11,7 +11,7 @@ import { useInvitationsStore } from '@/modules/invitations'
 import { useAuthStore } from '@/modules/auth'
 import { useNotificationsStore } from '@/modules/notifications'
 import { useOrganizationsStore } from '@/modules/organizations'
-import { QuickTaskDialog, ShortcutsDialog } from '@/modules/module'
+import { QuickTaskDialog, RunningTimer, ShortcutsDialog } from '@/modules/module'
 
 const notifications = useNotificationsStore()
 const organizations = useOrganizationsStore()
@@ -83,6 +83,7 @@ provide(ShellKey, {
     <template v-if="auth.user">
       <QuickTaskDialog />
       <ShortcutsDialog />
+      <RunningTimer />
     </template>
   </div>
 </template>

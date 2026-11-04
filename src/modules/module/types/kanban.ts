@@ -396,3 +396,42 @@ export interface TaskFilters {
   ordering?: string
   page?: number
 }
+
+/** Registro de tempo numa tarefa: cronômetro (ended_at nulo enquanto corre) ou lançamento manual. */
+export interface TimeEntry {
+  id: UUID
+  task_id: UUID
+  user_id: UUID
+  user_name: string | null
+  started_at: ISODateTime
+  ended_at: ISODateTime | null
+  minutes: number
+  note: string
+}
+export interface RunningTimer extends TimeEntry {
+  task_title: string
+  sector_id: UUID
+}
+export interface TaskTime {
+  total_minutes: number
+  entries: TimeEntry[]
+}
+export interface ManualTimeRequest {
+  minutes: number
+  /** AAAA-MM-DD; sem data, conta hoje */
+  date?: string
+  note?: string
+}
+export interface WorkloadPerson {
+  user_id: UUID
+  name: string
+  open: number
+  overdue: number
+  due_week: number
+  points: number
+  minutes_week: number
+}
+export interface Workload {
+  people: WorkloadPerson[]
+  unassigned: number
+}
