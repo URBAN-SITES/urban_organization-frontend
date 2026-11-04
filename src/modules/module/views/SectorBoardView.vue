@@ -30,6 +30,8 @@ import {
   Archive,
   ArrowRight,
   CalendarDays,
+  Download,
+  Gauge,
   ChartGantt,
   FileText,
   FolderKanban,
@@ -78,6 +80,7 @@ import ProjectCycles from '../components/projectCycles.vue'
 import ProjectEpics from '../components/projectEpics.vue'
 import ProjectIntake from '../components/projectIntake.vue'
 import ProjectPages from '../components/projectPages.vue'
+import ProjectWorkload from '../components/projectWorkload.vue'
 import ProjectIcon from '../components/projectIcon.vue'
 import SavedViews from '../components/savedViews.vue'
 import TaskDetail from '../components/taskDetail.vue'
@@ -92,6 +95,7 @@ import {
   listLabels,
   listSectorPeople,
   listTemplates,
+  exportTasksXlsx,
   setSectorFavorite,
 } from '../services'
 import { useKanbanStore, useSectorsStore } from '../stores'
@@ -114,10 +118,11 @@ type View =
   | 'epics'
   | 'pages'
   | 'intake'
+  | 'workload'
   | 'meetings'
   | 'github'
 // abas que não mostram tarefas (sem filtros)
-const TASKLESS: View[] = ['cycles', 'epics', 'pages', 'intake', 'meetings', 'github']
+const TASKLESS: View[] = ['cycles', 'epics', 'pages', 'intake', 'workload', 'meetings', 'github']
 
 const props = defineProps<{ sectorId: string }>()
 const router = useRouter()
@@ -153,6 +158,7 @@ const VIEWS = [
   { value: 'epics', label: 'Épicos' },
   { value: 'pages', label: 'Páginas' },
   { value: 'intake', label: 'Pedidos' },
+  { value: 'workload', label: 'Carga' },
   { value: 'meetings', label: 'Reuniões' },
   { value: 'github', label: 'GitHub' },
 ]
@@ -165,6 +171,7 @@ const VIEW_ICONS: Record<View, LucideIcon> = {
   epics: Milestone,
   pages: FileText,
   intake: Inbox,
+  workload: Gauge,
   meetings: Video,
   github: GitBranch,
 }
@@ -258,6 +265,31 @@ const cycleFilterOptions = computed(() => [
   ...cycles.value.map((cycle) => ({ value: cycle.id, label: cycle.name })),
 ])
 const currentCycle = computed(() => cycles.value.find((cycle) => cycle.state === 'current'))
+
+function showPerson(assignee: string) {
+  filters.value = { ...NO_FILTERS, assignee }
+  search.value = ''
+  view.value = 'board'
+}
+
+const exporting = ref(false)
+async function exportSheet() {
+  if (!sector.value || exporting.value) return
+  exporting.value = true
+  try {
+    const blob = await exportTasksXlsx(sector.value.id)
+    const url = URL.createObjectURL(blob)
+    Object.assign(document.createElement('a'), {
+      href: url,
+      download: `${(sector.value.identifier || 'projeto').toLowerCase()}-tarefas.xlsx`,
+    }).click()
+    URL.revokeObjectURL(url)
+  } catch (cause) {
+    toast.error(getErrorMessage(cause, 'Não foi possível gerar a planilha.'))
+  } finally {
+    exporting.value = false
+  }
+}
 
 function showEpic(epicId: string) {
   filters.value = { ...NO_FILTERS, epic: epicId }
@@ -561,6 +593,16 @@ function clearFilters() {
               <button
                 type="button"
                 class="board-glass board-glass-icon"
+                aria-label="Exportar tarefas para Excel (.xlsx)"
+                title="Exportar tarefas para Excel (.xlsx)"
+                :disabled="exporting"
+                @click="exportSheet"
+              >
+                <Download :size="16" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                class="board-glass board-glass-icon"
                 :aria-pressed="!!sector.is_favorite"
                 :aria-label="sector.is_favorite ? 'Desafixar projeto' : 'Fixar projeto'"
                 @click="toggleFavorite"
@@ -803,6 +845,13 @@ function clearFilters() {
             :people="people"
             @open="openDetails"
           />
+        </div>
+
+        <div
+          v-else-if="view === 'workload' && sector"
+          class="ui-rise -mx-4 min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:-mx-8 sm:px-8"
+        >
+          <ProjectWorkload :sector-id="sector.id" :version="tableVersion" @show="showPerson" />
         </div>
 
         <div
