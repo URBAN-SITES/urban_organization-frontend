@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { api } from '@/app/plugins/axios'
 import type { Page } from '@/shared/types'
 import type {
@@ -18,6 +19,11 @@ import type {
   Burndown,
   Epic,
   IntakeRequest,
+  ManualTimeRequest,
+  RunningTimer,
+  TaskTime,
+  TimeEntry,
+  Workload,
   PageSummary,
   ProjectPage,
   WriteEpicRequest,
@@ -527,4 +533,66 @@ export async function acceptIntake(
 
 export async function declineIntake(id: string, note: string): Promise<IntakeRequest> {
   return (await api.post<IntakeRequest>(`/intake/${enc(id)}/decline/`, { note })).data
+}
+
+export async function getMyTimer(): Promise<RunningTimer | null> {
+  return (await api.get<{ timer: RunningTimer | null }>('/me/timer/')).data.timer
+}
+
+export async function stopMyTimer(): Promise<TimeEntry | null> {
+  return (await api.delete<{ stopped: TimeEntry | null }>('/me/timer/')).data.stopped
+}
+
+export async function startTimer(taskId: string): Promise<RunningTimer> {
+  return (await api.post<RunningTimer>(`/tasks/${enc(taskId)}/timer/`)).data
+}
+
+export async function getTaskTime(taskId: string): Promise<TaskTime> {
+  return (await api.get<TaskTime>(`/tasks/${enc(taskId)}/time/`)).data
+}
+
+export async function addTaskTime(taskId: string, payload: ManualTimeRequest): Promise<TimeEntry> {
+  return (await api.post<TimeEntry>(`/tasks/${enc(taskId)}/time/`, payload)).data
+}
+
+export async function deleteTimeEntry(id: string): Promise<void> {
+  await api.delete(`/time/${enc(id)}/`)
+}
+
+export async function getWorkload(sectorId: string): Promise<Workload> {
+  return (await api.get<Workload>(`/sectors/${enc(sectorId)}/workload/`)).data
+}
+
+/** Baixa um arquivo da API e devolve o blob; erros JSON que chegam como blob viram objeto. */
+async function download(url: string, params?: Record<string, unknown>): Promise<Blob> {
+  try {
+    return (await api.get<Blob>(url, { params, responseType: 'blob', timeout: 60_000 })).data
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.data instanceof Blob) {
+      try {
+        error.response.data = JSON.parse(await error.response.data.text()) as unknown
+      } catch {
+        // corpo que não é JSON: fica a mensagem padrão de quem chamou
+      }
+    }
+    throw error
+  }
+}
+
+export async function exportTasksXlsx(sectorId: string): Promise<Blob> {
+  return download(`/sectors/${enc(sectorId)}/tasks/export/`)
+}
+
+/** Painéis do início escondidos pela pessoa (fica nas preferências da conta). */
+export async function getHiddenWidgets(): Promise<string[]> {
+  return (
+    (await api.get<{ hidden_widgets?: string[] }>('/users/me/settings/')).data.hidden_widgets ?? []
+  )
+}
+
+export async function setHiddenWidgets(hidden: string[]): Promise<string[]> {
+  const response = await api.patch<{ hidden_widgets?: string[] }>('/users/me/settings/', {
+    hidden_widgets: hidden,
+  })
+  return response.data.hidden_widgets ?? []
 }

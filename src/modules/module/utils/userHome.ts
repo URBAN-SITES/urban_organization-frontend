@@ -126,3 +126,20 @@ export function activityText(activity: Pick<DashboardActivity, 'action' | 'chang
   }
   return { verb: 'editou' }
 }
+
+/** Painéis do início que a pessoa pode esconder (a chave vai para hidden_widgets). */
+export const HOME_WIDGETS = [
+  { key: 'kpis', label: 'Indicadores', hint: 'Os quatro números sobre a foto do topo' },
+  { key: 'projects', label: 'Projetos recentes', hint: 'Atalhos e progresso dos projetos' },
+  { key: 'mine', label: 'Minhas tarefas', hint: 'Abertas e concluídas com você' },
+  { key: 'agenda', label: 'Agenda', hint: 'Próximas reuniões' },
+  { key: 'weekly', label: 'Concluídas pela equipe', hint: 'Entregas por semana' },
+  { key: 'open', label: 'Abertas por projeto', hint: 'Onde está o trabalho aberto' },
+  { key: 'insights', label: 'Reuniões e IA', hint: 'Resumos das gravações' },
+  { key: 'activity', label: 'Atividade recente', hint: 'O que mudou nos projetos' },
+] as const
+
+/** Quantas colunas cada linha do início usa, contando só os painéis visíveis. */
+export function visibleIn(keys: readonly string[], hidden: readonly string[]): number {
+  return keys.filter((key) => !hidden.includes(key)).length
+}

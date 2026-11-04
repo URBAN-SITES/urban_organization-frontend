@@ -39,6 +39,8 @@ export interface UserSettings {
   week_start: WeekStart
   compact_cards: boolean
   show_completed: boolean
+  /** painéis do início que a pessoa escondeu */
+  hidden_widgets: string[]
 }
 
 export interface NotificationSettings {

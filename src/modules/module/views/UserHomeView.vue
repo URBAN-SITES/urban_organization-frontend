@@ -36,11 +36,12 @@ import { relativeTime } from '@/shared/utils/time'
 import { useAuthStore } from '@/modules/auth'
 import { InvitationsInbox } from '@/modules/invitations'
 import { useOrganizationsStore } from '@/modules/organizations'
+import HomeCustomize from '../components/home/homeCustomize.vue'
 import HomeHero from '../components/home/homeHero.vue'
 import HomeKpi from '../components/home/homeKpi.vue'
 import { shortDate } from '../components/priority'
 import ProjectIcon from '../components/projectIcon.vue'
-import { getDashboard } from '../services'
+import { getDashboard, getHiddenWidgets } from '../services'
 import { useSectorsStore } from '../stores'
 import type { ActivityAction, Dashboard } from '../types'
 import {
@@ -50,6 +51,7 @@ import {
   duration,
   kpis,
   meetingState,
+  visibleIn,
   weekLabel,
 } from '../utils/userHome'
 
@@ -58,6 +60,17 @@ const organizations = useOrganizationsStore()
 const sectors = useSectorsStore()
 
 const data = ref<Dashboard | null>(null)
+
+// painéis escondidos pela pessoa (Personalizar); sem resposta, mostra tudo
+const hidden = ref<string[]>([])
+watch(
+  () => auth.user?.id,
+  async (id) => {
+    if (id) hidden.value = await getHiddenWidgets().catch(() => [])
+  },
+  { immediate: true },
+)
+const show = (key: string) => !hidden.value.includes(key)
 const loading = ref(false)
 const error = ref('')
 
@@ -229,7 +242,7 @@ const enter = (index: number) => ({ animationDelay: `${staggerDelay(index)}ms` }
       <template #top><InvitationsInbox /></template>
 
       <!-- indicadores, sobre a foto -->
-      <section v-if="!error" aria-label="Indicadores">
+      <section v-if="!error && show('kpis')" aria-label="Indicadores">
         <ul class="grid grid-cols-2 gap-3 xl:grid-cols-4">
           <template v-if="!data">
             <li v-for="n in 4" :key="n">
@@ -261,9 +274,31 @@ const enter = (index: number) => ({ animationDelay: `${staggerDelay(index)}ms` }
       />
 
       <template v-else>
-        <div class="grid gap-4 lg:grid-cols-2 2xl:grid-cols-[1fr_1.15fr_0.85fr]">
+        <div class="-mb-1 flex justify-end">
+          <HomeCustomize v-model:hidden="hidden" />
+        </div>
+        <p
+          v-if="
+            visibleIn(
+              ['projects', 'mine', 'agenda', 'weekly', 'open', 'insights', 'activity'],
+              hidden,
+            ) === 0
+          "
+          class="py-10 text-center text-13 text-fg-muted"
+        >
+          Todos os painéis estão escondidos. Use Personalizar para trazer algum de volta.
+        </p>
+        <div
+          v-if="visibleIn(['projects', 'mine', 'agenda'], hidden)"
+          class="grid gap-4 lg:grid-cols-2"
+          :class="
+            visibleIn(['projects', 'mine', 'agenda'], hidden) === 3 &&
+            '2xl:grid-cols-[1fr_1.15fr_0.85fr]'
+          "
+        >
           <!-- projetos recentes -->
           <UiPanel
+            v-if="show('projects')"
             title="Projetos recentes"
             heading-id="home-projects"
             class="ui-rise"
@@ -327,7 +362,13 @@ const enter = (index: number) => ({ animationDelay: `${staggerDelay(index)}ms` }
           </UiPanel>
 
           <!-- minhas tarefas -->
-          <UiPanel title="Minhas tarefas" heading-id="home-mine" class="ui-rise" :style="enter(5)">
+          <UiPanel
+            v-if="show('mine')"
+            title="Minhas tarefas"
+            heading-id="home-mine"
+            class="ui-rise"
+            :style="enter(5)"
+          >
             <template #action>
               <RouterLink
                 v-if="data?.today[0]"
@@ -397,10 +438,16 @@ const enter = (index: number) => ({ animationDelay: `${staggerDelay(index)}ms` }
 
           <!-- agenda -->
           <UiPanel
+            v-if="show('agenda')"
             title="Agenda"
             :description="todayLabel"
             heading-id="home-agenda"
-            class="ui-rise lg:col-span-2 2xl:col-span-1"
+            class="ui-rise"
+            :class="
+              ['', 'lg:col-span-1', 'lg:col-span-2 2xl:col-span-1'][
+                visibleIn(['projects', 'mine'], hidden)
+              ] || 'lg:col-span-2'
+            "
             :style="enter(6)"
           >
             <template #action>
@@ -474,13 +521,15 @@ const enter = (index: number) => ({ animationDelay: `${staggerDelay(index)}ms` }
           </UiPanel>
         </div>
 
-        <div class="grid gap-4 lg:grid-cols-3">
+        <div v-if="visibleIn(['weekly', 'open'], hidden)" class="grid gap-4 lg:grid-cols-3">
           <!-- produtividade -->
           <UiPanel
+            v-if="show('weekly')"
+            :class="show('open') ? 'lg:col-span-2' : 'lg:col-span-full'"
             title="Concluídas pela equipe"
             :description="data ? `${weeklyTotal} no período` : undefined"
             heading-id="home-weekly"
-            class="ui-rise lg:col-span-2"
+            class="ui-rise"
             :style="enter(7)"
           >
             <template #action>
@@ -543,6 +592,8 @@ const enter = (index: number) => ({ animationDelay: `${staggerDelay(index)}ms` }
 
           <!-- abertas por projeto -->
           <UiPanel
+            v-if="show('open')"
+            :class="!show('weekly') && 'lg:col-span-full'"
             title="Abertas por projeto"
             heading-id="home-open"
             class="ui-rise"
@@ -570,13 +621,15 @@ const enter = (index: number) => ({ animationDelay: `${staggerDelay(index)}ms` }
           </UiPanel>
         </div>
 
-        <div class="grid gap-4 lg:grid-cols-5">
+        <div v-if="visibleIn(['insights', 'activity'], hidden)" class="grid gap-4 lg:grid-cols-5">
           <!-- reuniões e IA -->
           <UiPanel
+            v-if="show('insights')"
+            :class="show('activity') ? 'lg:col-span-3' : 'lg:col-span-full'"
             title="Reuniões e IA"
             description="Resumos e tarefas sugeridas das gravações"
             heading-id="home-insights"
-            class="ui-rise lg:col-span-3"
+            class="ui-rise"
             :style="enter(9)"
           >
             <div v-if="!data" class="grid gap-3 sm:grid-cols-2">
@@ -634,9 +687,11 @@ const enter = (index: number) => ({ animationDelay: `${staggerDelay(index)}ms` }
 
           <!-- atividade -->
           <UiPanel
+            v-if="show('activity')"
+            :class="show('insights') ? 'lg:col-span-2' : 'lg:col-span-full'"
             title="Atividade recente"
             heading-id="home-activity"
-            class="ui-rise lg:col-span-2"
+            class="ui-rise"
             :style="enter(10)"
           >
             <div v-if="!data" class="flex flex-col gap-3">
