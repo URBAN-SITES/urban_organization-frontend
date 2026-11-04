@@ -69,6 +69,7 @@ const tabs = computed<TabItem[]>(() => [
 const roleOptions = computed(() => [
   { value: 'member', label: 'Membro' },
   { value: 'viewer', label: 'Leitor' },
+  { value: 'guest', label: 'Convidado externo' },
   ...(organization.value?.current_role === 'owner'
     ? [{ value: 'admin', label: 'Administrador' }]
     : []),

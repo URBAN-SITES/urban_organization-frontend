@@ -70,3 +70,19 @@ test('histórico descreve ciclo, épico, início e estimativa', () => {
     ],
   )
 })
+
+test('historyLines names imports, archives and the automation that acted', () => {
+  assert.deepEqual(historyLines({ action: 'created', changes: { imported: [null, 'trello'] } }), [
+    'importou a tarefa (Trello)',
+  ])
+  assert.deepEqual(
+    historyLines({
+      action: 'updated',
+      changes: { assignee: [null, 'Ana'], automation: [null, 'Triagem'] },
+    }),
+    ['atribuiu a Ana pela automação “Triagem”'],
+  )
+  assert.deepEqual(historyLines({ action: 'updated', changes: { archived: [null, 'sim'] } }), [
+    'arquivou a tarefa',
+  ])
+})

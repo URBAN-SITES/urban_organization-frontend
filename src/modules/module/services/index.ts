@@ -18,7 +18,12 @@ import type {
   CreateTaskRequest,
   Burndown,
   Epic,
+  AutomationRule,
+  ImportResult,
+  ImportSource,
   IntakeRequest,
+  PublicBoard,
+  WriteAutomationRequest,
   ManualTimeRequest,
   RunningTimer,
   TaskTime,
@@ -595,4 +600,59 @@ export async function setHiddenWidgets(hidden: string[]): Promise<string[]> {
     hidden_widgets: hidden,
   })
   return response.data.hidden_widgets ?? []
+}
+
+export async function listAutomations(sectorId: string): Promise<AutomationRule[]> {
+  return (await api.get<AutomationRule[]>(`/sectors/${enc(sectorId)}/automations/`)).data
+}
+
+export async function createAutomation(
+  sectorId: string,
+  payload: WriteAutomationRequest,
+): Promise<AutomationRule> {
+  return (await api.post<AutomationRule>(`/sectors/${enc(sectorId)}/automations/`, payload)).data
+}
+
+export async function updateAutomation(
+  id: string,
+  payload: Partial<WriteAutomationRequest>,
+): Promise<AutomationRule> {
+  return (await api.patch<AutomationRule>(`/automations/${enc(id)}/`, payload)).data
+}
+
+export async function deleteAutomation(id: string): Promise<void> {
+  await api.delete(`/automations/${enc(id)}/`)
+}
+
+/** Lê o arquivo exportado de outra ferramenta; com dryRun só mostra o que aconteceria. */
+export async function importTasks(
+  sectorId: string,
+  source: ImportSource,
+  file: File,
+  dryRun: boolean,
+): Promise<ImportResult> {
+  const body = new FormData()
+  body.append('source', source)
+  body.append('file', file)
+  body.append('dry_run', dryRun ? 'true' : 'false')
+  return (
+    await api.post<ImportResult>(`/sectors/${enc(sectorId)}/import/`, body, { timeout: 120_000 })
+  ).data
+}
+
+export async function getPublicLink(sectorId: string): Promise<string | null> {
+  return (await api.get<{ token: string | null }>(`/sectors/${enc(sectorId)}/public-link/`)).data
+    .token
+}
+
+export async function enablePublicLink(sectorId: string): Promise<string> {
+  return (await api.post<{ token: string }>(`/sectors/${enc(sectorId)}/public-link/`)).data.token
+}
+
+export async function disablePublicLink(sectorId: string): Promise<void> {
+  await api.delete(`/sectors/${enc(sectorId)}/public-link/`)
+}
+
+export async function getPublicBoard(token: string): Promise<PublicBoard> {
+  return (await api.get<PublicBoard>(`/public/projects/${enc(token)}/`)).data
 }
