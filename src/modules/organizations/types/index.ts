@@ -1,6 +1,6 @@
 import type { UUID, ISODateTime } from '@/shared/types'
 
-export type OrganizationRole = 'owner' | 'admin' | 'member' | 'viewer'
+export type OrganizationRole = 'owner' | 'admin' | 'member' | 'viewer' | 'guest'
 export interface OrganizationLocation {
   latitude: number
   longitude: number

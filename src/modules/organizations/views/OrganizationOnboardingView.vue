@@ -178,6 +178,10 @@ async function sendInvitations() {
     error.value = 'Adicione pelo menos um e-mail ou pule esta etapa.'
     return
   }
+  if (role.value === 'guest' && !selectedSectorIds.value.length) {
+    error.value = 'Marque pelo menos um projeto para o convidado externo.'
+    return
+  }
   saving.value = true
   failures.value = []
   const pending = [...remaining.value]
@@ -485,6 +489,7 @@ watch(name, (value) => {
         :options="[
           { value: 'member', label: 'Membro: cria e edita tarefas' },
           { value: 'viewer', label: 'Leitor: só visualiza' },
+          { value: 'guest', label: 'Convidado externo: só os projetos marcados abaixo' },
           ...(organization.current_role === 'owner'
             ? [{ value: 'admin', label: 'Administrador: gerencia a organização' }]
             : []),
@@ -494,6 +499,10 @@ watch(name, (value) => {
 
       <fieldset v-if="sectors.length">
         <legend class="mb-2 text-13 font-medium text-fg">Acesso aos projetos</legend>
+        <p v-if="role === 'guest'" class="mb-2 text-12 text-fg-muted">
+          Convidados externos (clientes, freelancers) veem só estes projetos. Não aparecem para eles
+          a equipe, as mensagens, os relatórios nem os outros projetos.
+        </p>
         <div class="grid gap-2 sm:grid-cols-2">
           <UiCheckbox
             v-for="sector in sectors"

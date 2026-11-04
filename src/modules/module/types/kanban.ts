@@ -435,3 +435,56 @@ export interface Workload {
   people: WorkloadPerson[]
   unassigned: number
 }
+
+export type AutomationTrigger = 'created' | 'moved' | 'priority' | 'assigned' | 'overdue'
+export type AutomationAction =
+  'assign' | 'priority' | 'label' | 'move' | 'due' | 'notify' | 'archive'
+/** Regra "quando X acontecer, faça Y" do projeto (não encadeia outras regras). */
+export interface AutomationRule {
+  id: UUID
+  name: string
+  trigger: AutomationTrigger
+  /** id da coluna (moved), prioridade (priority) ou vazio para "qualquer" */
+  trigger_value: string
+  action: AutomationAction
+  /** id de pessoa, prioridade, id de etiqueta, id de coluna ou número de dias */
+  action_value: string
+  is_active: boolean
+  run_count: number
+  last_run_at: ISODateTime | null
+  created_at: ISODateTime
+}
+export type WriteAutomationRequest = Pick<
+  AutomationRule,
+  'name' | 'trigger' | 'trigger_value' | 'action' | 'action_value' | 'is_active'
+>
+export type ImportSource = 'trello' | 'jira' | 'asana' | 'plane' | 'csv'
+export interface ImportResult {
+  total: number
+  created: number
+  assigned: number
+  new_columns: string[]
+  new_labels: string[]
+  sample: string[]
+}
+/** Quadro visto pelo link público: sem pessoas nem textos de dentro das tarefas. */
+export interface PublicBoard {
+  name: string
+  description: string
+  color: string
+  icon: string
+  organization: string
+  statuses: { id: UUID; name: string; category: StatusCategory; color: string }[]
+  tasks: {
+    id: UUID
+    key: string | null
+    title: string
+    status_id: UUID
+    priority: Task['priority']
+    start_date: string | null
+    due_date: string | null
+    estimate: number | null
+    completed: boolean
+    labels: { name: string; color: string }[]
+  }[]
+}

@@ -11,8 +11,8 @@ test('only owners can manage administrators and nobody can demote owners', () =>
 })
 
 test('role choices match the server grant hierarchy', () => {
-  assert.deepEqual(assignableRoles('owner'), ['admin', 'member', 'viewer'])
-  assert.deepEqual(assignableRoles('admin'), ['member', 'viewer'])
+  assert.deepEqual(assignableRoles('owner'), ['admin', 'member', 'viewer', 'guest'])
+  assert.deepEqual(assignableRoles('admin'), ['member', 'viewer', 'guest'])
   assert.deepEqual(assignableRoles('member'), [])
   assert.deepEqual(assignableRoles('viewer'), [])
 })

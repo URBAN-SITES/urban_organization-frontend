@@ -37,3 +37,13 @@ test('só o item da aba aberta fica ativo', () => {
   assert.deepEqual(active('/organizacoes/o1/projetos'), ['Projetos'])
   assert.deepEqual(active('/organizacoes/o1/membros'), ['Equipe'])
 })
+
+test('external guests only see project screens', () => {
+  const groups = sidebarGroups({
+    projectsPath: '/organizacoes/o1/projetos',
+    projectId: 'p1',
+    guest: true,
+  })
+  const labels = groups.flatMap((group) => group.items.map((item) => item.label))
+  assert.deepEqual(labels, ['Dashboard', 'Projetos', 'Tarefas', 'Kanban', 'Reuniões'])
+})

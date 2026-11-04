@@ -5,6 +5,7 @@ export const roleLabels: Record<OrganizationRole, string> = {
   admin: 'Administrador',
   member: 'Membro',
   viewer: 'Leitor',
+  guest: 'Convidado externo',
 }
 
 export const TEAM_SIZES = [

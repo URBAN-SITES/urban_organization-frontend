@@ -8,6 +8,7 @@ import { BaseButton, PageLayout, UiSpinner } from '@/shared/components'
 import { avatar } from '@/shared/utils/people'
 import { categoryColors } from '@/shared/utils/chartColors'
 import {
+  ProjectAutomations,
   ProjectFieldsSettings,
   getSector,
   useKanbanStore,
@@ -445,6 +446,7 @@ const field =
       </div>
 
       <ProjectFieldsSettings :sector-id="sector.id" :can-manage="canEdit" />
+      <ProjectAutomations :sector-id="sector.id" :can-manage="canEdit" />
 
       <div
         v-if="canEdit"

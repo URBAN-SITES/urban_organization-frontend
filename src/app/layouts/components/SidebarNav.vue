@@ -50,6 +50,7 @@ const groups = computed(() =>
   sidebarGroups({
     projectsPath: current.value ? `/organizacoes/${current.value.id}/projetos` : '/organizacoes',
     projectId: contextProject.value,
+    guest: current.value?.current_role === 'guest',
   }),
 )
 

@@ -28,6 +28,7 @@ export interface UserSettings {
   push_enabled: boolean
   email_product: boolean
   email_weekly_digest: boolean
+  email_daily_digest: boolean
   email_security: boolean
   email_assigned: boolean
   email_mentions: boolean
@@ -46,6 +47,7 @@ export interface UserSettings {
 export interface NotificationSettings {
   email_product: boolean
   email_weekly_digest: boolean
+  email_daily_digest: boolean
   email_security: boolean
   email_assigned: boolean
   email_mentions: boolean
