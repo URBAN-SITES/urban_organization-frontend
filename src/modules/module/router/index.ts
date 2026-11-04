@@ -16,6 +16,14 @@ export const moduleRoutes: RouteRecordRaw[] = [
     props: { doc: 'termos' },
     component: () => import('../views/LegalView.vue'),
   },
+  // quadro só leitura aberto por link público (sem conta)
+  {
+    path: '/p/:token',
+    name: 'PublicBoard',
+    meta: { requiresAuth: false },
+    props: true,
+    component: () => import('../views/PublicBoardView.vue'),
+  },
   {
     path: '/',
     meta: { transitionGroup: 'default' },

@@ -123,6 +123,7 @@ const saved = {
   notifications: ref<NotificationSettings>({
     email_product: true,
     email_weekly_digest: false,
+    email_daily_digest: false,
     email_security: true,
     email_assigned: true,
     email_mentions: true,

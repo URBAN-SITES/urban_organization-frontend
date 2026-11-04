@@ -42,7 +42,15 @@ export interface NavGroup {
 export interface NavContext {
   projectsPath: string
   projectId: string | null
+  /** convidado externo: só os projetos em que foi incluído (sem telas da organização) */
+  guest?: boolean
 }
+
+// telas da organização que um convidado externo pode abrir
+const GUEST_PATHS = new Set(['/', '/notificacoes', '/configuracoes'])
+/** Tira do menu o que um convidado externo não acessa (o servidor também bloqueia). */
+export const forGuest = (items: NavItem[]): NavItem[] =>
+  items.filter((item) => GUEST_PATHS.has(item.to))
 
 const PROJECT_BOARD = /^\/setores\/[^/]+$/
 const onProject = (path: string) => PROJECT_BOARD.test(path)
@@ -107,7 +115,7 @@ export function sidebarGroups(context: NavContext): NavGroup[] {
       ? `/setores/${context.projectId}${view ? `?view=${view}` : ''}`
       : context.projectsPath
 
-  return [
+  const groups: NavGroup[] = [
     {
       id: 'general',
       label: 'Geral',
@@ -160,6 +168,15 @@ export function sidebarGroups(context: NavContext): NavGroup[] {
     },
     { id: 'intelligence', label: 'Inteligência', items: [assistant, reports] },
   ]
+  if (!context.guest) return groups
+  // projetos, tarefas, quadro e reuniões vivem dentro do projeto: ficam; o resto sai
+  const projectOnly = new Set(['Dashboard', 'Projetos', 'Tarefas', 'Kanban', 'Reuniões'])
+  return groups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => projectOnly.has(item.label)),
+    }))
+    .filter((group) => group.items.length)
 }
 
 /** Telas fixas da organização, para a busca (Ctrl+K). */

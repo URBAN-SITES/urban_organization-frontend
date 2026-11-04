@@ -7,7 +7,8 @@ import { useChatStore } from '@/modules/chat'
 import { useNotificationsStore } from '@/modules/notifications'
 import { UiIcon } from '@/shared/components'
 import { useModalLayer } from '@/shared/composables/overlay'
-import { isNavActive, mobileTabs } from '../navigation'
+import { useOrganizationsStore } from '@/modules/organizations'
+import { forGuest, isNavActive, mobileTabs } from '../navigation'
 import SidebarPanel from './SidebarPanel.vue'
 
 // As quatro telas do dia a dia ficam na barra; "Menu" abre a barra lateral completa num painel.
@@ -24,7 +25,11 @@ watch(
   () => (open.value = false),
 )
 
-const menuActive = computed(() => !mobileTabs.some((item) => isNavActive(item, route.path)))
+const organizations = useOrganizationsStore()
+const tabs = computed(() =>
+  organizations.current?.current_role === 'guest' ? forGuest(mobileTabs) : mobileTabs,
+)
+const menuActive = computed(() => !tabs.value.some((item) => isNavActive(item, route.path)))
 
 const tabClass = (active: boolean) => [
   'relative flex flex-1 flex-col items-center justify-center gap-0.5 text-12 outline-none',
@@ -40,7 +45,7 @@ const tabClass = (active: boolean) => [
     class="fixed inset-x-0 bottom-0 z-40 flex h-[calc(3.5rem+env(safe-area-inset-bottom))] border-t border-border bg-surface-1 pb-[env(safe-area-inset-bottom)] md:hidden"
   >
     <RouterLink
-      v-for="item in mobileTabs"
+      v-for="item in tabs"
       :key="item.to"
       :to="item.to"
       :aria-current="isNavActive(item, route.path) ? 'page' : undefined"

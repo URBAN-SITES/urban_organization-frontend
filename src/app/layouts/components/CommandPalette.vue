@@ -18,7 +18,7 @@ import { useOrganizationsStore } from '@/modules/organizations'
 import { useSearchStore } from '@/modules/search'
 import { UiIcon, UiSpinner } from '@/shared/components'
 import { useModalLayer } from '@/shared/composables/overlay'
-import { accountNav, workspaceNav } from '../navigation'
+import { accountNav, forGuest, workspaceNav } from '../navigation'
 
 interface Command {
   id: string
@@ -49,7 +49,10 @@ const listId = useId()
 const normalize = (value: string) => value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 
 const commands = computed<Command[]>(() => [
-  ...[...workspaceNav, ...accountNav].map((item) => ({
+  ...(organizations.current?.current_role === 'guest'
+    ? forGuest([...workspaceNav, ...accountNav])
+    : [...workspaceNav, ...accountNav]
+  ).map((item) => ({
     id: `nav:${item.to}`,
     group: 'Navegar' as const,
     label: item.label,
