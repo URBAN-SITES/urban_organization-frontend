@@ -31,6 +31,7 @@ import {
   ArrowRight,
   CalendarDays,
   Download,
+  FileUp,
   Gauge,
   ChartGantt,
   FileText,
@@ -79,6 +80,7 @@ import ProjectBin from '../components/projectBin.vue'
 import ProjectCycles from '../components/projectCycles.vue'
 import ProjectEpics from '../components/projectEpics.vue'
 import ProjectIntake from '../components/projectIntake.vue'
+import ProjectImport from '../components/projectImport.vue'
 import ProjectPages from '../components/projectPages.vue'
 import ProjectWorkload from '../components/projectWorkload.vue'
 import ProjectIcon from '../components/projectIcon.vue'
@@ -177,6 +179,7 @@ const VIEW_ICONS: Record<View, LucideIcon> = {
 }
 const filtersOpen = ref(false)
 const binOpen = ref(false)
+const importOpen = ref(false)
 
 // atalhos do projeto (a lista completa aparece com a tecla ?)
 useEventListener(document, 'keydown', (event: KeyboardEvent) => {
@@ -617,6 +620,16 @@ function clearFilters() {
                 v-if="canEdit"
                 type="button"
                 class="board-glass board-glass-icon"
+                aria-label="Importar tarefas de outra ferramenta"
+                title="Importar tarefas (Trello, Jira, Asana, Plane, CSV)"
+                @click="importOpen = true"
+              >
+                <FileUp :size="16" aria-hidden="true" />
+              </button>
+              <button
+                v-if="canEdit"
+                type="button"
+                class="board-glass board-glass-icon"
                 aria-label="Arquivadas e lixeira"
                 title="Arquivadas e lixeira"
                 @click="binOpen = true"
@@ -944,6 +957,12 @@ function clearFilters() {
     </main>
 
     <ProjectBin v-if="sector && canEdit" v-model:open="binOpen" :sector="sector" />
+    <ProjectImport
+      v-if="sector && canEdit"
+      v-model:open="importOpen"
+      :sector-id="sector.id"
+      @imported="load(sector.id)"
+    />
     <BulkBar
       v-if="canEdit && view === 'list'"
       v-model:selected="selected"

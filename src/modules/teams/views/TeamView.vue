@@ -61,6 +61,7 @@ const roleTone = {
   admin: BADGE.accent,
   member: BADGE.outline,
   viewer: BADGE.neutral,
+  guest: BADGE.outline,
 }
 
 let request = 0
