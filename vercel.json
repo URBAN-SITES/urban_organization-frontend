@@ -13,7 +13,7 @@
       "destination": "https://urban-organization-api.onrender.com/media/$1"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!assets/).*)",
       "destination": "/index.html"
     }
   ]
