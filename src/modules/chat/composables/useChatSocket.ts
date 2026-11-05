@@ -1,4 +1,5 @@
 import { getCurrentScope, onScopeDispose } from 'vue'
+import { realtimeUrl } from '@/app/plugins/realtime'
 import type { UUID } from '@/shared/types'
 import type { ChatEvent } from '../stores/chat'
 
@@ -8,15 +9,30 @@ const EVENTS = ['chat.message', 'chat.message_updated', 'chat.message_deleted', 
 let socket: WebSocket | undefined
 let retry: ReturnType<typeof setTimeout> | undefined
 let delay = 1000
+let connecting = false
 const listeners = new Set<(event: ChatEvent) => void>()
 const active = () => listeners.size > 0 || users > 0
 let users = 0
 
-function connect(): void {
+function scheduleRetry(): void {
+  retry = setTimeout(() => void connect(), delay)
+  delay = Math.min(delay * 2, 30000)
+}
+
+async function connect(): Promise<void> {
   retry = undefined
+  if (!active() || connecting) return
+  connecting = true
+  let url: URL
+  try {
+    url = await realtimeUrl()
+  } catch {
+    connecting = false
+    if (active()) scheduleRetry()
+    return
+  }
+  connecting = false
   if (!active()) return
-  const url = new URL('/ws/', window.location.origin)
-  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
   const current = new WebSocket(url)
   socket = current
   current.onopen = () => {
@@ -33,8 +49,7 @@ function connect(): void {
   current.onclose = (event) => {
     if (socket === current) socket = undefined
     if (!active() || event.code === 4401) return
-    retry = setTimeout(connect, delay)
-    delay = Math.min(delay * 2, 30000)
+    scheduleRetry()
   }
 }
 
@@ -42,7 +57,7 @@ function connect(): void {
 export function useChatSocket(onEvent?: (event: ChatEvent) => void) {
   users += 1
   if (onEvent) listeners.add(onEvent)
-  if (!socket && !retry) connect()
+  if (!socket && !retry) void connect()
 
   function sendTyping(channelId: UUID): void {
     if (socket?.readyState === WebSocket.OPEN) {
