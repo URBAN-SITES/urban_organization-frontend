@@ -6,11 +6,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://urban-organization-backend.onrender.com/api/:path*"
+      "destination": "https://urban-organization-api.onrender.com/api/:path*"
     },
     {
       "source": "/media/:path*",
-      "destination": "https://urban-organization-backend.onrender.com/media/:path*"
+      "destination": "https://urban-organization-api.onrender.com/media/:path*"
     },
     {
       "source": "/(.*)",
