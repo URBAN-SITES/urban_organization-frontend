@@ -1,5 +1,6 @@
 import { onUnmounted, watch } from 'vue'
 import { toast } from 'vue-sonner'
+import { realtimeUrl } from '@/app/plugins/realtime'
 import { useNotificationsStore } from '../stores'
 import { desktopAlertsOn, showDesktopAlert, userAway } from './desktopAlerts'
 
@@ -48,11 +49,22 @@ export function useNotificationSession(userId: () => string | undefined): void {
         },
       )
 
-      function connect(): void {
+      function scheduleRetry(): void {
+        retry = setTimeout(() => void connect(), delay)
+        delay = Math.min(delay * 2, 30000)
+      }
+
+      async function connect(): Promise<void> {
         retry = undefined
         if (closed) return
-        const url = new URL('/ws/', window.location.origin)
-        url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
+        let url: URL
+        try {
+          url = await realtimeUrl()
+        } catch {
+          if (!closed) scheduleRetry()
+          return
+        }
+        if (closed) return
         socket = new WebSocket(url)
         socket.onopen = () => {
           delay = 1000
@@ -77,17 +89,16 @@ export function useNotificationSession(userId: () => string | undefined): void {
         }
         socket.onclose = (event) => {
           if (closed || event.code === 4401) return
-          retry = setTimeout(connect, delay)
-          delay = Math.min(delay * 2, 30000)
+          scheduleRetry()
         }
       }
 
       function refresh(): void {
         void notifications.refreshUnreadCount()
-        if (socket?.readyState === WebSocket.CLOSED && !retry) connect()
+        if (socket?.readyState === WebSocket.CLOSED && !retry) void connect()
       }
 
-      connect()
+      void connect()
       window.addEventListener('focus', refresh)
       onCleanup(() => {
         closed = true
