@@ -108,3 +108,22 @@ export interface RefOption {
   title: string
   state: string
 }
+
+/** Quadro (GitHub Projects v2) que a pessoa pode importar. */
+export interface GitHubProjectBoard {
+  id: string
+  number: number
+  title: string
+  url: string
+  closed: boolean
+  /** usuário ou organização dona do quadro */
+  owner: string
+}
+
+export interface GitHubProjectImportResult {
+  project: string
+  created: number
+  updated: number
+  columns_created: number
+  skipped: number
+}

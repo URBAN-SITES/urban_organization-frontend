@@ -34,10 +34,12 @@ import {
 } from '../services'
 import type { CheckState, ProjectRepository, RepositoryActivity } from '../types'
 import { CHECK_LABELS, PULL_STATES } from '../utils'
+import ImportGitHubProject from './importGitHubProject.vue'
 import LinkRepositoriesDialog from './linkRepositoriesDialog.vue'
 
 /** Aba GitHub do projeto: repositórios associados e o que está acontecendo em cada um. */
 const props = defineProps<{ sectorId: UUID; canManage: boolean }>()
+defineEmits<{ imported: [] }>()
 const confirm = useConfirm()
 
 const repositories = ref<ProjectRepository[]>([])
@@ -127,6 +129,7 @@ async function unlink(row: ProjectRepository) {
 
 <template>
   <div class="grid gap-4">
+    <ImportGitHubProject v-if="canManage" :sector-id="sectorId" @imported="$emit('imported')" />
     <div v-if="loading" class="grid gap-3" aria-label="Carregando repositórios">
       <UiSkeleton class="h-9 w-72" />
       <div class="grid gap-3 lg:grid-cols-3">
