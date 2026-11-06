@@ -2,10 +2,7 @@ import type { ISODateTime } from '@/shared/types'
 
 const AVATAR_COLORS = ['#15803d', '#c2410c', '#2563eb', '#6d28d9', '#b45309', '#0e7490']
 
-export function initials(name: string): string {
-  const parts = name.trim().split(/\s+/)
-  return ((parts[0]?.[0] ?? '') + (parts.length > 1 ? (parts.at(-1)?.[0] ?? '') : '')).toUpperCase()
-}
+export { initials } from '../../../shared/utils/people.ts'
 
 // cores definidas no design para os membros de exemplo
 const KNOWN_COLORS: Record<string, string> = {

@@ -1,3 +1,4 @@
+import { initials } from '../../../shared/utils/people.ts'
 /* Classes visuais da tela (selos e botões de cabeçalho), só deste módulo. */
 
 export const BADGE_BASE =
@@ -31,10 +32,6 @@ const AVATAR_COLORS: Record<string, string> = {
 }
 
 export function avatar(name: string) {
-  const parts = name.trim().split(/\s+/)
-  const initials = (
-    (parts[0]?.[0] ?? '') + (parts.length > 1 ? (parts.at(-1)?.[0] ?? '') : '')
-  ).toUpperCase()
   // sem cor definida (ex.: o usuário atual) usa a cor de tinta
-  return { initials, color: AVATAR_COLORS[name] ?? '' }
+  return { initials: initials(name), color: AVATAR_COLORS[name] ?? '' }
 }

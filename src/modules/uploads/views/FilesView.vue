@@ -30,6 +30,8 @@ const rows = computed(() =>
   tab.value === 'all' ? files.value : files.value.filter((file) => file.origin === tab.value),
 )
 const COLUMNS = ['Nome', 'Origem', 'Anexado em', 'Atualizado', 'Dono']
+// no celular a tabela fica com nome, onde está e dono
+const PHONE_HIDDEN = new Set(['Origem', 'Atualizado'])
 
 let request = 0
 async function load() {
@@ -158,14 +160,17 @@ const where = (file: OrganizationFile) => file.task_title ?? file.sector_name ??
     </div>
 
     <div class="overflow-x-auto uo-card">
-      <table class="w-full min-w-[720px] border-collapse text-left">
+      <table class="w-full border-collapse text-left sm:min-w-[720px]">
         <thead>
           <tr class="border-b border-border bg-surface-2 dark:bg-black/20">
             <th
               v-for="column in COLUMNS"
               :key="column"
               scope="col"
-              class="px-[18px] py-[9px] text-[12px] leading-normal font-normal text-fg-muted"
+              :class="[
+                'px-[18px] py-[9px] text-[12px] leading-normal font-normal text-fg-muted',
+                PHONE_HIDDEN.has(column) ? 'max-sm:hidden' : '',
+              ]"
             >
               {{ column }}
             </th>
@@ -187,7 +192,7 @@ const where = (file: OrganizationFile) => file.task_title ?? file.sector_name ??
                 >{{ file.title }}</a
               >
             </td>
-            <td class="px-[18px] py-[12px]">
+            <td class="px-[18px] py-[12px] max-sm:hidden">
               <span :class="[BADGE_BASE, BADGE[FILE_ORIGINS[file.origin].tone]]">{{
                 FILE_ORIGINS[file.origin].label
               }}</span>
@@ -195,7 +200,7 @@ const where = (file: OrganizationFile) => file.task_title ?? file.sector_name ??
             <td class="max-w-[240px] truncate px-[18px] py-[12px]" :title="where(file)">
               {{ where(file) }}
             </td>
-            <td class="px-[18px] py-[12px] text-fg-muted">
+            <td class="px-[18px] py-[12px] text-fg-muted max-sm:hidden">
               {{ relativeTime(file.created_at) }}
             </td>
             <td class="px-[18px] py-[12px]">

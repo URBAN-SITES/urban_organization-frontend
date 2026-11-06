@@ -277,8 +277,8 @@ watch(
         <template #aside>
           <h2 class="px-[18px] pt-[18px] text-16 font-semibold text-fg">Mensagens</h2>
 
-          <ChatSectionTitle>Canais por setor</ChatSectionTitle>
-          <nav aria-label="Canais por setor" class="flex flex-col gap-[2px]">
+          <ChatSectionTitle>Canais</ChatSectionTitle>
+          <nav aria-label="Canais" class="flex flex-col gap-[2px]">
             <ChatChannelItem
               v-for="channel in sectors"
               :key="channel.id"
@@ -351,7 +351,7 @@ watch(
             @change="selectFromPicker"
           >
             <option value="" disabled>Selecionar conversa</option>
-            <optgroup v-if="sectors.length" label="Canais por setor">
+            <optgroup v-if="sectors.length" label="Canais">
               <option v-for="channel in sectors" :key="channel.id" :value="channel.id">
                 # {{ channel.name }}
               </option>
