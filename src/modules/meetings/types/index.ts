@@ -30,6 +30,15 @@ export interface MeetingInput {
   participants: UUID[]
 }
 
+/** Sala de vídeo de um canal do chat (sem agenda nem gravação). */
+export interface ChannelRoomInfo {
+  url: string
+  token: string
+  room: string
+  identity: string
+  title: string
+  channel_id: UUID
+}
 export interface JoinInfo {
   url: string
   token: string
