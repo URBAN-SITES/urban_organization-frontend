@@ -30,11 +30,12 @@ export function meetingProblem(
   return { code: null, message: typeof first === 'string' ? first : fallback }
 }
 
-type Device = 'microfone' | 'câmera' | 'tela'
+type Device = 'microfone' | 'câmera' | 'tela' | 'alto-falante'
 const NAMES: Record<Device, { the: string; none: string }> = {
   microfone: { the: 'o microfone', none: 'Nenhum microfone encontrado' },
   câmera: { the: 'a câmera', none: 'Nenhuma câmera encontrada' },
   tela: { the: 'a tela', none: 'Nenhuma tela disponível' },
+  'alto-falante': { the: 'o alto-falante', none: 'Nenhum alto-falante encontrado' },
 }
 
 /** Explica por que o navegador não entregou microfone, câmera ou tela. */
