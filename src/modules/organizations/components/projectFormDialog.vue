@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Check } from '@lucide/vue'
-import { reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
+import { toast } from 'vue-sonner'
 import { getErrorMessage } from '@/app/plugins/axios'
 import {
   PROJECT_COLORS,
@@ -10,7 +11,13 @@ import {
   updateSector,
   type Sector,
 } from '@/modules/module'
-import { UiButton, UiDialog, UiInput, UiSwitch, UiTextarea } from '@/shared/components'
+import {
+  GitHubRequestError,
+  importGitHubProject,
+  listGitHubProjects,
+  type GitHubProjectBoard,
+} from '@/modules/github'
+import { UiButton, UiDialog, UiInput, UiSelect, UiSwitch, UiTextarea } from '@/shared/components'
 import { useConfirm } from '@/shared/composables/confirm'
 
 /** Criar ou editar um projeto (setor). Sem `project`, cria na organização. */
@@ -23,6 +30,36 @@ const form = reactive({ name: '', description: '', color: '', icon: '', isPrivat
 const errors = reactive({ name: '', form: '' })
 const saving = ref(false)
 
+// com o GitHub vinculado, o projeto novo pode nascer de um GitHub Project
+const boards = ref<GitHubProjectBoard[]>([])
+const board = ref('')
+const boardsHint = ref('')
+const boardOptions = computed(() => [
+  { value: '', label: 'Começar vazio' },
+  ...boards.value.map((item) => ({
+    value: item.id,
+    label: `${item.owner} / ${item.title}${item.closed ? ' (fechado)' : ''}`,
+  })),
+])
+
+async function loadBoards() {
+  boards.value = []
+  boardsHint.value = ''
+  try {
+    boards.value = await listGitHubProjects()
+  } catch (cause) {
+    // sem GitHub vinculado a opção simplesmente não aparece
+    if (cause instanceof GitHubRequestError && cause.code === 'github_forbidden')
+      boardsHint.value =
+        'O GitHub App ainda não tem permissão para ler Projects. Peça a quem administra o app.'
+  }
+}
+
+watch(board, (id, previous) => {
+  const title = (key: string) => boards.value.find((item) => item.id === key)?.title ?? ''
+  if (!form.name.trim() || form.name === title(previous)) form.name = title(id)
+})
+
 watch(open, (value) => {
   if (!value) return
   const project = props.project
@@ -34,6 +71,8 @@ watch(open, (value) => {
     isPrivate: project?.is_private ?? true,
   })
   Object.assign(errors, { name: '', form: '' })
+  board.value = ''
+  if (!project) void loadBoards()
 })
 
 // o erro some assim que o nome é preenchido
@@ -72,6 +111,19 @@ async function save() {
     const saved = project
       ? await updateSector(project.id, payload)
       : await createSector(props.organizationId, payload)
+    if (!project && board.value) {
+      try {
+        const result = await importGitHubProject(saved.id, board.value)
+        toast.success(`Quadro "${result.project}" importado`, {
+          description: `${result.created} ${result.created === 1 ? 'tarefa' : 'tarefas'}`,
+        })
+      } catch (cause) {
+        // o projeto já existe: avisa e segue, dá para importar depois na aba GitHub
+        toast.error('Projeto criado, mas o quadro do GitHub não foi importado.', {
+          description: getErrorMessage(cause, 'Tente de novo na aba GitHub do projeto.'),
+        })
+      }
+    }
     emit('saved', saved)
     open.value = false
   } catch (cause) {
@@ -102,6 +154,14 @@ async function save() {
         />
       </div>
       <UiTextarea v-model="form.description" label="Descrição" :rows="3" />
+      <UiSelect
+        v-if="!project && boards.length"
+        v-model="board"
+        :options="boardOptions"
+        label="Criar a partir de um GitHub Project"
+        hint="As colunas e os cartões do quadro viram colunas e tarefas deste projeto."
+      />
+      <p v-else-if="!project && boardsHint" class="text-13 text-fg-muted">{{ boardsHint }}</p>
 
       <fieldset>
         <legend class="mb-2 text-13 font-medium text-fg">Cor</legend>
