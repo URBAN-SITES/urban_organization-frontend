@@ -3,6 +3,7 @@ import { api } from '@/app/plugins/axios'
 import type { UUID } from '@/shared/types'
 import type {
   ActionTaskInput,
+  ChannelRoomInfo,
   JoinInfo,
   Meeting,
   MeetingInput,
@@ -58,6 +59,12 @@ export const joinMeeting = (id: UUID) =>
   call(
     () => api.post<JoinInfo>(`/meetings/${id}/join/`, { consent: true }),
     'Não foi possível entrar na reunião.',
+  )
+
+export const joinChannelRoom = (channelId: UUID) =>
+  call(
+    () => api.post<ChannelRoomInfo>(`/chat/channels/${channelId}/room/`),
+    'Não foi possível entrar na reunião da conversa.',
   )
 
 export const listRecordings = (meetingId: UUID) =>

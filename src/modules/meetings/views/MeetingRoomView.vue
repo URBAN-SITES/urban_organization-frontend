@@ -33,6 +33,7 @@ import ParticipantTile from '../components/participantTile.vue'
 import { useMeetingRoom } from '../composables/room'
 import {
   getMeeting,
+  joinChannelRoom,
   joinMeeting,
   listRecordings,
   MeetingRequestError,
@@ -42,10 +43,14 @@ import {
 import type { Meeting } from '../types'
 import { meetingWhen, recordingError } from '../utils'
 
-/** Sala de uma reunião: pré-entrada com aviso de gravação, chamada e saída. */
+/**
+ * Sala de uma reunião: pré-entrada com aviso de gravação, chamada e saída.
+ * Também abre a reunião de uma conversa do chat (/chat/sala/:channelId), sem gravação.
+ */
 const route = useRoute()
 const router = useRouter()
-const meetingId = computed(() => String(route.params.meetingId))
+const channelId = computed(() => (route.params.channelId ? String(route.params.channelId) : ''))
+const meetingId = computed(() => String(route.params.meetingId ?? route.params.channelId))
 const lk = useMeetingRoom()
 
 const meeting = ref<Meeting | null>(null)
@@ -59,9 +64,11 @@ const canRecord = ref(false)
 const recordingBusy = ref(false)
 const peopleOpen = ref(false)
 
-const back = computed(() =>
-  meeting.value ? `/setores/${meeting.value.sector_id}?view=meetings` : '/',
-)
+const back = computed(() => {
+  if (channelId.value) return `/chat?canal=${channelId.value}`
+  return meeting.value ? `/setores/${meeting.value.sector_id}?view=meetings` : '/'
+})
+const backLabel = computed(() => (channelId.value ? 'Voltar à conversa' : 'Voltar ao projeto'))
 const stateLabel = computed(
   () =>
     ({
@@ -83,7 +90,27 @@ async function load() {
   phase.value = 'loading'
   loadError.value = ''
   try {
-    meeting.value = await getMeeting(meetingId.value)
+    if (channelId.value) {
+      // a conversa não tem agenda: a "reunião" é só o título e a permissão de entrar
+      const info = await joinChannelRoom(channelId.value)
+      meeting.value = {
+        id: info.channel_id,
+        sector_id: '',
+        title: `Reunião · ${info.title}`,
+        description: '',
+        starts_at: '',
+        ends_at: '',
+        created_by: null,
+        participants: [],
+        recording_count: 0,
+        can_manage: false,
+        can_join: true,
+        created_at: '',
+      }
+      consent.value = true // sem gravação, não há aviso a aceitar
+    } else {
+      meeting.value = await getMeeting(meetingId.value)
+    }
     phase.value = 'prejoin'
   } catch (cause) {
     loadError.value = cause instanceof Error ? cause.message : 'Tente novamente.'
@@ -96,7 +123,9 @@ async function join() {
   phase.value = 'joining'
   joinError.value = ''
   try {
-    const info = await joinMeeting(meetingId.value)
+    const info = channelId.value
+      ? { ...(await joinChannelRoom(channelId.value)), can_record: false }
+      : await joinMeeting(meetingId.value)
     canRecord.value = info.can_record
     await lk.connect(info.url, info.token, { mic: wantMic.value, camera: wantCamera.value })
     phase.value = 'room'
@@ -156,7 +185,7 @@ async function toggleRecording() {
 }
 
 function rejoin() {
-  consent.value = false
+  consent.value = !!channelId.value
   phase.value = 'prejoin'
 }
 </script>
@@ -193,10 +222,10 @@ function rejoin() {
             :to="back"
             class="mb-2 inline-flex w-fit items-center gap-1 rounded-control text-13 text-fg-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-accent"
           >
-            <ArrowLeft :size="14" aria-hidden="true" /> Voltar ao projeto
+            <ArrowLeft :size="14" aria-hidden="true" /> {{ backLabel }}
           </RouterLink>
           <h1 id="prejoin-title" class="text-20 font-semibold">{{ meeting.title }}</h1>
-          <p class="text-13 text-fg-muted">{{ meetingWhen(meeting) }}</p>
+          <p v-if="!channelId" class="text-13 text-fg-muted">{{ meetingWhen(meeting) }}</p>
         </header>
 
         <UiEmptyState
@@ -215,7 +244,10 @@ function rejoin() {
             <UiSwitch v-model="wantCamera" label="Entrar com câmera" />
           </div>
 
-          <div class="grid gap-3 rounded-card border border-border bg-surface-2 p-4">
+          <div
+            v-if="!channelId"
+            class="grid gap-3 rounded-card border border-border bg-surface-2 p-4"
+          >
             <p class="flex items-center gap-2 text-14 font-medium">
               <Circle :size="12" class="fill-danger text-danger" aria-hidden="true" /> Aviso de
               gravação
@@ -411,7 +443,7 @@ function rejoin() {
       >
         <template #action>
           <div class="flex flex-wrap justify-center gap-2">
-            <UiButton :icon="ArrowLeft" @click="router.push(back)">Voltar ao projeto</UiButton>
+            <UiButton :icon="ArrowLeft" @click="router.push(back)">{{ backLabel }}</UiButton>
             <UiButton variant="primary" :icon="Video" @click="rejoin">Entrar de novo</UiButton>
           </div>
         </template>
