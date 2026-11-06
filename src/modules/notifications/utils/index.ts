@@ -11,11 +11,28 @@ const titles: Record<string, string> = {
   'Your organization role changed': 'Seu papel na organização mudou',
   'You were invited to an organization': 'Você recebeu um convite para uma organização',
   'Your organization invitation was accepted': 'Seu convite foi aceito',
+  'New comment on a task you follow': 'Novo comentário numa tarefa que você segue',
+  'New request in a project': 'Novo pedido num projeto',
+  'Your request was accepted': 'Seu pedido foi aceito',
+  'Your request was declined': 'Seu pedido foi recusado',
+  Automation: 'Automação',
+  'Missed call': 'Ligação perdida',
 }
 
+// títulos com o nome de quem fez a ação: [padrão do backend, tradução]
+const withActor: [RegExp, (name: string) => string][] = [
+  [/^(.+) mentioned you$/, (name) => `${name} mencionou você`],
+  [/^(.+) sent a message$/, (name) => `${name} enviou uma mensagem`],
+  [/^Voice call from (.+)$/, (name) => `Ligação de voz de ${name}`],
+  [/^Video call from (.+)$/, (name) => `Chamada de vídeo de ${name}`],
+]
+
 export function notificationTitle(title: string): string {
-  const mention = title.match(/^(.+) mentioned you$/)
-  return mention ? `${mention[1]} mencionou você` : (titles[title] ?? title)
+  for (const [pattern, translate] of withActor) {
+    const match = title.match(pattern)
+    if (match?.[1]) return translate(match[1])
+  }
+  return titles[title] ?? title
 }
 
 const text = (value: unknown) => (typeof value === 'string' && value ? value : null)
@@ -26,7 +43,8 @@ export function notificationPath(data: AppNotification['data']): string {
   const sector = text(data.sector_id)
   const task = text(data.task_id)
   const organization = text(data.organization_id)
-  if (data.channel_id) return '/chat'
+  const channel = text(data.channel_id)
+  if (channel) return `/chat?canal=${channel}`
   if (sector && task) return `/setores/${sector}?task=${task}`
   if (event === 'organization.invited' || event === 'organization.member_removed')
     return '/organizacoes'
@@ -51,7 +69,11 @@ export function notificationKind(item: Pick<AppNotification, 'title' | 'data'>):
 
 // Quem fez a ação, quando o título o cita ("Ana mentioned you"); sem nome devolve null.
 export function notificationActor(title: string): string | null {
-  return title.match(/^(.+) mentioned you$/)?.[1] ?? null
+  for (const [pattern] of withActor) {
+    const name = title.match(pattern)?.[1]
+    if (name) return name
+  }
+  return null
 }
 
 /** Agrupa por dia para a central: Hoje, Ontem ou a data. */
