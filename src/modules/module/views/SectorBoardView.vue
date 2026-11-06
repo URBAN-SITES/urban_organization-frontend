@@ -32,12 +32,10 @@ import {
   CalendarDays,
   Download,
   FileUp,
-  Gauge,
   ChartGantt,
   FileText,
   FolderKanban,
   Inbox,
-  Milestone,
   IterationCw,
   GitBranch,
   LayoutList,
@@ -77,13 +75,10 @@ import { fetchAllPages } from '@/shared/utils'
 import BoardColumn from '../components/boardColumn.vue'
 import BulkBar from '../components/bulkBar.vue'
 import ProjectBin from '../components/projectBin.vue'
-import ProjectCycles from '../components/projectCycles.vue'
-import ProjectEpics from '../components/projectEpics.vue'
 import ProjectIntake from '../components/projectIntake.vue'
 import ProjectImport from '../components/projectImport.vue'
 import ProjectPages from '../components/projectPages.vue'
 import { ProjectFiles } from '@/modules/uploads'
-import ProjectWorkload from '../components/projectWorkload.vue'
 import ProjectIcon from '../components/projectIcon.vue'
 import SavedViews from '../components/savedViews.vue'
 import TaskDetail from '../components/taskDetail.vue'
@@ -112,20 +107,9 @@ import {
 } from '../utils/board'
 import { isPlainShortcut, modalIsOpen } from '../utils/shortcuts'
 
-type View =
-  | 'board'
-  | 'list'
-  | 'table'
-  | 'timeline'
-  | 'cycles'
-  | 'epics'
-  | 'pages'
-  | 'intake'
-  | 'workload'
-  | 'meetings'
-  | 'github'
+type View = 'board' | 'list' | 'table' | 'timeline' | 'pages' | 'intake' | 'meetings' | 'github'
 // abas que não mostram tarefas (sem filtros)
-const TASKLESS: View[] = ['cycles', 'epics', 'pages', 'intake', 'workload', 'meetings', 'github']
+const TASKLESS: View[] = ['pages', 'intake', 'meetings', 'github']
 
 const props = defineProps<{ sectorId: string }>()
 const router = useRouter()
@@ -157,11 +141,8 @@ const VIEWS = [
   { value: 'list', label: 'Lista' },
   { value: 'table', label: 'Tabela' },
   { value: 'timeline', label: 'Linha do tempo' },
-  { value: 'cycles', label: 'Ciclos' },
-  { value: 'epics', label: 'Épicos' },
   { value: 'pages', label: 'Documentos' },
   { value: 'intake', label: 'Pedidos' },
-  { value: 'workload', label: 'Carga' },
   { value: 'meetings', label: 'Reuniões' },
   { value: 'github', label: 'GitHub' },
 ]
@@ -170,11 +151,8 @@ const VIEW_ICONS: Record<View, LucideIcon> = {
   list: LayoutList,
   table: Table2,
   timeline: ChartGantt,
-  cycles: IterationCw,
-  epics: Milestone,
   pages: FileText,
   intake: Inbox,
-  workload: Gauge,
   meetings: Video,
   github: GitBranch,
 }
@@ -270,8 +248,8 @@ const cycleFilterOptions = computed(() => [
 ])
 const currentCycle = computed(() => cycles.value.find((cycle) => cycle.state === 'current'))
 
-function showPerson(assignee: string) {
-  filters.value = { ...NO_FILTERS, assignee }
+function showCycle(cycleId: string) {
+  filters.value = { ...NO_FILTERS, cycle: cycleId }
   search.value = ''
   view.value = 'board'
 }
@@ -295,22 +273,11 @@ async function exportSheet() {
   }
 }
 
-function showEpic(epicId: string) {
-  filters.value = { ...NO_FILTERS, epic: epicId }
-  search.value = ''
-  view.value = 'board'
-}
 const epicFilterOptions = computed(() => [
   { value: '', label: 'Épico: todos' },
   { value: 'none', label: 'Fora de épicos' },
   ...epics.value.map((epic) => ({ value: epic.id, label: epic.name })),
 ])
-
-function showCycle(cycleId: string) {
-  filters.value = { ...NO_FILTERS, cycle: cycleId }
-  search.value = ''
-  view.value = 'board'
-}
 
 async function reschedule(id: string, dates: UpdateTaskRequest) {
   try {
@@ -815,34 +782,6 @@ function clearFilters() {
         </div>
 
         <div
-          v-else-if="view === 'cycles' && sector"
-          class="ui-rise -mx-4 min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:-mx-8 sm:px-8"
-        >
-          <ProjectCycles
-            v-model:cycles="cycles"
-            :sector-id="sector.id"
-            :tasks="kanban.tasks"
-            :statuses="kanban.statuses"
-            :can-edit="canEdit"
-            @show="showCycle"
-          />
-        </div>
-
-        <div
-          v-else-if="view === 'epics' && sector"
-          class="ui-rise -mx-4 min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:-mx-8 sm:px-8"
-        >
-          <ProjectEpics
-            v-model:epics="epics"
-            :sector-id="sector.id"
-            :tasks="kanban.tasks"
-            :people="people"
-            :can-edit="canEdit"
-            @show="showEpic"
-          />
-        </div>
-
-        <div
           v-else-if="view === 'pages' && sector"
           class="ui-rise -mx-4 min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:-mx-8 sm:px-8"
         >
@@ -862,13 +801,6 @@ function clearFilters() {
             :people="people"
             @open="openDetails"
           />
-        </div>
-
-        <div
-          v-else-if="view === 'workload' && sector"
-          class="ui-rise -mx-4 min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:-mx-8 sm:px-8"
-        >
-          <ProjectWorkload :sector-id="sector.id" :version="tableVersion" @show="showPerson" />
         </div>
 
         <div
