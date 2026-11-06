@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Menu } from '@lucide/vue'
+import { FolderKanban, Menu } from '@lucide/vue'
 import { computed, ref, useTemplateRef, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/modules/auth'
@@ -8,7 +8,7 @@ import { useNotificationsStore } from '@/modules/notifications'
 import { UiIcon } from '@/shared/components'
 import { useModalLayer } from '@/shared/composables/overlay'
 import { useOrganizationsStore } from '@/modules/organizations'
-import { forGuest, isNavActive, mobileTabs } from '../navigation'
+import { forGuest, isNavActive, mobileTabs, type NavItem } from '../navigation'
 import SidebarPanel from './SidebarPanel.vue'
 
 // As quatro telas do dia a dia ficam na barra; "Menu" abre a barra lateral completa num painel.
@@ -26,9 +26,18 @@ watch(
 )
 
 const organizations = useOrganizationsStore()
-const tabs = computed(() =>
-  organizations.current?.current_role === 'guest' ? forGuest(mobileTabs) : mobileTabs,
-)
+// Projetos (com as telas de cada projeto dentro dele) entra no lugar da antiga aba Equipe
+const tabs = computed<NavItem[]>(() => {
+  const current = organizations.current
+  const projects: NavItem = {
+    to: current ? `/organizacoes/${current.id}/projetos` : '/organizacoes',
+    label: 'Projetos',
+    icon: FolderKanban,
+    match: (path) => /^\/organizacoes\/[^/]+\/projetos/.test(path) || path.startsWith('/setores/'),
+  }
+  const [dashboard, ...rest] = current?.current_role === 'guest' ? forGuest(mobileTabs) : mobileTabs
+  return dashboard ? [dashboard, projects, ...rest] : [projects]
+})
 const menuActive = computed(() => !tabs.value.some((item) => isNavActive(item, route.path)))
 
 const tabClass = (active: boolean) => [

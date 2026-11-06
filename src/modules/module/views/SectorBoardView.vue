@@ -82,6 +82,7 @@ import ProjectEpics from '../components/projectEpics.vue'
 import ProjectIntake from '../components/projectIntake.vue'
 import ProjectImport from '../components/projectImport.vue'
 import ProjectPages from '../components/projectPages.vue'
+import { ProjectFiles } from '@/modules/uploads'
 import ProjectWorkload from '../components/projectWorkload.vue'
 import ProjectIcon from '../components/projectIcon.vue'
 import SavedViews from '../components/savedViews.vue'
@@ -158,7 +159,7 @@ const VIEWS = [
   { value: 'timeline', label: 'Linha do tempo' },
   { value: 'cycles', label: 'Ciclos' },
   { value: 'epics', label: 'Épicos' },
-  { value: 'pages', label: 'Páginas' },
+  { value: 'pages', label: 'Documentos' },
   { value: 'intake', label: 'Pedidos' },
   { value: 'workload', label: 'Carga' },
   { value: 'meetings', label: 'Reuniões' },
@@ -719,7 +720,7 @@ function clearFilters() {
                 aria-label="Buscar tarefas"
                 class="board-search w-full sm:w-56"
               />
-              <div class="board-views" role="tablist" aria-label="Modo de visualização">
+              <div class="board-views md:hidden" role="tablist" aria-label="Modo de visualização">
                 <UiTooltip
                   v-for="item in VIEWS"
                   :key="item.value"
@@ -845,7 +846,10 @@ function clearFilters() {
           v-else-if="view === 'pages' && sector"
           class="ui-rise -mx-4 min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:-mx-8 sm:px-8"
         >
-          <ProjectPages :sector-id="sector.id" :can-edit="canEdit" />
+          <div class="grid gap-8">
+            <ProjectPages :sector-id="sector.id" :can-edit="canEdit" />
+            <ProjectFiles :organization-id="sector.organization_id" :sector-id="sector.id" />
+          </div>
         </div>
 
         <div
@@ -871,7 +875,11 @@ function clearFilters() {
           v-else-if="view === 'github' && sector"
           class="ui-rise -mx-4 min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:-mx-8 sm:px-8"
         >
-          <ProjectGitHub :sector-id="sector.id" :can-manage="canManage" />
+          <ProjectGitHub
+            :sector-id="sector.id"
+            :can-manage="canManage"
+            @imported="load(sector.id)"
+          />
         </div>
 
         <div
@@ -1178,6 +1186,13 @@ function clearFilters() {
   background: rgb(0 0 0 / 0.4);
   padding: 3px;
   backdrop-filter: blur(10px);
+}
+
+/* no computador a barra lateral do projeto já troca de tela; os botões ficam só no celular */
+@media (min-width: 768px) {
+  .board-views {
+    display: none;
+  }
 }
 
 .board-view {
