@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { MicOff, Monitor } from '@lucide/vue'
-import { type Participant, Track, type TrackPublication } from 'livekit-client'
+import type { Participant, TrackPublication } from 'livekit-client'
 import { computed, onBeforeUnmount, useTemplateRef, watch } from 'vue'
 import { UiAvatar } from '@/shared/components'
 
-/** Vídeo (câmera ou tela) de uma pessoa; sem vídeo, mostra o avatar. */
+/** Vídeo (câmera ou tela) de uma pessoa; sem vídeo, mostra o avatar. O som toca pela sala. */
 const props = defineProps<{
   participant: Participant
   publication: TrackPublication | undefined
@@ -14,7 +14,6 @@ const props = defineProps<{
 }>()
 
 const video = useTemplateRef<HTMLVideoElement>('video')
-const audio = useTemplateRef<HTMLAudioElement>('audio')
 
 const name = computed(() => props.participant.name || props.participant.identity)
 const local = computed(() => props.participant.isLocal)
@@ -22,11 +21,6 @@ const videoTrack = computed(() => {
   void props.version
   const track = props.publication?.track
   return track && !props.publication?.isMuted ? track : undefined
-})
-const micTrack = computed(() => {
-  void props.version
-  if (local.value || props.screen) return undefined
-  return props.participant.getTrackPublication(Track.Source.Microphone)?.track
 })
 const muted = computed(() => {
   void props.version
@@ -45,17 +39,8 @@ watch(
   },
   { immediate: true, flush: 'post' },
 )
-watch(
-  [micTrack, audio],
-  ([track, element], [previous, oldElement]) => {
-    if (previous && oldElement) previous.detach(oldElement)
-    if (track && element) track.attach(element)
-  },
-  { immediate: true, flush: 'post' },
-)
 onBeforeUnmount(() => {
   if (videoTrack.value && video.value) videoTrack.value.detach(video.value)
-  if (micTrack.value && audio.value) micTrack.value.detach(audio.value)
 })
 </script>
 
@@ -79,7 +64,6 @@ onBeforeUnmount(() => {
       ]"
     />
     <UiAvatar v-if="!videoTrack" :name="name" size="lg" />
-    <audio v-if="micTrack" ref="audio" autoplay />
     <figcaption
       class="absolute bottom-2 left-2 flex max-w-[calc(100%-1rem)] items-center gap-1.5 rounded-control border border-border bg-surface-1 px-2 py-1 text-12 text-fg"
     >

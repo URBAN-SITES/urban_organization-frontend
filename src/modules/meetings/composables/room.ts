@@ -1,7 +1,9 @@
 import {
   ConnectionState,
   DisconnectReason,
+  type LocalAudioTrack,
   type Participant,
+  type RemoteTrack,
   Room,
   RoomEvent,
   Track,
@@ -9,6 +11,7 @@ import {
 } from 'livekit-client'
 import { computed, markRaw, onBeforeUnmount, ref, shallowRef } from 'vue'
 import { mediaProblem } from '../utils'
+import type { DeviceChoice, DeviceKind } from './devices'
 
 export type RoomState = 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'disconnected'
 
@@ -68,6 +71,33 @@ export function useMeetingRoom() {
     }),
   )
 
+  /** microfone publicado, para o medidor de volume */
+  const micTrack = computed(() => {
+    void version.value
+    return room.value?.localParticipant.getTrackPublication(Track.Source.Microphone)?.audioTrack as
+      LocalAudioTrack | undefined
+  })
+
+  // o som de cada pessoa toca num <audio> próprio, fora dos quadros de vídeo: assim
+  // ninguém fica mudo porque o quadro dela saiu da tela ou trocou de lugar
+  let speakers: HTMLElement | null = null
+  function playRemote(track: RemoteTrack) {
+    if (track.kind !== Track.Kind.Audio) return
+    if (!speakers) {
+      speakers = document.createElement('div')
+      speakers.hidden = true
+      document.body.append(speakers)
+    }
+    speakers.append(track.attach())
+  }
+  function stopRemote(track: RemoteTrack) {
+    if (track.kind === Track.Kind.Audio) for (const element of track.detach()) element.remove()
+  }
+  function dropSpeakers() {
+    speakers?.remove()
+    speakers = null
+  }
+
   const local = computed(() => {
     void version.value
     const me = room.value?.localParticipant
@@ -98,8 +128,26 @@ export function useMeetingRoom() {
     }
   }
 
-  async function connect(url: string, token: string, media: { mic: boolean; camera: boolean }) {
-    const current = markRaw(new Room({ adaptiveStream: true, dynacast: true }))
+  async function connect(
+    url: string,
+    token: string,
+    media: { mic: boolean; camera: boolean },
+    devices: DeviceChoice,
+  ) {
+    const current = markRaw(
+      new Room({
+        adaptiveStream: true,
+        dynacast: true,
+        audioCaptureDefaults: {
+          deviceId: devices.audioinput || undefined,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+        videoCaptureDefaults: { deviceId: devices.videoinput || undefined },
+        audioOutput: { deviceId: devices.audiooutput || undefined },
+      }),
+    )
     room.value = current
     state.value = 'connecting'
     leftReason.value = ''
@@ -121,10 +169,13 @@ export function useMeetingRoom() {
       .on(RoomEvent.AudioPlaybackStatusChanged, () => {
         audioBlocked.value = !current.canPlaybackAudio
       })
+      .on(RoomEvent.TrackSubscribed, playRemote)
+      .on(RoomEvent.TrackUnsubscribed, stopRemote)
       .on(RoomEvent.MediaDevicesError, (error, kind) => {
         report(mediaProblem(error, kind === 'audioinput' ? 'microfone' : 'câmera'))
       })
       .on(RoomEvent.Disconnected, (reason) => {
+        dropSpeakers()
         // saída voluntária não é problema; queda, expulsão ou sala encerrada é
         leftReason.value =
           reason === undefined || reason === DisconnectReason.CLIENT_INITIATED
@@ -156,6 +207,24 @@ export function useMeetingRoom() {
     if (media.camera) await setMedia('camera', true)
   }
 
+  /** Troca o aparelho no meio da reunião; vazio volta ao padrão do sistema. */
+  async function switchDevice(kind: DeviceKind, deviceId: string) {
+    const current = room.value
+    if (!current) return
+    try {
+      await current.switchActiveDevice(kind, deviceId || 'default')
+    } catch (error) {
+      report(
+        mediaProblem(
+          error,
+          kind === 'audioinput' ? 'microfone' : kind === 'videoinput' ? 'câmera' : 'alto-falante',
+        ),
+      )
+    } finally {
+      touch()
+    }
+  }
+
   async function enableAudio() {
     await room.value?.startAudio()
     audioBlocked.value = !(room.value?.canPlaybackAudio ?? true)
@@ -166,7 +235,10 @@ export function useMeetingRoom() {
     state.value = 'disconnected'
   }
 
-  onBeforeUnmount(() => void room.value?.disconnect())
+  onBeforeUnmount(() => {
+    void room.value?.disconnect()
+    dropSpeakers()
+  })
 
   return {
     room,
@@ -175,6 +247,7 @@ export function useMeetingRoom() {
     participants,
     tiles,
     local,
+    micTrack,
     recording,
     audioBlocked,
     mediaError,
@@ -182,6 +255,7 @@ export function useMeetingRoom() {
     busy,
     connect,
     setMedia,
+    switchDevice,
     enableAudio,
     leave,
   }
