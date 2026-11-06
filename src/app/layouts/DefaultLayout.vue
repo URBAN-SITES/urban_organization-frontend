@@ -6,7 +6,7 @@ import AppSidebar from './components/AppSidebar.vue'
 import CommandPalette from './components/CommandPalette.vue'
 import MobileNav from './components/MobileNav.vue'
 import { ShellKey } from '@/shared/composables/shell'
-import { useChatAlerts } from '@/modules/chat'
+import { CallOverlay, useChatAlerts } from '@/modules/chat'
 import { useInvitationsStore } from '@/modules/invitations'
 import { useAuthStore } from '@/modules/auth'
 import { useNotificationsStore } from '@/modules/notifications'
@@ -84,6 +84,7 @@ provide(ShellKey, {
       <QuickTaskDialog />
       <ShortcutsDialog />
       <RunningTimer />
+      <CallOverlay />
     </template>
   </div>
 </template>
