@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, useTemplateRef, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { BaseButton, TopbarComp, UiErrorState } from '@/shared/components'
 import { getErrorMessage } from '@/app/plugins/axios'
 import { useAuthStore } from '@/modules/auth'
-import { ensureGoogleConnected } from '@/modules/calendar_sync'
 import { useOrganizationsStore } from '@/modules/organizations'
 import {
   ChatAvatar,
@@ -19,12 +18,14 @@ import {
   ChatTyping,
 } from '../components'
 import { useChatSocket } from '../composables/useChatSocket'
+import { useVoiceRecorder } from '../composables/useVoiceRecorder'
 import { useCallStore } from '../stores/call'
 import { useChatStore } from '../stores/chat'
 import type { ChatChannel, ChatMessage, DemoMessage } from '../types'
 import { formatDayLabel } from '../utils'
 
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore()
 const organizations = useOrganizationsStore()
 const chat = useChatStore()
@@ -148,40 +149,46 @@ async function send() {
   await chat.send(content, { files: attached, mentions: mentions.map(([id]) => id) })
 }
 
-// O Meet não pode ser embutido em iframe (o Google bloqueia), então abre numa janelinha no canto.
-// A janela é aberta no clique, antes dos awaits, para o navegador não bloquear o popup.
-function openMeetWindow(): Window | null {
-  const width = 460
-  const height = 640
-  const left = Math.max(0, window.screenX + window.outerWidth - width - 16)
-  const top = Math.max(0, window.screenY + window.outerHeight - height - 48)
-  return window.open(
-    '',
-    'resenha-meet',
-    `popup=yes,width=${width},height=${height},left=${left},top=${top}`,
-  )
-}
-
+// Reunião da conversa (LiveKit, igual às reuniões dos projetos): avisa no canal e abre a sala
+const startingMeeting = ref(false)
 async function startMeet() {
-  const popup = openMeetWindow()
-  let navigated = false
+  const channelId = chat.activeId
+  if (!channelId || startingMeeting.value) return
+  startingMeeting.value = true
   try {
-    if (!(await ensureGoogleConnected({ returnTo: '/chat' }))) return // foi para o Google conectar a conta
-    const { link, error } = await chat.meet()
-    if (error) throw new Error(error)
-    if (link && popup) {
-      popup.location.href = link
-      navigated = true
-    } else if (link) window.open(link, '_blank', 'noopener') // popup bloqueado: abre em nova aba
-  } catch (e) {
-    toast.error(e instanceof Error ? e.message : 'Não foi possível iniciar o Meet.')
+    const { error } = await chat.meet()
+    if (error) return void toast.error(error)
+    await router.push({ name: 'ChannelRoom', params: { channelId } })
   } finally {
-    // sem link (erro, ou indo conectar o Google) não deixa uma janela vazia aberta
-    if (popup && !navigated) popup.close()
+    startingMeeting.value = false
   }
 }
 
-// chamadas WebRTC são para conversas pequenas; acima disso, use o Meet (limite do backend)
+// mensagem de voz: grava, mostra o tempo e envia como anexo de áudio
+const VOICE_MAX_SECONDS = 5 * 60 // ~1 MB em opus, longe do limite de 10 MB
+const voice = useVoiceRecorder()
+const voiceTime = computed(() => {
+  const s = voice.seconds.value
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+})
+async function startVoice() {
+  if (!(await voice.start()))
+    toast.error('Não foi possível gravar. Permita o acesso ao microfone neste site.')
+}
+async function sendVoice() {
+  const file = await voice.stop()
+  if (file) await chat.send('', { files: [file] })
+}
+watch(voice.seconds, (s) => {
+  if (s >= VOICE_MAX_SECONDS) void sendVoice()
+})
+// trocar de conversa no meio da gravação descarta o áudio, para não ir ao canal errado
+watch(
+  () => chat.activeId,
+  () => voice.cancel(),
+)
+
+// chamadas WebRTC são para conversas pequenas; acima disso, use a reunião (limite do backend)
 const CALL_MAX_PEOPLE = 6
 const canCall = computed(
   () =>
@@ -215,6 +222,10 @@ async function init() {
     await organizations.loadMembers(org.id)
     const others = organizations.members.map((m) => m.user_id).filter((id) => id !== me.value)
     await chat.load(org.id, others)
+    // vindo de um link (ex.: "Voltar à conversa" da reunião), abre a conversa certa
+    const wanted = route.query.canal
+    if (typeof wanted === 'string' && chat.channels.some((c) => c.id === wanted))
+      await chat.select(wanted)
   } catch (e) {
     loadError.value = getErrorMessage(e, 'Tente de novo em instantes.')
   } finally {
@@ -313,23 +324,16 @@ watch(() => [chat.activeId, items.value.length], scrollToEnd, { immediate: true 
           </template>
           <BaseButton
             variant="primary"
-            label="Iniciar Meet"
-            icon="videocam"
+            label="Iniciar reunião"
+            icon="video_call"
             icon-position="left"
             size="sm"
             :full-width="false"
+            :disabled="!active.id || startingMeeting"
+            title="Abre uma sala de vídeo da conversa e avisa os membros"
             @click="startMeet"
-            class="mt-0! hidden rounded-[10px]! h-[34px]! gap-[6px]! px-[12px]! py-0! text-[13px]! [&_.material-symbols-outlined]:text-[17px]! sm:inline-flex"
+            class="mt-0! inline-flex rounded-[10px]! h-[34px]! gap-[6px]! px-[12px]! py-0! text-[13px]! [&_.material-symbols-outlined]:text-[17px]!"
           />
-          <button
-            type="button"
-            class="grid size-[34px] shrink-0 cursor-pointer place-items-center rounded-[10px] border border-border transition-all duration-200 hover:-translate-y-0.5 hover:border-border-strong hover:bg-surface-2 hover:text-fg active:translate-y-0 dark:hover:bg-surface-2"
-            aria-label="Mais opções do canal"
-          >
-            <span class="material-symbols-outlined text-[18px]!" aria-hidden="true"
-              >more_horiz</span
-            >
-          </button>
           <select
             :value="activeId"
             aria-label="Selecionar canal ou mensagem direta"
@@ -402,6 +406,43 @@ watch(() => [chat.activeId, items.value.length], scrollToEnd, { immediate: true 
                 tabindex="-1"
                 aria-label="Arquivos da mensagem"
                 @change="pickFiles"
+              />
+              <span
+                v-if="voice.recording.value"
+                class="flex items-center gap-[6px] rounded-[8px] bg-danger/10 py-[2px] pr-[2px] pl-[8px] text-[12px] text-danger"
+                role="status"
+                aria-live="polite"
+              >
+                <span class="size-[8px] animate-pulse rounded-full bg-danger" aria-hidden="true" />
+                Gravando {{ voiceTime }}
+                <button
+                  type="button"
+                  class="grid size-[26px] cursor-pointer place-items-center rounded-[6px] text-fg-muted hover:bg-surface-2 hover:text-fg"
+                  aria-label="Descartar áudio"
+                  title="Descartar áudio"
+                  @click="voice.cancel()"
+                >
+                  <span class="material-symbols-outlined text-[16px]!" aria-hidden="true"
+                    >delete</span
+                  >
+                </button>
+                <button
+                  type="button"
+                  class="grid size-[26px] cursor-pointer place-items-center rounded-[6px] bg-accent text-accent-fg hover:brightness-105"
+                  aria-label="Enviar áudio"
+                  title="Enviar áudio"
+                  @click="sendVoice"
+                >
+                  <span class="material-symbols-outlined text-[16px]!" aria-hidden="true"
+                    >send</span
+                  >
+                </button>
+              </span>
+              <ChatToolButton
+                v-else
+                icon="mic"
+                label="Gravar mensagem de voz"
+                @click="startVoice"
               />
               <ChatToolButton
                 icon="attach_file"

@@ -25,3 +25,18 @@ O navegador pede permissão de microfone/câmera e exige HTTPS fora de `localhos
 `components/chatReactions.vue` mostra os emojis e um seletor rápido; `chat.react()` chama
 `POST /chat/messages/<id>/reactions/` (mesmo emoji de novo remove). Os outros recebem a
 mudança como `chat.message_updated`.
+
+## Reunião da conversa (LiveKit)
+
+O botão "Iniciar reunião" do cabeçalho não usa mais o Google Meet: chama
+`POST /chat/channels/<id>/meet/` (que publica o link na conversa) e abre
+`/chat/sala/<id>`. Essa rota usa a mesma tela das reuniões dos projetos
+(`meetings/views/MeetingRoomView.vue`), sem aviso nem botão de gravação. "Voltar à
+conversa" leva para `/chat?canal=<id>`, que abre a conversa certa. O link publicado
+aparece na mensagem como o botão "Entrar na reunião".
+
+## Mensagens de voz
+
+O microfone do composer grava com o `MediaRecorder` (`composables/useVoiceRecorder.ts`)
+e envia o áudio como anexo comum, até 5 minutos. `chatAttachmentCard.vue` toca anexos
+`audio/*` com o player do navegador.

@@ -9,6 +9,13 @@ export const meetingRoutes: RouteRecordRaw[] = [
     component: () => import('../views/MeetingRoomView.vue'),
   },
   {
+    // reunião de uma conversa do chat: mesma sala, sem agenda nem gravação
+    path: '/chat/sala/:channelId',
+    name: 'ChannelRoom',
+    meta: { requiresAuth: true },
+    component: () => import('../views/MeetingRoomView.vue'),
+  },
+  {
     path: '/reunioes/:meetingId/gravacoes/:recordingId',
     meta: { requiresAuth: true, transitionGroup: 'default' },
     component: () => import('@/app/layouts/DefaultLayout.vue'),
