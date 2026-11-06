@@ -18,6 +18,17 @@ export interface ChatMention {
   id: UUID
   name: string
 }
+export interface ChatReaction {
+  emoji: string
+  user_ids: UUID[]
+}
+/** Present on the summary message posted when a call ends. */
+export interface ChatCallSummary {
+  id: UUID
+  kind: CallKind
+  status: CallStatus
+  duration_seconds: number
+}
 export interface ChatMessage {
   id: UUID
   channel_id: UUID
@@ -28,6 +39,8 @@ export interface ChatMessage {
   task: ChatTaskReference | null
   mentions: ChatMention[]
   attachments: ChatAttachment[]
+  reactions: ChatReaction[]
+  call: ChatCallSummary | null
   created_at: ISODateTime
   edited_at: ISODateTime | null
   deleted_at: ISODateTime | null
@@ -70,5 +83,45 @@ export interface WriteChatMessageRequest {
 export interface EditChatMessageRequest {
   content: string
 }
+
+export type CallKind = 'audio' | 'video'
+export type CallStatus = 'ringing' | 'ongoing' | 'ended' | 'missed' | 'declined'
+export interface CallParticipant {
+  user_id: UUID
+  name: string
+  state: 'invited' | 'joined' | 'declined' | 'left'
+  muted: boolean
+  video_off: boolean
+  screen_sharing: boolean
+}
+export interface Call {
+  id: UUID
+  channel_id: UUID
+  organization_id: UUID
+  kind: CallKind
+  status: CallStatus
+  started_by: { id: UUID; name: string } | null
+  participants: CallParticipant[]
+  created_at: ISODateTime
+  answered_at: ISODateTime | null
+  ended_at: ISODateTime | null
+  duration_seconds: number
+}
+export type CallMediaFlags = Partial<
+  Pick<CallParticipant, 'muted' | 'video_off' | 'screen_sharing'>
+>
+/** WebRTC payload relayed by the server as is. */
+export interface CallSignalData {
+  sdp?: RTCSessionDescriptionInit
+  candidate?: RTCIceCandidateInit
+}
+/** Server -> client call events on /ws/ (see backend docs/LIGACOES.md). */
+export type CallEvent =
+  | { type: 'call.ringing'; call: Call }
+  | { type: 'call.participant_joined' | 'call.media'; call_id: UUID; participant: CallParticipant }
+  | { type: 'call.participant_left' | 'call.declined'; call_id: UUID; user_id: UUID }
+  | { type: 'call.signal'; call_id: UUID; from_user_id: UUID; data: CallSignalData }
+  | { type: 'call.ended'; call_id: UUID; status: CallStatus }
+  | { type: 'call.error'; call_id: UUID; detail: string }
 
 export type * from './ui'

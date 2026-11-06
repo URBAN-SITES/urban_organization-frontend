@@ -12,6 +12,7 @@ import {
   openDirect,
   sendMessage,
   startMeet,
+  toggleReaction,
 } from '../services'
 import type { ChatChannel, ChatMessage, WriteChatMessageRequest } from '../types'
 
@@ -132,7 +133,11 @@ export const useChatStore = defineStore('chat', () => {
     channel.last_message = {
       id: message.id,
       author_name: message.author_name,
-      content: mine && channel.kind === 'direct' ? `Você: ${message.content}` : message.content,
+      content: message.call
+        ? 'Ligação'
+        : mine && channel.kind === 'direct'
+          ? `Você: ${message.content}`
+          : message.content,
       has_attachments: message.attachments.length > 0,
       created_at: message.created_at,
     }
@@ -194,6 +199,14 @@ export const useChatStore = defineStore('chat', () => {
       )
     }
     return !!done
+  }
+
+  /** Toggles my emoji on a message of the active channel (others get it over the socket). */
+  async function react(messageId: UUID, emoji: string): Promise<void> {
+    const channelId = activeId.value
+    if (!channelId) return
+    const message = await run(() => toggleReaction(messageId, emoji))
+    if (message) upsert(channelId, message)
   }
 
   /** Creates a conversation shared by two or more teams and selects it. */
@@ -288,6 +301,7 @@ export const useChatStore = defineStore('chat', () => {
     send,
     edit,
     remove,
+    react,
     loadOlder,
     hasOlder,
     openTeamsChannel,
