@@ -2,16 +2,22 @@ import {
   BarChart3,
   Bell,
   CalendarDays,
+  ChartGantt,
   FileText,
   FolderKanban,
+  Gauge,
   GitBranch,
+  Inbox,
+  IterationCw,
   LayoutDashboard,
-  ListChecks,
+  LayoutList,
   Map as MapIcon,
   MessagesSquare,
+  Milestone,
   Settings,
   Sparkles,
   SquareKanban,
+  Table2,
   Users,
   Video,
   type LucideIcon,
@@ -51,10 +57,6 @@ const GUEST_PATHS = new Set(['/', '/notificacoes', '/configuracoes'])
 /** Tira do menu o que um convidado externo não acessa (o servidor também bloqueia). */
 export const forGuest = (items: NavItem[]): NavItem[] =>
   items.filter((item) => GUEST_PATHS.has(item.to))
-
-const PROJECT_BOARD = /^\/setores\/[^/]+$/
-const onProject = (path: string) => PROJECT_BOARD.test(path)
-const TASK_VIEWS = ['list', 'table']
 
 const dashboard: NavItem = {
   to: '/',
@@ -111,75 +113,80 @@ const map: NavItem = { to: '/mapbox', label: 'Mapa', icon: MapIcon, keywords: 'l
 const mapReady = Boolean(import.meta.env?.VITE_MAPBOX_API_KEY?.trim())
 const maps = mapReady ? [map] : []
 
-/** Grupos da barra lateral; os itens de projeto apontam para o projeto em contexto. */
+/** Grupos da barra lateral da organização. As telas de um projeto ficam na barra do projeto. */
 export function sidebarGroups(context: NavContext): NavGroup[] {
-  const project = (view?: string) =>
-    context.projectId
-      ? `/setores/${context.projectId}${view ? `?view=${view}` : ''}`
-      : context.projectsPath
-
+  const projects: NavItem = {
+    to: context.projectsPath,
+    label: 'Projetos',
+    icon: FolderKanban,
+    keywords: 'setores quadros',
+    match: (path) => /^\/organizacoes\/[^/]+\/(projetos|setores|configurar-setores)/.test(path),
+  }
   const groups: NavGroup[] = [
-    {
-      id: 'general',
-      label: 'Geral',
-      items: [
-        dashboard,
-        {
-          to: context.projectsPath,
-          label: 'Projetos',
-          icon: FolderKanban,
-          keywords: 'setores',
-          match: (path) =>
-            /^\/organizacoes\/[^/]+\/(projetos|setores|configurar-setores)/.test(path) ||
-            /^\/setores\/[^/]+\/editar$/.test(path),
-        },
-        {
-          to: project('list'),
-          label: 'Tarefas',
-          icon: ListChecks,
-          keywords: 'lista tabela',
-          match: (path, view) => onProject(path) && TASK_VIEWS.includes(view),
-        },
-        {
-          to: project(),
-          label: 'Kanban',
-          icon: SquareKanban,
-          keywords: 'quadro',
-          match: (path, view) => onProject(path) && (view === '' || view === 'board'),
-        },
-        calendar,
-        ...maps,
-      ],
-    },
-    {
-      id: 'collaboration',
-      label: 'Colaboração',
-      items: [
-        {
-          to: project('meetings'),
-          label: 'Reuniões',
-          icon: Video,
-          keywords: 'meet chamada gravacao',
-          match: (path, view) =>
-            path.startsWith('/reunioes/') || (onProject(path) && view === 'meetings'),
-        },
-        messages,
-        team,
-        files,
-        github,
-      ],
-    },
+    { id: 'general', label: 'Geral', items: [dashboard, projects, calendar, ...maps] },
+    { id: 'collaboration', label: 'Colaboração', items: [messages, github] },
     { id: 'intelligence', label: 'Inteligência', items: [assistant, reports] },
   ]
   if (!context.guest) return groups
-  // projetos, tarefas, quadro e reuniões vivem dentro do projeto: ficam; o resto sai
-  const projectOnly = new Set(['Dashboard', 'Projetos', 'Tarefas', 'Kanban', 'Reuniões'])
+  // convidado externo só entra nos projetos em que foi incluído
+  return [{ id: 'general', label: 'Geral', items: [dashboard, projects] }]
+}
+
+/** O projeto aberto na barra lateral: /setores/:id e /setores/:id/editar. */
+export function projectInPath(path: string): string | null {
+  return /^\/setores\/([^/]+)(?:\/editar)?$/.exec(path)?.[1] ?? null
+}
+
+/** Barra lateral de dentro de um projeto: cada aba dele vira um item. */
+export function projectGroups(projectId: string, options: { guest?: boolean } = {}): NavGroup[] {
+  const base = `/setores/${projectId}`
+  const tab = (view: string, label: string, icon: LucideIcon, keywords = ''): NavItem => ({
+    to: view === 'board' ? base : `${base}?view=${view}`,
+    label,
+    icon,
+    keywords,
+    match: (path, current) =>
+      path === base && (current === view || (view === 'board' && current === '')),
+  })
+  const groups: NavGroup[] = [
+    {
+      id: 'project-work',
+      label: 'Trabalho',
+      items: [
+        tab('board', 'Kanban', SquareKanban, 'quadro'),
+        tab('list', 'Lista', LayoutList, 'tarefas'),
+        tab('table', 'Tabela', Table2, 'planilha'),
+        tab('timeline', 'Linha do tempo', ChartGantt, 'gantt prazos'),
+      ],
+    },
+    {
+      id: 'project-team',
+      label: 'Projeto',
+      items: [
+        tab('pages', 'Documentos', FileText, 'paginas arquivos anexos'),
+        tab('meetings', 'Reuniões', Video, 'chamada gravacao'),
+        tab('cycles', 'Ciclos', IterationCw, 'sprint'),
+        tab('epics', 'Épicos', Milestone),
+        tab('intake', 'Pedidos', Inbox, 'solicitacoes'),
+        tab('workload', 'Carga', Gauge, 'capacidade'),
+        tab('github', 'GitHub', GitBranch, 'repositorio importar'),
+      ],
+    },
+  ]
+  if (!options.guest)
+    groups.push({
+      id: 'project-settings',
+      label: 'Ajustes',
+      items: [
+        {
+          to: `${base}/editar`,
+          label: 'Configurações',
+          icon: Settings,
+          keywords: 'colunas membros cor',
+        },
+      ],
+    })
   return groups
-    .map((group) => ({
-      ...group,
-      items: group.items.filter((item) => projectOnly.has(item.label)),
-    }))
-    .filter((group) => group.items.length)
 }
 
 /** Telas fixas da organização, para a busca (Ctrl+K). */
@@ -195,8 +202,8 @@ export const workspaceNav: NavItem[] = [
   ...maps,
 ]
 
-/** As quatro abas da barra inferior do celular. */
-export const mobileTabs: NavItem[] = [dashboard, calendar, messages, team]
+/** As abas fixas da barra inferior do celular (a de Projetos depende da organização). */
+export const mobileTabs: NavItem[] = [dashboard, calendar, messages]
 
 export const accountNav: NavItem[] = [
   { to: '/notificacoes', label: 'Notificações', icon: Bell, keywords: 'avisos alertas' },

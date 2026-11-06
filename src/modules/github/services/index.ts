@@ -3,6 +3,8 @@ import { api } from '@/app/plugins/axios'
 import type { UUID } from '@/shared/types'
 import type {
   GitHubCallbackResult,
+  GitHubProjectBoard,
+  GitHubProjectImportResult,
   GitHubPurpose,
   GitHubStatus,
   ProjectRepository,
@@ -129,4 +131,20 @@ export const unlinkTaskRef = (taskId: UUID, linkId: UUID) =>
   call(
     () => api.delete<void>(`/tasks/${taskId}/github/${linkId}/`),
     'Não foi possível desvincular.',
+  )
+
+export const listGitHubProjects = () =>
+  call(
+    () => api.get<GitHubProjectBoard[]>(`${BASE}projects/`),
+    'Não foi possível listar os quadros do GitHub.',
+  )
+
+/** Importa (ou importa de novo, sem duplicar) o quadro para o projeto. */
+export const importGitHubProject = (sectorId: UUID, projectId: string) =>
+  call(
+    () =>
+      api.post<GitHubProjectImportResult>(`/sectors/${sectorId}/github/projects/import/`, {
+        project_id: projectId,
+      }),
+    'Não foi possível importar o quadro do GitHub.',
   )
