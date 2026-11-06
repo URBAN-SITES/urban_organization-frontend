@@ -1,6 +1,6 @@
 /*
  * Design tokens do Inceptum (Fase 1).
- * Cores semânticas trocam com o tema (.dark); o resto é fixo.
+ * Tema único (escuro). Cores semânticas e movimento ficam no :root.
  * Use as utilidades geradas pelo Tailwind: bg-surface-1, text-fg-muted, border-border,
  * rounded-control, text-13, shadow-float, duration-(--dur-fast), ease-out...
  * Constantes equivalentes para JS ficam em src/shared/motion.
@@ -12,29 +12,39 @@
  */
 
 :root,
-.light {
-  --ds-bg: #fafaf9;
-  --ds-surface-1: #ffffff;
-  --ds-surface-2: #f4f4f3;
-  --ds-surface-3: #ebebe9;
-  --ds-border: #e5e5e3;
-  --ds-border-strong: #d4d4d1;
-  --ds-fg: #18181b;
-  --ds-fg-muted: #6b6b73;
-  /* #e85a0c não atinge AA com texto branco (3,6:1); #c2410c atinge 5,2:1 */
-  --ds-accent: #c2410c;
-  --ds-accent-hover: #ad3a0b;
-  --ds-accent-fg: #ffffff;
-  --ds-accent-soft: rgb(194 65 12 / 0.08);
-  --ds-danger: #c42b2b;
-  --ds-danger-soft: rgb(196 43 43 / 0.1);
-  --ds-success: #1f7a4d;
-  --ds-success-soft: rgb(31 122 77 / 0.1);
-  --ds-warning: #8a5a00;
-  --ds-warning-soft: rgb(176 115 0 / 0.12);
-  --ds-overlay: rgb(24 24 27 / 0.4);
-  --ds-shadow-color: 24 24 27;
+.dark {
+  /* tema único, escuro: identidade Urban Organization com preto profundo, superfícies em
+     camadas e bordas de luz. A classe .dark fica fixa no <html> para os utilitários dark: */
+  --ds-bg: #000000;
+  --ds-bg-2: #080808;
+  --ds-surface-1: #101010;
+  --ds-surface-2: #151515;
+  --ds-surface-3: #1d1d1f;
+  --ds-border: rgb(255 255 255 / 0.08);
+  --ds-border-strong: rgb(255 255 255 / 0.14);
+  --ds-fg: #ffffff;
+  --ds-fg-muted: #a1a1aa;
+  --ds-accent: #f99f11;
+  --ds-accent-hover: #fab13f;
+  /* texto preto sobre o laranja da marca: 10,6:1 */
+  --ds-accent-fg: #000000;
+  --ds-accent-soft: rgb(249 159 17 / 0.14);
+  --ds-danger: #f26b6b;
+  --ds-danger-soft: rgb(242 107 107 / 0.14);
+  --ds-success: #4cc38a;
+  --ds-success-soft: rgb(76 195 138 / 0.14);
+  --ds-warning: #e5a83b;
+  --ds-warning-soft: rgb(229 168 59 / 0.14);
+  --ds-overlay: rgb(0 0 0 / 0.66);
+  --ds-shadow-color: 0 0 0;
+  /* luz quente das fotos de referência, usada em brilhos e no topo dos cartões */
+  --ds-glow: rgb(249 159 17 / 0.16);
+  --ds-card-sheen: rgb(255 255 255 / 0.035);
 
+  color-scheme: dark;
+}
+
+:root {
   /* motion */
   --dur-instant: 80ms;
   --dur-fast: 140ms;
@@ -54,34 +64,6 @@
   --motion-slide: 32px;
   /* 1 com movimento, 0 com prefers-reduced-motion (ex.: drawer entra só com fade) */
   --motion-on: 1;
-
-  color-scheme: light;
-}
-
-.dark {
-  --ds-bg: #0b0b0c;
-  --ds-surface-1: #121214;
-  --ds-surface-2: #18181b;
-  --ds-surface-3: #202024;
-  --ds-border: #26262b;
-  --ds-border-strong: #34343a;
-  --ds-fg: #ededef;
-  --ds-fg-muted: #8b8b93;
-  --ds-accent: #ff6b1a;
-  --ds-accent-hover: #ff8340;
-  /* texto escuro sobre o laranja: 6,9:1 */
-  --ds-accent-fg: #0b0b0c;
-  --ds-accent-soft: rgb(255 107 26 / 0.14);
-  --ds-danger: #f26b6b;
-  --ds-danger-soft: rgb(242 107 107 / 0.14);
-  --ds-success: #4cc38a;
-  --ds-success-soft: rgb(76 195 138 / 0.14);
-  --ds-warning: #e5a83b;
-  --ds-warning-soft: rgb(229 168 59 / 0.14);
-  --ds-overlay: rgb(0 0 0 / 0.6);
-  --ds-shadow-color: 0 0 0;
-
-  color-scheme: dark;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -99,6 +81,8 @@
 
 @theme inline {
   --color-bg: var(--ds-bg);
+  --color-bg-2: var(--ds-bg-2);
+  --color-glow: var(--ds-glow);
   --color-surface-1: var(--ds-surface-1);
   --color-surface-2: var(--ds-surface-2);
   --color-surface-3: var(--ds-surface-3);
@@ -120,6 +104,12 @@
 
   --shadow-float:
     0 1px 2px rgb(var(--ds-shadow-color) / 0.08), 0 8px 24px rgb(var(--ds-shadow-color) / 0.16);
+  --shadow-card:
+    0 1px 0 var(--ds-card-sheen) inset, 0 1px 2px rgb(var(--ds-shadow-color) / 0.06),
+    0 10px 30px -18px rgb(var(--ds-shadow-color) / 0.5);
+  --shadow-lift:
+    0 1px 0 var(--ds-card-sheen) inset, 0 18px 40px -16px rgb(var(--ds-shadow-color) / 0.6),
+    0 0 0 1px var(--ds-border-strong);
   --shadow-modal:
     0 2px 4px rgb(var(--ds-shadow-color) / 0.1), 0 24px 48px rgb(var(--ds-shadow-color) / 0.24);
 }
@@ -151,8 +141,8 @@
   --text-48--letter-spacing: -0.03em;
 
   --radius-control: 6px;
-  --radius-card: 10px;
-  --radius-modal: 14px;
+  --radius-card: 12px;
+  --radius-modal: 16px;
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in: cubic-bezier(0.55, 0, 1, 0.45);

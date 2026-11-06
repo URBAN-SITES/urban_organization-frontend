@@ -93,6 +93,7 @@ test('every registered private route redirects anonymous visitors before loading
     'TermsOfService',
     // O login com GitHub volta para cá sem sessão.
     'GitHubCallback',
+    'PublicBoard',
   ]
   const resolvedPublicNames: string[] = []
   for (const record of router.getRoutes()) {
@@ -194,7 +195,7 @@ test('initial private navigation stays blocked when the server is unavailable', 
   auth.loadUser = async () => {
     throw new Error('offline')
   }
-  await router.push('/pagamentos')
+  await router.push('/calendario')
   assert.equal(router.currentRoute.value.matched.length, 0)
   assert.equal(messages.length, 1)
 })
@@ -215,8 +216,8 @@ test('anonymous users keep access to auth pages and invitation landing', async (
 test('authenticated users leave guest pages for a safe destination', async () => {
   const router = routerForTest()
   auth.loadUser = async () => ({ id: 'user' })
-  await router.push({ name: 'Login', query: { redirect: '/pagamentos/123?from=login#pix' } })
-  assert.equal(router.currentRoute.value.fullPath, '/pagamentos/123?from=login#pix')
+  await router.push({ name: 'Login', query: { redirect: '/setores/123?from=login#quadro' } })
+  assert.equal(router.currentRoute.value.fullPath, '/setores/123?from=login#quadro')
 })
 
 test('external destinations and auth-page loops fall back to home', async () => {

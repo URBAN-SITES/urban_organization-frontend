@@ -1,18 +1,4 @@
 import type { RouteRecordRaw } from 'vue-router'
-import { useAuthStore } from '@/modules/auth'
-import { toast } from 'vue-sonner'
-
-async function requireAssistantAccess() {
-  try {
-    const user = await useAuthStore().loadUser()
-    if (!user) return { name: 'Login', query: { redirect: '/assistente' } }
-    if (!(user.has_assistant_access ?? user.is_subscriber)) return { name: 'Plans' }
-    return true
-  } catch {
-    toast.error('Não foi possível verificar seu acesso à IA. Tente novamente.')
-    return false
-  }
-}
 
 export const chatRoutes: RouteRecordRaw[] = [
   {
@@ -31,8 +17,8 @@ export const chatRoutes: RouteRecordRaw[] = [
   },
   {
     path: '/assistente',
+    // a IA é liberada para toda conta logada; o guard global cuida do login
     meta: { requiresAuth: true, transitionGroup: 'default' },
-    beforeEnter: requireAssistantAccess,
     component: () => import('@/app/layouts/DefaultLayout.vue'),
     children: [
       {

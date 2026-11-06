@@ -10,7 +10,16 @@ const settings = defineModel<NotificationSettings>({ required: true })
   <div class="grid items-start gap-[16px] xl:grid-cols-2">
     <ConfigCard title="Por e-mail" class="gap-[6px]!">
       <ConfigToggle v-model="settings.email_product" label="E-mails de produto" />
-      <ConfigToggle v-model="settings.email_weekly_digest" label="Resumo semanal" />
+      <ConfigToggle
+        v-model="settings.email_daily_digest"
+        label="Resumo diário"
+        description="Às 8h: o que está atrasado, o que vence hoje ou amanhã e o que chegou para você."
+      />
+      <ConfigToggle
+        v-model="settings.email_weekly_digest"
+        label="Resumo semanal"
+        description="Segunda às 8h, com os prazos dos próximos 7 dias."
+      />
       <ConfigToggle v-model="settings.email_security" label="E-mails de segurança" />
       <ConfigToggle v-model="settings.email_assigned" label="Tarefas atribuídas a mim" />
       <ConfigToggle v-model="settings.email_mentions" label="Menções no chat" />

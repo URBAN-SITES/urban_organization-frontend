@@ -11,7 +11,6 @@ import { mapboxRoutes } from '@/modules/mapbox/router'
 import { moduleRoutes } from '@/modules/module/router'
 import { notificationsRoutes } from '@/modules/notifications/router'
 import { organizationRoutes } from '@/modules/organizations/router'
-import { paymentsRoutes } from '@/modules/payments/router'
 
 import { reportsRoutes } from '@/modules/reports/router'
 
@@ -44,7 +43,6 @@ export const routes: RouteRecordRaw[] = [
   ...mapboxRoutes,
   ...moduleRoutes,
   ...notificationsRoutes,
-  ...paymentsRoutes,
   ...uploadsRoutes,
   ...teamsRoutes,
   ...reportsRoutes,

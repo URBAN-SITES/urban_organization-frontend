@@ -1,14 +1,34 @@
 <script setup lang="ts">
 import { CalendarClock, ChevronDown } from '@lucide/vue'
 import { ref } from 'vue'
-import { UiAvatar } from '@/shared/components'
+import { UiAvatar, UiCheckbox } from '@/shared/components'
 import type { Status, Task } from '../types'
 import LabelChip from './labelChip.vue'
 import { PRIORITY_TEXT, priorityOf, shortDate } from './priority'
 
 /** Lista agrupada por status (as mesmas tarefas e filtros do quadro). */
-defineProps<{ statuses: Status[]; tasksOf: (statusId: string) => Task[] }>()
+const props = defineProps<{
+  statuses: Status[]
+  tasksOf: (statusId: string) => Task[]
+  /** caixas de seleção para editar várias de uma vez */
+  selectable?: boolean
+}>()
 const emit = defineEmits<{ open: [taskId: string] }>()
+const selected = defineModel<string[]>('selected', { default: () => [] })
+
+function pick(id: string, on: boolean) {
+  selected.value = on ? [...selected.value, id] : selected.value.filter((value) => value !== id)
+}
+function pickAll(statusId: string, on: boolean) {
+  const ids = props.tasksOf(statusId).map((task) => task.id)
+  const rest = selected.value.filter((id) => !ids.includes(id))
+  selected.value = on ? [...rest, ...ids] : rest
+}
+const allOf = (statusId: string) => {
+  const ids = props.tasksOf(statusId).map((task) => task.id)
+  const count = ids.filter((id) => selected.value.includes(id)).length
+  return { all: !!ids.length && count === ids.length, some: count > 0 && count < ids.length }
+}
 const collapsed = ref<string[]>([])
 
 function toggle(id: string) {
@@ -24,9 +44,17 @@ function toggle(id: string) {
       v-for="status in statuses"
       :key="status.id"
       :aria-labelledby="`list-${status.id}`"
-      class="rounded-card border border-border bg-surface-1"
+      class="uo-card"
     >
-      <h3 :id="`list-${status.id}`">
+      <h3 :id="`list-${status.id}`" class="flex items-center">
+        <span v-if="selectable && tasksOf(status.id).length" class="pl-4">
+          <UiCheckbox
+            :model-value="allOf(status.id).all"
+            :indeterminate="allOf(status.id).some"
+            :aria-label="`Selecionar todas de ${status.name}`"
+            @update:model-value="pickAll(status.id, $event)"
+          />
+        </span>
         <button
           type="button"
           :aria-expanded="!collapsed.includes(status.id)"
@@ -54,8 +82,18 @@ function toggle(id: string) {
         <li
           v-for="task in tasksOf(status.id)"
           :key="task.id"
-          class="relative flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 hover:bg-surface-2"
+          :class="[
+            'relative flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 hover:bg-surface-2',
+            selected.includes(task.id) ? 'bg-surface-2' : '',
+          ]"
         >
+          <span v-if="selectable" class="relative z-10">
+            <UiCheckbox
+              :model-value="selected.includes(task.id)"
+              :aria-label="`Selecionar ${task.title}`"
+              @update:model-value="pick(task.id, $event)"
+            />
+          </span>
           <component
             :is="priorityOf(task.priority).icon"
             :size="16"

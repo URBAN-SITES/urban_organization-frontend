@@ -31,3 +31,34 @@ export function installBootSplash(router: Router): void {
     dismissSplash()
   })
 }
+
+const STALE_CHUNK_ERROR =
+  /dynamically imported module|Importing a module script failed|Unable to preload CSS/i
+const STALE_CHUNK_KEY = 'urban:stale-chunk-reload'
+
+export function isStaleChunkError(error: unknown): boolean {
+  return error instanceof Error && STALE_CHUNK_ERROR.test(error.message)
+}
+
+/** Um deploy novo apaga os arquivos antigos: a aba aberta recarrega e segue para a rota pedida. */
+export function installStaleChunkReload(router: Router): void {
+  router.onError((error, to) => {
+    if (!isStaleChunkError(error)) return
+    try {
+      // uma tentativa por rota, para um arquivo realmente ausente não virar um loop de recargas
+      if (sessionStorage.getItem(STALE_CHUNK_KEY) === to.fullPath) return
+      sessionStorage.setItem(STALE_CHUNK_KEY, to.fullPath)
+    } catch {
+      return
+    }
+    window.location.assign(to.fullPath)
+  })
+  router.afterEach((_to, _from, failure) => {
+    if (failure) return
+    try {
+      sessionStorage.removeItem(STALE_CHUNK_KEY)
+    } catch {
+      // sem sessionStorage não há o que limpar
+    }
+  })
+}

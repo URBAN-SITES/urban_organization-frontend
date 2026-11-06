@@ -187,10 +187,7 @@ function rejoin() {
       v-else-if="(phase === 'prejoin' || phase === 'joining') && meeting"
       class="grid flex-1 place-items-center overflow-y-auto p-4"
     >
-      <section
-        class="grid w-full max-w-md gap-5 rounded-card border border-border bg-surface-1 p-6"
-        aria-labelledby="prejoin-title"
-      >
+      <section class="grid w-full max-w-md gap-5 uo-card p-6" aria-labelledby="prejoin-title">
         <header class="grid gap-1">
           <RouterLink
             :to="back"

@@ -1,26 +1,24 @@
 <script setup lang="ts">
 import {
+  Keyboard,
   CornerDownLeft,
   FileText,
   LogOut,
-  Moon,
   Plus,
   Search,
   SquareCheck,
   SquareKanban,
-  Sun,
   UserRound,
 } from '@lucide/vue'
 import { useEventListener, watchDebounced } from '@vueuse/core'
 import { computed, nextTick, ref, useId, useTemplateRef, watch, type Component } from 'vue'
 import { useRouter } from 'vue-router'
-import { useTheme } from '@/app/composables/useTheme'
-import { useSectorsStore } from '@/modules/module'
+import { useQuickActionsStore, useSectorsStore } from '@/modules/module'
 import { useOrganizationsStore } from '@/modules/organizations'
 import { useSearchStore } from '@/modules/search'
 import { UiIcon, UiSpinner } from '@/shared/components'
 import { useModalLayer } from '@/shared/composables/overlay'
-import { accountNav, workspaceNav } from '../navigation'
+import { accountNav, forGuest, workspaceNav } from '../navigation'
 
 interface Command {
   id: string
@@ -38,7 +36,7 @@ const emit = defineEmits<{ signOut: [] }>()
 
 const router = useRouter()
 const sectors = useSectorsStore()
-const { isDark, toggleTheme } = useTheme()
+const quick = useQuickActionsStore()
 const organizations = useOrganizationsStore()
 const search = useSearchStore()
 
@@ -51,7 +49,10 @@ const listId = useId()
 const normalize = (value: string) => value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 
 const commands = computed<Command[]>(() => [
-  ...[...workspaceNav, ...accountNav].map((item) => ({
+  ...(organizations.current?.current_role === 'guest'
+    ? forGuest([...workspaceNav, ...accountNav])
+    : [...workspaceNav, ...accountNav]
+  ).map((item) => ({
     id: `nav:${item.to}`,
     group: 'Navegar' as const,
     label: item.label,
@@ -68,12 +69,22 @@ const commands = computed<Command[]>(() => [
     run: () => void router.push(`/setores/${sector.id}`),
   })),
   {
-    id: 'action:theme',
+    id: 'action:new-task',
     group: 'Ações',
-    label: isDark.value ? 'Usar tema claro' : 'Usar tema escuro',
-    icon: isDark.value ? Sun : Moon,
-    keywords: 'tema claro escuro aparencia',
-    run: toggleTheme,
+    label: 'Nova tarefa',
+    hint: 'N',
+    icon: Plus,
+    keywords: 'criar tarefa rapida',
+    run: () => (quick.taskOpen = true),
+  },
+  {
+    id: 'action:shortcuts',
+    group: 'Ações',
+    label: 'Atalhos do teclado',
+    hint: '?',
+    icon: Keyboard,
+    keywords: 'teclas ajuda atalho',
+    run: () => (quick.shortcutsOpen = true),
   },
   {
     id: 'action:new-org',

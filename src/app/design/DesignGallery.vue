@@ -42,7 +42,6 @@ import { useConfirm } from '@/shared/composables/confirm'
 import { staggerDelay } from '@/shared/motion'
 
 /** Uma cópia da galeria; DesignView mostra uma no tema claro e outra no escuro. */
-defineProps<{ theme: 'light' | 'dark' }>()
 
 const text = ref('')
 const email = ref('ana@empresa')
@@ -120,9 +119,7 @@ const row = 'flex flex-wrap items-center gap-3'
 </script>
 
 <template>
-  <div :class="[theme, 'min-w-0 rounded-card border border-border bg-bg p-6 text-fg']">
-    <p class="mb-2 font-mono text-12 text-fg-muted">tema: {{ theme }}</p>
-
+  <div class="min-w-0 rounded-card border border-border bg-bg p-6 text-fg">
     <section :class="section">
       <h2 :class="heading">Tipografia</h2>
       <p class="text-48 font-semibold">48 Display</p>

@@ -30,6 +30,7 @@ export function notificationSettings(settings: UserSettings): NotificationSettin
   return {
     email_product: settings.email_product,
     email_weekly_digest: settings.email_weekly_digest,
+    email_daily_digest: settings.email_daily_digest,
     email_security: settings.email_security,
     email_assigned: settings.email_assigned,
     email_mentions: settings.email_mentions,

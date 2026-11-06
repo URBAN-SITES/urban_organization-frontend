@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { Building2, Check, ChevronsUpDown, Mail, Plus } from '@lucide/vue'
-import { computed } from 'vue'
+import { useResizeObserver, useStorage } from '@vueuse/core'
+import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/modules/auth'
 import { useChatStore } from '@/modules/chat'
 import { useInvitationsStore } from '@/modules/invitations'
 import { useSectorsStore } from '@/modules/module'
-import { useNotificationsStore } from '@/modules/notifications'
 import { useOrganizationsStore } from '@/modules/organizations'
-import { UiIcon, UiMenu, type MenuItem } from '@/shared/components'
-import { accountNav, isNavActive, workspaceGroups, type NavItem } from '../navigation'
+import { UiMenu, type MenuItem } from '@/shared/components'
+import { isNavActive, sidebarGroups, type NavItem } from '../navigation'
+import SidebarFavorites from './SidebarFavorites.vue'
 import SidebarLink from './SidebarLink.vue'
 
 /** Conteúdo da navegação: o mesmo na barra lateral (desktop) e no menu do celular. */
@@ -18,36 +19,60 @@ const { collapsed = false, size = 'md' } = defineProps<{
   size?: 'md' | 'lg'
 }>()
 
-const MAX_SECTORS = 8
-
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const organizations = useOrganizationsStore()
 const sectors = useSectorsStore()
 const chat = useChatStore()
-const notifications = useNotificationsStore()
 const invitations = useInvitationsStore()
 
 const current = computed(() => organizations.current)
 const orgLabel = (name: string, personal: boolean) => (personal ? 'Espaço pessoal' : name)
 const initial = (name: string) => name.trim().charAt(0).toUpperCase() || '?'
-const visibleSectors = computed(() => sectors.sectors.slice(0, MAX_SECTORS))
-const sectorActive = (id: string) => route.path.startsWith(`/setores/${id}`)
-const projectsLink = computed(() =>
-  current.value ? `/organizacoes/${current.value.id}/projetos` : '/organizacoes',
+const view = computed(() => (typeof route.query.view === 'string' ? route.query.view : ''))
+
+// projeto em contexto para Tarefas, Kanban e Reuniões: o aberto, o último aberto, um fixado
+const lastProject = useStorage<string | null>('urban:sidebar-last-project', null)
+const openProject = computed(() => {
+  const match = /^\/setores\/([^/]+)$/.exec(route.path)
+  return match ? match[1]! : null
+})
+watch(openProject, (id) => id && (lastProject.value = id), { immediate: true })
+const contextProject = computed(() => {
+  const ids = sectors.sectors.map((sector) => sector.id)
+  if (openProject.value) return openProject.value
+  if (lastProject.value && ids.includes(lastProject.value)) return lastProject.value
+  return sectors.sectors.find((sector) => sector.is_favorite)?.id ?? ids[0] ?? null
+})
+
+const groups = computed(() =>
+  sidebarGroups({
+    projectsPath: current.value ? `/organizacoes/${current.value.id}/projetos` : '/organizacoes',
+    projectId: contextProject.value,
+    guest: current.value?.current_role === 'guest',
+  }),
 )
 
-const groups = computed(() => [
-  ...workspaceGroups,
-  { id: 'account', label: 'Conta', items: accountNav },
-])
+const active = (item: NavItem) => isNavActive(item, route.path, view.value)
+const badge = (item: NavItem) => (item.to === '/chat' ? chat.unreadTotal : 0)
 
-function badge(item: NavItem): number {
-  if (item.to === '/chat') return chat.unreadTotal
-  if (item.to === '/notificacoes') return notifications.unreadCount
-  return 0
+// traço laranja da rota atual: um só elemento que desliza até o item ativo
+const nav = useTemplateRef<HTMLElement>('nav')
+const indicator = ref<{ top: number; height: number } | null>(null)
+function placeIndicator() {
+  const link = nav.value?.querySelector<HTMLElement>('.sb-link[data-active]')
+  // o traço ocupa o meio do item, sem encostar nas bordas arredondadas
+  indicator.value = link
+    ? { top: link.offsetTop + link.offsetHeight * 0.22, height: link.offsetHeight * 0.56 }
+    : null
 }
+watch(
+  () => [route.fullPath, collapsed, sectors.sectors.length],
+  () => void nextTick(placeIndicator),
+  { immediate: true },
+)
+useResizeObserver(nav, placeIndicator)
 
 const orgMenu = computed<MenuItem[]>(() => [
   ...organizations.organizations.map((organization) => ({
@@ -87,145 +112,66 @@ function chooseOrganization(id: string) {
 
 <template>
   <div v-if="auth.user" class="flex min-h-0 flex-1 flex-col">
-    <div class="px-2 pb-3">
+    <div class="px-3 pb-2">
       <UiMenu :items="orgMenu" label="Organizações" class="flex w-full">
-        <template #trigger="{ props: trigger }">
+        <template #trigger="{ props: trigger, open }">
           <button
             v-bind="trigger"
             data-ui="org-switcher"
             type="button"
             :aria-label="`Organização: ${current ? orgLabel(current.name, current.is_personal) : 'nenhuma'}. Trocar`"
-            :class="[
-              'flex w-full cursor-pointer items-center gap-2.5 overflow-hidden rounded-control border border-border bg-surface-2/60 pr-2 pl-[7px] text-left',
-              'transition-[background-color,border-color,scale] duration-(--dur-fast) ease-out',
-              'hover:border-border-strong hover:bg-surface-2 active:scale-[0.98]',
-              'focus-visible:outline-2 focus-visible:outline-accent',
-              size === 'lg' ? 'h-12' : 'h-10',
-            ]"
+            :class="['sb-org', size === 'lg' ? 'h-12' : 'h-11', { 'is-open': open }]"
           >
-            <span
-              class="relative grid size-6 shrink-0 place-items-center rounded-[5px] bg-fg text-12 font-semibold text-bg"
-              aria-hidden="true"
-            >
+            <span class="sb-org-mark" aria-hidden="true">
               {{ initial(current?.name ?? '') }}
-              <span
-                v-if="invitations.mine.length"
-                class="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-accent ring-2 ring-surface-1"
-              />
+              <span v-if="invitations.mine.length" class="sb-dot" />
             </span>
-            <span class="sidebar-label min-w-0 flex-1">
-              <span class="block truncate text-13 leading-4 font-medium text-fg">
+            <span class="sidebar-label min-w-0 flex-1 text-left">
+              <span class="block truncate text-13 leading-4 font-medium text-white">
                 {{ current ? orgLabel(current.name, current.is_personal) : 'Sem organização' }}
               </span>
-              <span class="block truncate text-12 leading-4 text-fg-muted">
+              <span class="block truncate text-12 leading-4 text-[var(--sb-muted)]">
                 {{ organizations.organizations.length }}
                 {{ organizations.organizations.length === 1 ? 'organização' : 'organizações' }}
               </span>
             </span>
-            <UiIcon
-              :icon="ChevronsUpDown"
+            <ChevronsUpDown
               :size="14"
-              class="sidebar-label shrink-0 text-fg-muted"
+              class="sidebar-label shrink-0 text-[var(--sb-muted)]"
+              aria-hidden="true"
             />
           </button>
         </template>
       </UiMenu>
     </div>
 
-    <nav
-      aria-label="Navegação principal"
-      class="sidebar-scroll min-h-0 flex-1 overflow-y-auto px-2 pb-3"
-    >
-      <section v-for="group in groups" :key="group.id" class="mb-3">
-        <!-- altura fixa: ao recolher, o título vira um traço sem empurrar os itens -->
-        <h2
-          class="sidebar-group relative flex h-7 items-center px-3 text-12 font-medium text-fg-muted"
-        >
-          <span class="sidebar-label truncate">{{ group.label }}</span>
-          <span class="sidebar-rule absolute left-3 h-px w-4 bg-border-strong" aria-hidden="true" />
+    <nav ref="nav" aria-label="Navegação principal" class="sb-scroll relative min-h-0 flex-1 px-3">
+      <span
+        v-if="indicator"
+        class="sb-indicator"
+        :style="{ transform: `translateY(${indicator.top}px)`, height: `${indicator.height}px` }"
+        aria-hidden="true"
+      />
+      <section v-for="group in groups" :key="group.id" class="sb-group">
+        <h2 class="sb-group-title">
+          <span class="sidebar-label">{{ group.label }}</span>
         </h2>
         <ul class="grid gap-0.5">
-          <li v-for="item in group.items" :key="item.to">
+          <li v-for="item in group.items" :key="item.label">
             <SidebarLink
               :to="item.to"
               :label="item.label"
               :icon="item.icon"
-              :active="isNavActive(item, route.path)"
+              :active="active(item)"
               :collapsed="collapsed"
               :badge="badge(item)"
               :size="size"
             />
           </li>
         </ul>
-
-        <!-- os projetos entram logo depois do grupo de trabalho -->
-        <template v-if="group.id === 'workspace' && visibleSectors.length">
-          <h2
-            class="sidebar-group relative mt-3 flex h-7 items-center justify-between px-3 text-12 font-medium text-fg-muted"
-          >
-            <span class="sidebar-label truncate">Projetos</span>
-            <RouterLink
-              :to="projectsLink"
-              class="sidebar-label rounded-[4px] text-12 text-fg-muted underline-offset-4 hover:text-fg hover:underline focus-visible:outline-2 focus-visible:outline-accent"
-            >
-              Ver todos
-            </RouterLink>
-            <span
-              class="sidebar-rule absolute left-3 h-px w-4 bg-border-strong"
-              aria-hidden="true"
-            />
-          </h2>
-          <ul class="grid gap-0.5">
-            <li v-for="sector in visibleSectors" :key="sector.id">
-              <SidebarLink
-                :to="`/setores/${sector.id}`"
-                :label="sector.name"
-                :color="sector.color"
-                :active="sectorActive(sector.id)"
-                :collapsed="collapsed"
-                :size="size"
-              />
-            </li>
-          </ul>
-        </template>
       </section>
+
+      <SidebarFavorites :collapsed="collapsed" :size="size" />
     </nav>
   </div>
 </template>
-
-<style>
-/*
- * Modo recolhido (AppSidebar marca data-collapsed): a largura muda sem animar layout,
- * os rótulos somem e voltam com fade e os títulos dos grupos viram um traço curto.
- */
-.sidebar-label {
-  transition:
-    opacity var(--dur-base) var(--ease-out),
-    transform var(--dur-base) var(--ease-out),
-    visibility 0s;
-}
-
-[data-collapsed] .sidebar-label {
-  visibility: hidden;
-  opacity: 0;
-  transform: translateX(calc(-4px * var(--motion-on)));
-  transition:
-    opacity var(--dur-fast-exit) var(--ease-in),
-    transform var(--dur-fast-exit) var(--ease-in),
-    visibility 0s linear var(--dur-fast-exit);
-}
-
-.sidebar-rule {
-  opacity: 0;
-  transition: opacity var(--dur-fast) var(--ease-out);
-}
-
-[data-collapsed] .sidebar-rule {
-  opacity: 1;
-}
-
-.sidebar-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: var(--ds-border-strong) transparent;
-}
-</style>

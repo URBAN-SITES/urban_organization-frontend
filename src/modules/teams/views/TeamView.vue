@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { UsersRound } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
@@ -60,6 +61,7 @@ const roleTone = {
   admin: BADGE.accent,
   member: BADGE.outline,
   viewer: BADGE.neutral,
+  guest: BADGE.outline,
 }
 
 let request = 0
@@ -124,6 +126,8 @@ const openSector = (sectorId: string) => router.push({ name: 'SectorBoard', para
 
 <template>
   <PageLayout
+    :icon="UsersRound"
+    tone="#3b82f6"
     :crumbs="['Equipe e setores']"
     title="Equipe e setores"
     :description="`${organization?.name ?? ''} · quem participa de cada setor e o que pode fazer`"
@@ -211,7 +215,7 @@ const openSector = (sectorId: string) => router.push({ name: 'SectorBoard', para
         v-for="sector in sectors.sectors"
         :key="sector.id"
         type="button"
-        class="flex cursor-pointer flex-col gap-[12px] rounded-card border border-border bg-surface-1 p-[14px] text-left transition-colors hover:border-(--text-muted)"
+        class="flex cursor-pointer flex-col gap-[12px] uo-card uo-card-interactive p-[14px] text-left"
         :aria-label="`Abrir o Kanban de ${sector.name}`"
         @click="openSector(sector.id)"
       >
@@ -256,10 +260,7 @@ const openSector = (sectorId: string) => router.push({ name: 'SectorBoard', para
       </button>
     </div>
 
-    <section
-      v-if="tab !== 'sectors'"
-      class="overflow-x-auto rounded-card border border-border bg-surface-1"
-    >
+    <section v-if="tab !== 'sectors'" class="overflow-x-auto uo-card">
       <table v-if="tab === 'members'" class="w-full min-w-[760px] border-collapse text-left">
         <thead>
           <tr class="border-b border-border bg-surface-2 dark:bg-black/20">

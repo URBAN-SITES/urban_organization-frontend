@@ -1,19 +1,18 @@
 <script setup lang="ts">
+import { ChartColumn } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
-import { useTheme } from '@/app/composables/useTheme'
 import { getErrorMessage } from '@/app/plugins/axios'
 import { BaseButton, CardComp, ChartComp, PageLayout } from '@/shared/components'
 import { avatar } from '@/shared/utils/people'
 import { categoryColors, inkWithAccent } from '@/shared/utils/chartColors'
 import { useOrganizationsStore } from '@/modules/organizations'
-import { getReport } from '../services'
+import { downloadReportPdf, getReport } from '../services'
 import type { Report, ReportDays } from '../types'
 import { kpis, peopleCsv, periods } from '../utils'
 import { BADGE, BADGE_BASE, TOOLBAR_BUTTON } from '../utils/ui'
 
 const organizations = useOrganizationsStore()
-const { isDark } = useTheme()
 
 const days = ref<ReportDays>(30)
 const report = ref<Report | null>(null)
@@ -47,7 +46,7 @@ const weeklyData = computed(() => ({
     {
       label: 'Tarefas concluídas',
       data: weeks.value.map((w) => w.done),
-      backgroundColor: inkWithAccent(weeks.value.length, isDark.value),
+      backgroundColor: inkWithAccent(weeks.value.length),
     },
   ],
 }))
@@ -78,10 +77,32 @@ function exportCsv() {
   Object.assign(document.createElement('a'), { href: url, download: 'desempenho.csv' }).click()
   URL.revokeObjectURL(url)
 }
+
+const exportingPdf = ref(false)
+async function exportPdf() {
+  const organization = organizations.current
+  if (!organization || exportingPdf.value) return
+  exportingPdf.value = true
+  try {
+    const blob = await downloadReportPdf(organization.id, days.value)
+    const url = URL.createObjectURL(blob)
+    Object.assign(document.createElement('a'), {
+      href: url,
+      download: `relatorio-${days.value}-dias.pdf`,
+    }).click()
+    URL.revokeObjectURL(url)
+  } catch (error) {
+    toast.error(getErrorMessage(error, 'Não foi possível gerar o PDF.'))
+  } finally {
+    exportingPdf.value = false
+  }
+}
 </script>
 
 <template>
   <PageLayout
+    :icon="ChartColumn"
+    tone="#3b82f6"
     :crumbs="['Relatórios']"
     title="Relatórios"
     :description="`${periods.find((p) => p.days === days)!.label} · setores que você acompanha`"
@@ -112,6 +133,16 @@ function exportCsv() {
           :class="TOOLBAR_BUTTON"
           @click="exportCsv"
         />
+        <BaseButton
+          variant="secondary"
+          label="Baixar PDF"
+          icon="picture_as_pdf"
+          icon-position="left"
+          :full-width="false"
+          :loading="exportingPdf"
+          :class="TOOLBAR_BUTTON"
+          @click="exportPdf"
+        />
       </div>
     </template>
 
@@ -140,7 +171,7 @@ function exportCsv() {
       />
     </div>
 
-    <section class="overflow-hidden rounded-card border border-border bg-surface-1">
+    <section class="overflow-hidden uo-card">
       <h2 class="px-[18px] pt-[16px] pb-[12px] text-16 font-semibold text-fg">
         Desempenho por pessoa
       </h2>

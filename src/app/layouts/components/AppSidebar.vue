@@ -1,23 +1,82 @@
 <script setup lang="ts">
-import { PanelLeftClose, PanelLeftOpen } from '@lucide/vue'
-import { useStorage } from '@vueuse/core'
-import { computed, onMounted, watch } from 'vue'
+import { onClickOutside, onKeyStroke, useMutationObserver } from '@vueuse/core'
+import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/modules/auth'
 import { useSectorsStore } from '@/modules/module'
 import { useOrganizationsStore } from '@/modules/organizations'
-import { UiIcon, UiTooltip } from '@/shared/components'
-import SidebarNav from './SidebarNav.vue'
-import SidebarProfile from './SidebarProfile.vue'
+import SidebarPanel from './SidebarPanel.vue'
 
 const auth = useAuthStore()
 const organizations = useOrganizationsStore()
 const sectors = useSectorsStore()
+const route = useRoute()
 
-// recolhida ou não: preferência do usuário, guardada no navegador
-const collapsed = useStorage('inceptum:sidebar-collapsed', false)
-const toggleLabel = computed(() =>
-  collapsed.value ? 'Expandir barra lateral' : 'Recolher barra lateral',
+/*
+ * A barra fica sempre compacta (só ícones) e abre por cima do conteúdo, sem empurrar a página:
+ * - mouse: abre ao passar por cima e fecha ao sair, com um pequeno atraso para não piscar
+ *   quando o cursor só cruza a barra;
+ * - teclado: abre quando o foco (Tab) entra nela e fecha quando sai;
+ * - toque: um toque no fundo da barra abre; tocar fora, Esc ou trocar de tela fecha;
+ * - menus da organização e da conta abertos seguram a barra aberta até fecharem.
+ */
+const OPEN_DELAY = 110
+const CLOSE_DELAY = 240
+
+const aside = useTemplateRef<HTMLElement>('aside')
+const hovering = ref(false)
+const keyboardFocus = ref(false)
+const touchOpen = ref(false)
+const menuOpen = ref(false)
+const expanded = computed(
+  () => hovering.value || keyboardFocus.value || touchOpen.value || menuOpen.value,
 )
+
+let timer: ReturnType<typeof setTimeout> | undefined
+function setHover(value: boolean) {
+  clearTimeout(timer)
+  timer = setTimeout(() => (hovering.value = value), value ? OPEN_DELAY : CLOSE_DELAY)
+}
+onBeforeUnmount(() => clearTimeout(timer))
+
+function onPointerEnter(event: PointerEvent) {
+  if (event.pointerType !== 'touch') setHover(true)
+}
+function onPointerLeave(event: PointerEvent) {
+  if (event.pointerType !== 'touch') setHover(false)
+}
+// toque no fundo da barra (fora de links e botões) abre; nos ícones segue navegando direto
+function onPointerDown(event: PointerEvent) {
+  if (event.pointerType !== 'touch' || expanded.value) return
+  if (!(event.target as Element).closest('a, button')) touchOpen.value = true
+}
+onClickOutside(aside, () => (touchOpen.value = false))
+
+function onFocusIn(event: FocusEvent) {
+  if ((event.target as Element).matches(':focus-visible')) keyboardFocus.value = true
+}
+function onFocusOut(event: FocusEvent) {
+  if (!aside.value?.contains(event.relatedTarget as Node | null)) keyboardFocus.value = false
+}
+
+// os menus vão para o <body>: o estado aberto vem do aria-expanded dos gatilhos
+useMutationObserver(
+  aside,
+  () => (menuOpen.value = !!aside.value?.querySelector('[aria-haspopup][aria-expanded="true"]')),
+  { subtree: true, attributes: true, attributeFilter: ['aria-expanded'] },
+)
+
+function close() {
+  clearTimeout(timer)
+  hovering.value = keyboardFocus.value = touchOpen.value = false
+}
+watch(
+  () => route.fullPath,
+  () => (touchOpen.value = false),
+)
+onKeyStroke('Escape', () => {
+  if (expanded.value && !menuOpen.value) close()
+})
 
 // páginas sem guard abrem sem o usuário carregado: confere a sessão
 onMounted(async () => {
@@ -38,46 +97,21 @@ watch(
 </script>
 
 <template>
-  <aside
-    :data-collapsed="collapsed || undefined"
-    :class="[
-      'sticky top-0 hidden h-dvh shrink-0 flex-col overflow-hidden border-r border-border bg-surface-1 md:flex',
-      collapsed ? 'w-14' : 'w-64',
-    ]"
-    aria-label="Barra lateral"
-  >
-    <div class="flex h-12 shrink-0 items-center px-2">
-      <RouterLink
-        to="/"
-        class="flex min-w-0 items-center gap-2.5 rounded-control py-1 pr-2 pl-[10px] focus-visible:outline-2 focus-visible:outline-accent"
-        aria-label="Inceptum: início"
-      >
-        <img src="/icons/logo.svg" alt="" class="size-5 shrink-0 rounded-[4px]" />
-        <span
-          class="sidebar-label truncate text-13 font-semibold tracking-[0.18em] text-fg uppercase"
-        >
-          Inceptum
-        </span>
-      </RouterLink>
-    </div>
-
-    <SidebarNav :collapsed="collapsed" />
-
-    <div class="shrink-0 border-t border-border p-2">
-      <UiTooltip :text="toggleLabel" placement="right" :disabled="!collapsed" class="mb-1 flex">
-        <button
-          type="button"
-          data-ui="sidebar-toggle"
-          :aria-label="collapsed ? toggleLabel : undefined"
-          :aria-expanded="!collapsed"
-          class="group flex h-8 w-full cursor-pointer items-center gap-3 overflow-hidden rounded-control px-3 text-13 text-fg-muted transition-[background-color,color,scale] duration-(--dur-fast) ease-out hover:bg-surface-2/70 hover:text-fg focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent active:scale-[0.98]"
-          @click="collapsed = !collapsed"
-        >
-          <UiIcon :icon="collapsed ? PanelLeftOpen : PanelLeftClose" :size="16" class="shrink-0" />
-          <span class="sidebar-label truncate">Recolher</span>
-        </button>
-      </UiTooltip>
-      <SidebarProfile :collapsed="collapsed" />
-    </div>
-  </aside>
+  <!-- o espaço reservado é sempre o da barra compacta: abrir não empurra o conteúdo -->
+  <div class="sb-host sticky top-0 z-40 hidden h-dvh shrink-0 md:block">
+    <aside
+      ref="aside"
+      class="app-sidebar dark"
+      :class="{ 'is-open': expanded }"
+      :data-collapsed="!expanded || undefined"
+      aria-label="Barra lateral"
+      @pointerenter="onPointerEnter"
+      @pointerleave="onPointerLeave"
+      @pointerdown="onPointerDown"
+      @focusin="onFocusIn"
+      @focusout="onFocusOut"
+    >
+      <SidebarPanel :collapsed="!expanded" />
+    </aside>
+  </div>
 </template>

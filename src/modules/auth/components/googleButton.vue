@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ArrowRight } from '@lucide/vue'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { mountGoogleButton } from '../services/googleIdentity'
 
@@ -12,7 +13,7 @@ const emit = defineEmits<{
 
 const buttonContainer = ref<HTMLDivElement>()
 const label = computed(() =>
-  props.buttonText === 'signup_with' ? 'Cadastrar com Google' : 'Entrar com Google',
+  props.buttonText === 'signup_with' ? 'Continuar com Google' : 'Entrar com Google',
 )
 const isLoading = ref(true)
 const setupMessage = ref('')
@@ -54,16 +55,8 @@ onBeforeUnmount(() => {
   <div v-if="clientId" class="w-full">
     <!-- Visual próprio, igual aos outros botões; o botão oficial do Google fica
          invisível por cima, ampliado para cobrir a área toda, e recebe o clique. -->
-    <div
-      :class="[
-        'group relative flex h-11 w-full items-center justify-center gap-2.5 overflow-hidden rounded-control border border-border bg-surface-1 text-14 font-medium text-fg',
-        'transition-[background-color,border-color] duration-(--dur-fast) ease-out',
-        setupMessage || isLoading
-          ? 'opacity-60'
-          : 'hover:border-border-strong hover:bg-surface-2 focus-within:outline-2 focus-within:outline-accent',
-      ]"
-    >
-      <svg class="size-4 shrink-0" viewBox="0 0 48 48" aria-hidden="true">
+    <div :class="['auth-social ui-sweep', { 'opacity-60': setupMessage || isLoading }]">
+      <svg class="size-[18px] shrink-0" viewBox="0 0 48 48" aria-hidden="true">
         <path
           fill="#FFC107"
           d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"
@@ -81,7 +74,8 @@ onBeforeUnmount(() => {
           d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"
         />
       </svg>
-      <span>{{ label }}</span>
+      <span class="flex-1 text-center">{{ label }}</span>
+      <ArrowRight :size="16" class="auth-social-arrow shrink-0" aria-hidden="true" />
 
       <div
         v-if="!setupMessage"

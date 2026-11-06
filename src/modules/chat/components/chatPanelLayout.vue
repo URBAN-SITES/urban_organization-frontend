@@ -6,7 +6,7 @@ withDefaults(defineProps<{ tinted?: boolean }>(), { tinted: false })
 </script>
 
 <template>
-  <div class="flex min-h-0 flex-1 overflow-hidden rounded-card border border-border bg-surface-1">
+  <div class="flex min-h-0 flex-1 overflow-hidden uo-card">
     <aside
       class="hidden w-[280px] shrink-0 flex-col overflow-y-auto border-r border-border bg-surface-2 md:flex dark:bg-black/20"
     >
