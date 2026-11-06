@@ -107,6 +107,9 @@ const reports: NavItem = {
   keywords: 'graficos metricas',
 }
 const map: NavItem = { to: '/mapbox', label: 'Mapa', icon: MapIcon, keywords: 'localizacao' }
+// sem chave do Mapbox a tela só diria "indisponível": o item some do menu e da busca
+const mapReady = Boolean(import.meta.env?.VITE_MAPBOX_API_KEY?.trim())
+const maps = mapReady ? [map] : []
 
 /** Grupos da barra lateral; os itens de projeto apontam para o projeto em contexto. */
 export function sidebarGroups(context: NavContext): NavGroup[] {
@@ -145,7 +148,7 @@ export function sidebarGroups(context: NavContext): NavGroup[] {
           match: (path, view) => onProject(path) && (view === '' || view === 'board'),
         },
         calendar,
-        map,
+        ...maps,
       ],
     },
     {
@@ -189,7 +192,7 @@ export const workspaceNav: NavItem[] = [
   github,
   assistant,
   reports,
-  map,
+  ...maps,
 ]
 
 /** As quatro abas da barra inferior do celular. */
