@@ -8,13 +8,15 @@ import {
   MonitorUp,
   MonitorX,
   PhoneOff,
+  Settings2,
   Users,
   Video,
   VideoOff,
   Volume2,
   X,
 } from '@lucide/vue'
-import { computed, ref, watch } from 'vue'
+import { createLocalAudioTrack, type LocalAudioTrack } from 'livekit-client'
+import { computed, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import {
@@ -29,7 +31,9 @@ import {
   UiSwitch,
   UiTooltip,
 } from '@/shared/components'
+import DeviceSettings from '../components/deviceSettings.vue'
 import ParticipantTile from '../components/participantTile.vue'
+import { type DeviceKind, useMediaDevices } from '../composables/devices'
 import { useMeetingRoom } from '../composables/room'
 import {
   getMeeting,
@@ -52,6 +56,40 @@ const router = useRouter()
 const channelId = computed(() => (route.params.channelId ? String(route.params.channelId) : ''))
 const meetingId = computed(() => String(route.params.meetingId ?? route.params.channelId))
 const lk = useMeetingRoom()
+const devices = useMediaDevices()
+const settingsOpen = ref(false)
+
+// antes de entrar, um microfone de teste alimenta o medidor de volume
+const preview = shallowRef<LocalAudioTrack>()
+let previewRequest = 0
+function stopPreview() {
+  previewRequest++
+  preview.value?.stop()
+  preview.value = undefined
+}
+async function startPreview() {
+  stopPreview()
+  if (!wantMic.value) return
+  const request = previewRequest
+  try {
+    const track = await createLocalAudioTrack({
+      deviceId: devices.choice.value.audioinput || undefined,
+    })
+    if (request !== previewRequest) return track.stop()
+    preview.value = track
+    // com a permissão dada, os nomes dos aparelhos aparecem
+    void devices.refresh()
+  } catch {
+    // o aviso detalhado aparece ao entrar; aqui só não há medidor
+  }
+}
+onBeforeUnmount(stopPreview)
+
+async function pickDevice(kind: DeviceKind, deviceId: string) {
+  devices.pick(kind, deviceId)
+  if (phase.value === 'room') await lk.switchDevice(kind, deviceId)
+  else if (kind === 'audioinput') await startPreview()
+}
 
 const meeting = ref<Meeting | null>(null)
 const loadError = ref('')
@@ -112,11 +150,16 @@ async function load() {
       meeting.value = await getMeeting(meetingId.value)
     }
     phase.value = 'prejoin'
+    await devices.refresh()
+    await startPreview()
   } catch (cause) {
     loadError.value = cause instanceof Error ? cause.message : 'Tente novamente.'
   }
 }
 watch(meetingId, load, { immediate: true })
+watch(wantMic, () => {
+  if (phase.value === 'prejoin') void startPreview()
+})
 
 async function join() {
   if (!consent.value || phase.value === 'joining') return
@@ -127,7 +170,13 @@ async function join() {
       ? { ...(await joinChannelRoom(channelId.value)), can_record: false }
       : await joinMeeting(meetingId.value)
     canRecord.value = info.can_record
-    await lk.connect(info.url, info.token, { mic: wantMic.value, camera: wantCamera.value })
+    stopPreview() // o microfone de teste sai antes da sala abrir o de verdade
+    await lk.connect(
+      info.url,
+      info.token,
+      { mic: wantMic.value, camera: wantCamera.value },
+      devices.choice.value,
+    )
     phase.value = 'room'
   } catch (cause) {
     await lk.leave()
@@ -187,6 +236,7 @@ async function toggleRecording() {
 function rejoin() {
   consent.value = !!channelId.value
   phase.value = 'prejoin'
+  void startPreview()
 }
 </script>
 
@@ -243,6 +293,22 @@ function rejoin() {
             />
             <UiSwitch v-model="wantCamera" label="Entrar com câmera" />
           </div>
+
+          <details class="group rounded-card border border-border p-4" open>
+            <summary
+              class="flex cursor-pointer list-none items-center gap-2 text-14 font-medium focus-visible:outline-2 focus-visible:outline-accent"
+            >
+              <Settings2 :size="16" aria-hidden="true" /> Som e câmera
+            </summary>
+            <DeviceSettings
+              class="mt-4"
+              :lists="devices.lists.value"
+              :choice="devices.choice.value"
+              :can-pick-output="devices.canPickOutput"
+              :mic-track="preview"
+              @pick="pickDevice"
+            />
+          </details>
 
           <div
             v-if="!channelId"
@@ -331,7 +397,30 @@ function rejoin() {
         </main>
 
         <aside
-          v-if="peopleOpen"
+          v-if="settingsOpen"
+          class="w-80 shrink-0 overflow-y-auto border-l border-border p-4 max-sm:absolute max-sm:inset-0 max-sm:z-10 max-sm:w-auto max-sm:border-l-0 max-sm:bg-bg"
+          aria-labelledby="settings-title"
+        >
+          <div class="mb-3 flex items-center justify-between">
+            <h2 id="settings-title" class="text-14 font-semibold">Som e câmera</h2>
+            <UiIconButton
+              :icon="X"
+              size="sm"
+              label="Fechar ajustes"
+              @click="settingsOpen = false"
+            />
+          </div>
+          <DeviceSettings
+            :lists="devices.lists.value"
+            :choice="devices.choice.value"
+            :can-pick-output="devices.canPickOutput"
+            :mic-track="lk.micTrack.value"
+            @pick="pickDevice"
+          />
+        </aside>
+
+        <aside
+          v-else-if="peopleOpen"
           class="w-72 shrink-0 overflow-y-auto border-l border-border p-4 max-sm:absolute max-sm:inset-0 max-sm:z-10 max-sm:w-auto max-sm:border-l-0 max-sm:bg-bg"
           aria-labelledby="people-title"
         >
@@ -412,7 +501,17 @@ function rejoin() {
             variant="secondary"
             :pressed="peopleOpen"
             label="Pessoas na sala"
-            @click="peopleOpen = !peopleOpen"
+            @click="((peopleOpen = !peopleOpen), (settingsOpen = false))"
+          />
+        </UiTooltip>
+        <UiTooltip text="Som e câmera">
+          <UiIconButton
+            :icon="Settings2"
+            size="lg"
+            variant="secondary"
+            :pressed="settingsOpen"
+            label="Escolher microfone, alto-falante e câmera"
+            @click="((settingsOpen = !settingsOpen), (peopleOpen = false), devices.refresh())"
           />
         </UiTooltip>
         <UiButton
