@@ -34,7 +34,7 @@ test('the event decides the kind and where the notification leads', () => {
     'organization',
   )
   assert.equal(notificationPath(task), '/setores/s1?task=t1')
-  assert.equal(notificationPath({ channel_id: 'c' }), '/chat')
+  assert.equal(notificationPath({ channel_id: 'c' }), '/chat?canal=c')
   assert.equal(
     notificationPath({ event: 'organization.invited', organization_id: 'o1' }),
     '/organizacoes',
@@ -51,4 +51,12 @@ test('day labels for grouping', () => {
   assert.equal(dayLabel(new Date(2026, 9, 29, 1).toISOString(), now), 'Hoje')
   assert.equal(dayLabel(new Date(2026, 9, 28, 23).toISOString(), now), 'Ontem')
   assert.match(dayLabel(new Date(2026, 9, 20).toISOString(), now), /20 de outubro de 2026/)
+})
+
+test('chat and call titles are translated and keep who did it', () => {
+  assert.equal(notificationTitle('Ana sent a message'), 'Ana enviou uma mensagem')
+  assert.equal(notificationTitle('Video call from Bob'), 'Chamada de vídeo de Bob')
+  assert.equal(notificationTitle('Missed call'), 'Ligação perdida')
+  assert.equal(notificationActor('Ana sent a message'), 'Ana')
+  assert.equal(notificationPath({ event: 'chat.mentioned', channel_id: 'c1' }), '/chat?canal=c1')
 })

@@ -1,3 +1,4 @@
+import { initials as personInitials } from '../../../shared/utils/people.ts'
 import type { OrganizationRole } from '../types'
 
 export const roleLabels: Record<OrganizationRole, string> = {
@@ -25,14 +26,10 @@ export function slugProblem(value: string): string {
     : 'Use letras minúsculas, números e hífens, como norte-studio.'
 }
 
+/** Iniciais das duas primeiras palavras do nome da organização ("Urban Studio" vira "US"). */
 export function initials(name: string): string {
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((word) => word[0])
-    .join('')
-    .toUpperCase()
+  const words = name.split(/\s+/).filter((word) => /[\p{L}\p{N}]/u.test(word))
+  return personInitials(words.slice(0, 2).join(' '))
 }
 
 export function parseInvitationEmails(input: string): string[] {
