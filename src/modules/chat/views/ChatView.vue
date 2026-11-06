@@ -244,6 +244,16 @@ watch(
 )
 
 watch(() => [chat.activeId, items.value.length], scrollToEnd, { immediate: true })
+
+// falhas ao enviar (texto, arquivo ou áudio) aparecem na hora, não somem em silêncio
+watch(
+  () => chat.error,
+  (message) => {
+    if (!message || !chat.channels.length) return // sem conversas, a tela de erro já mostra
+    toast.error(message)
+    chat.error = ''
+  },
+)
 </script>
 
 <template>
