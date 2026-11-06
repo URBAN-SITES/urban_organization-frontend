@@ -11,7 +11,6 @@ import { fetchAllPages } from '@/shared/utils'
 import { useAuthStore } from '@/modules/auth'
 import { listOnlineMembers } from '@/modules/chat'
 import { listInvitations, type Invitation } from '@/modules/invitations'
-import { getDashboard, listSectorMembers, useSectorsStore, type Dashboard } from '@/modules/module'
 import { roleLabels, useOrganizationsStore } from '@/modules/organizations'
 import { getReport, type Report } from '@/modules/reports'
 import { BADGE, BADGE_BASE, TOOLBAR_BUTTON } from '../utils/ui'
@@ -19,17 +18,14 @@ import { BADGE, BADGE_BASE, TOOLBAR_BUTTON } from '../utils/ui'
 const router = useRouter()
 const auth = useAuthStore()
 const organizations = useOrganizationsStore()
-const sectors = useSectorsStore()
 
-type Tab = 'members' | 'sectors' | 'invites'
+// a equipe é das pessoas da organização; os projetos ficam em Projetos
+type Tab = 'members' | 'invites'
 const tab = ref<Tab>('members')
 const loading = ref(false)
 const online = ref<string[]>([])
 const report = ref<Report | null>(null)
-const dashboard = ref<Dashboard | null>(null)
 const invitations = ref<Invitation[] | null>(null) // null: sem permissão para ver
-const sectorNamesByUser = ref<Record<string, string[]>>({})
-const sectorMemberCount = ref<Record<string, number>>({})
 
 const organization = computed(() => organizations.current)
 const canManage = computed(() =>
@@ -40,17 +36,10 @@ const openTasks = computed(() => {
   for (const person of report.value?.people ?? []) byUser[person.user_id] = person.open
   return byUser
 })
-const openBySector = computed(() => {
-  const bySector: Record<string, number> = {}
-  for (const row of dashboard.value?.open_by_sector ?? []) bySector[row.sector] = row.open
-  return bySector
-})
-const busiestSector = computed(() => dashboard.value?.open_by_sector[0]?.sector)
 
 const pending = computed(() => (invitations.value ?? []).filter((i) => i.status === 'pending'))
 const tabs = computed(() => [
   { id: 'members' as const, label: 'Membros', count: organizations.members.length },
-  { id: 'sectors' as const, label: 'Setores', count: sectors.sectors.length },
   ...(canManage.value
     ? [{ id: 'invites' as const, label: 'Convites pendentes', count: pending.value.length }]
     : []),
@@ -73,29 +62,16 @@ async function load() {
   if (!current) return
   loading.value = true
   try {
-    await Promise.all([organizations.loadMembers(current.id), sectors.load(current.id)])
-    const [people, presence, summary, week, invites] = await Promise.all([
-      Promise.all(
-        sectors.sectors.map((s) => fetchAllPages((page) => listSectorMembers(s.id, page))),
-      ),
+    await organizations.loadMembers(current.id)
+    const [presence, week, invites] = await Promise.all([
       listOnlineMembers(current.id).catch(() => []),
-      getDashboard(current.id).catch(() => null),
       getReport(current.id, 7).catch(() => null),
       canManage.value
         ? fetchAllPages((page) => listInvitations(current.id, page)).catch(() => null)
         : null,
     ])
     if (id !== request) return
-    const names: Record<string, string[]> = {}
-    const counts: Record<string, number> = {}
-    sectors.sectors.forEach((sector, index) => {
-      counts[sector.id] = people[index]!.length
-      for (const member of people[index]!) (names[member.user_id] ??= []).push(sector.name)
-    })
-    sectorNamesByUser.value = names
-    sectorMemberCount.value = counts
     online.value = presence
-    dashboard.value = summary
     report.value = week
     invitations.value = invites
   } catch (error) {
@@ -106,7 +82,7 @@ async function load() {
 }
 watch(() => organization.value?.id, load, { immediate: true })
 
-const COLUMNS = ['Pessoa', 'Setores', 'Papel', 'Tarefas abertas', 'Status']
+const COLUMNS = ['Pessoa', 'Papel', 'Tarefas abertas', 'Status']
 
 const goMembers = (invite = false) =>
   organization.value &&
@@ -115,22 +91,15 @@ const goMembers = (invite = false) =>
     params: { organizationId: organization.value.id },
     query: invite ? { convidar: '1' } : {},
   })
-const goNewSector = () =>
-  organization.value &&
-  router.push({
-    name: 'OrganizationOnboardingSectors',
-    params: { organizationId: organization.value.id },
-  })
-const openSector = (sectorId: string) => router.push({ name: 'SectorBoard', params: { sectorId } })
 </script>
 
 <template>
   <PageLayout
     :icon="UsersRound"
     tone="#3b82f6"
-    :crumbs="['Equipe e setores']"
-    title="Equipe e setores"
-    :description="`${organization?.name ?? ''} · quem participa de cada setor e o que pode fazer`"
+    :crumbs="['Equipe']"
+    title="Equipe"
+    :description="`${organization?.name ?? ''} · quem faz parte da organização e o que pode fazer`"
     width="wide"
   >
     <template #actions>
@@ -183,18 +152,11 @@ const openSector = (sectorId: string) => router.push({ name: 'SectorBoard', para
     </div>
 
     <template v-if="tab === 'members'">
-      <div class="grid grid-cols-1 gap-[12px] sm:grid-cols-2 xl:grid-cols-4">
+      <div class="grid grid-cols-1 gap-[12px] sm:grid-cols-3">
         <CardComp
           title="Membros"
           :data="organizations.members.length"
           :description="`${online.length} online agora`"
-        />
-        <CardComp
-          title="Setores"
-          :data="sectors.sectors.length"
-          :description="
-            busiestSector ? `${busiestSector} tem mais tarefas abertas` : 'sem tarefas abertas'
-          "
         />
         <CardComp
           title="Concluídas em 7 dias"
@@ -210,60 +172,8 @@ const openSector = (sectorId: string) => router.push({ name: 'SectorBoard', para
       </div>
     </template>
 
-    <div v-if="tab !== 'invites'" class="grid grid-cols-1 gap-[12px] sm:grid-cols-2 xl:grid-cols-4">
-      <button
-        v-for="sector in sectors.sectors"
-        :key="sector.id"
-        type="button"
-        class="flex cursor-pointer flex-col gap-[12px] uo-card uo-card-interactive p-[14px] text-left"
-        :aria-label="`Abrir o Kanban de ${sector.name}`"
-        @click="openSector(sector.id)"
-      >
-        <span class="flex items-center gap-[10px]">
-          <span
-            class="grid size-[32px] shrink-0 place-items-center rounded-[9px]"
-            :style="{
-              backgroundColor: `${sector.color || '#8a857d'}1f`,
-              color: sector.color || '#8a857d',
-            }"
-            aria-hidden="true"
-          >
-            <span class="material-symbols-outlined text-[18px]!">{{
-              sector.icon || 'workspaces'
-            }}</span>
-          </span>
-          <span class="flex min-w-0 flex-col leading-normal">
-            <span class="truncate text-[14px] font-semibold">{{ sector.name }}</span>
-            <span class="text-[12px] text-fg-muted"
-              >{{ sectorMemberCount[sector.id] ?? 0 }}
-              {{ sectorMemberCount[sector.id] === 1 ? 'membro' : 'membros' }}</span
-            >
-          </span>
-        </span>
-        <span class="flex items-center justify-between gap-[8px] text-[12px] text-fg-muted">
-          <span v-if="sector.is_private" class="inline-flex items-center gap-[4px]">
-            <span class="material-symbols-outlined text-[14px]!" aria-hidden="true">lock</span>
-            Privado
-          </span>
-          <span v-else>Aberto à organização</span>
-          <span class="shrink-0 font-mono whitespace-nowrap"
-            >{{ openBySector[sector.name] ?? 0 }} abertas</span
-          >
-        </span>
-      </button>
-      <button
-        v-if="canManage"
-        type="button"
-        class="flex min-h-[96px] cursor-pointer items-center justify-center gap-[8px] rounded-card border border-dashed border-(--text-muted) text-[13.5px] text-fg-muted transition-colors hover:border-(--text-primary)"
-        @click="goNewSector"
-      >
-        <span class="material-symbols-outlined text-[18px]!" aria-hidden="true">add</span>
-        Novo setor
-      </button>
-    </div>
-
-    <section v-if="tab !== 'sectors'" class="overflow-x-auto uo-card">
-      <table v-if="tab === 'members'" class="w-full min-w-[760px] border-collapse text-left">
+    <section class="overflow-x-auto uo-card">
+      <table v-if="tab === 'members'" class="w-full min-w-[640px] border-collapse text-left">
         <thead>
           <tr class="border-b border-border bg-surface-2 dark:bg-black/20">
             <th
@@ -301,19 +211,6 @@ const openSector = (sectorId: string) => router.push({ name: 'SectorBoard', para
                   </span>
                   <span class="truncate text-[12px] text-fg-muted">{{ member.email }}</span>
                 </span>
-              </span>
-            </td>
-            <td class="px-[18px] py-[12px]">
-              <span class="flex flex-wrap gap-[4px]">
-                <span
-                  v-for="name in sectorNamesByUser[member.user_id] ?? []"
-                  :key="name"
-                  :class="[BADGE_BASE, BADGE.neutral]"
-                  >{{ name }}</span
-                >
-                <span v-if="!sectorNamesByUser[member.user_id]?.length" class="text-fg-muted"
-                  >—</span
-                >
               </span>
             </td>
             <td class="px-[18px] py-[12px]">

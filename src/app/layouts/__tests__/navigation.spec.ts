@@ -1,49 +1,57 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { isNavActive, sidebarGroups } from '../navigation.ts'
+import { isNavActive, projectGroups, projectInPath, sidebarGroups } from '../navigation.ts'
 
-const items = (projectId: string | null) =>
-  Object.fromEntries(
-    sidebarGroups({ projectsPath: '/organizacoes/o1/projetos', projectId })
+const labels = (groups: { items: { label: string }[] }[]) =>
+  groups.flatMap((group) => group.items.map((item) => item.label))
+
+const main = (guest = false) =>
+  sidebarGroups({ projectsPath: '/organizacoes/o1/projetos', projectId: null, guest })
+
+test('a barra da organização não tem mais as telas de um projeto', () => {
+  const items = labels(main())
+  for (const gone of ['Kanban', 'Tarefas', 'Reuniões', 'Equipe', 'Documentos'])
+    assert.ok(!items.includes(gone), `${gone} saiu da barra principal`)
+  assert.deepEqual(items.slice(0, 2), ['Dashboard', 'Projetos'])
+  assert.ok(items.includes('Mensagens'))
+})
+
+test('Projetos leva para a lista de projetos da organização', () => {
+  const projects = main()
+    .flatMap((group) => group.items)
+    .find((item) => item.label === 'Projetos')!
+  assert.equal(projects.to, '/organizacoes/o1/projetos')
+  assert.ok(isNavActive(projects, '/organizacoes/o1/projetos'))
+})
+
+test('dentro de um projeto a barra mostra as telas dele', () => {
+  assert.equal(projectInPath('/setores/p1'), 'p1')
+  assert.equal(projectInPath('/setores/p1/editar'), 'p1')
+  assert.equal(projectInPath('/organizacoes/o1/projetos'), null)
+  const items = Object.fromEntries(
+    projectGroups('p1')
       .flatMap((group) => group.items)
       .map((item) => [item.label, item]),
   )
-
-test('itens de projeto abrem a aba certa do projeto em contexto', () => {
-  const nav = items('p1')
-  assert.equal(nav.Kanban!.to, '/setores/p1')
-  assert.equal(nav.Tarefas!.to, '/setores/p1?view=list')
-  assert.equal(nav['Reuniões']!.to, '/setores/p1?view=meetings')
+  assert.equal(items.Kanban!.to, '/setores/p1')
+  assert.equal(items.Lista!.to, '/setores/p1?view=list')
+  assert.equal(items.Tabela!.to, '/setores/p1?view=table')
+  assert.equal(items['Linha do tempo']!.to, '/setores/p1?view=timeline')
+  assert.equal(items.Documentos!.to, '/setores/p1?view=pages')
+  assert.equal(items['Configurações']!.to, '/setores/p1/editar')
 })
 
-test('sem projeto, os itens de projeto levam para a lista de projetos', () => {
-  const nav = items(null)
-  for (const label of ['Kanban', 'Tarefas', 'Reuniões'])
-    assert.equal(nav[label]!.to, '/organizacoes/o1/projetos')
-})
-
-test('só o item da aba aberta fica ativo', () => {
-  const nav = items('p1')
+test('só o item da aba aberta do projeto fica ativo', () => {
+  const items = projectGroups('p1').flatMap((group) => group.items)
   const active = (path: string, view = '') =>
-    Object.values(nav)
-      .filter((item) => isNavActive(item, path, view))
-      .map((item) => item.label)
+    items.filter((item) => isNavActive(item, path, view)).map((item) => item.label)
   assert.deepEqual(active('/setores/p1'), ['Kanban'])
-  assert.deepEqual(active('/setores/p1', 'table'), ['Tarefas'])
-  assert.deepEqual(active('/setores/p1', 'meetings'), ['Reuniões'])
-  assert.deepEqual(active('/setores/p1', 'github'), [])
-  assert.deepEqual(active('/reunioes/m1'), ['Reuniões'])
-  assert.deepEqual(active('/'), ['Dashboard'])
-  assert.deepEqual(active('/organizacoes/o1/projetos'), ['Projetos'])
-  assert.deepEqual(active('/organizacoes/o1/membros'), ['Equipe'])
+  assert.deepEqual(active('/setores/p1', 'table'), ['Tabela'])
+  assert.deepEqual(active('/setores/p1', 'pages'), ['Documentos'])
+  assert.deepEqual(active('/setores/p1/editar'), ['Configurações'])
 })
 
-test('external guests only see project screens', () => {
-  const groups = sidebarGroups({
-    projectsPath: '/organizacoes/o1/projetos',
-    projectId: 'p1',
-    guest: true,
-  })
-  const labels = groups.flatMap((group) => group.items.map((item) => item.label))
-  assert.deepEqual(labels, ['Dashboard', 'Projetos', 'Tarefas', 'Kanban', 'Reuniões'])
+test('convidado externo vê só os projetos e, dentro deles, sem Configurações', () => {
+  assert.deepEqual(labels(main(true)), ['Dashboard', 'Projetos'])
+  assert.ok(!labels(projectGroups('p1', { guest: true })).includes('Configurações'))
 })
