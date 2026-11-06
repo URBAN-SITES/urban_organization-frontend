@@ -27,17 +27,44 @@ const callLabel = computed(() => {
   return `${name} · ${Math.max(1, Math.round(call.duration_seconds / 60))} min`
 })
 
-// separa o texto nas menções (@Nome) para destacá-las
-const parts = computed(() => {
+type Part =
+  | { kind: 'text' | 'mention'; text: string }
+  | { kind: 'link'; text: string; href: string; to?: string }
+
+const URL_PATTERN = /(https?:\/\/\S+)/
+
+// link do próprio app abre sem recarregar; o da reunião da conversa vira um botão
+function link(href: string): Part {
+  try {
+    const url = new URL(href)
+    if (url.pathname.startsWith('/chat/sala/'))
+      return { kind: 'link', text: 'Entrar na reunião', href, to: url.pathname }
+    if (url.origin === window.location.origin)
+      return { kind: 'link', text: href, href, to: url.pathname + url.search }
+  } catch {
+    /* parece link, mas não é uma URL válida */
+  }
+  return { kind: 'link', text: href, href }
+}
+
+// separa o texto nas menções (@Nome) e nos links para destacá-los
+const parts = computed<Part[]>(() => {
   const names = props.message.mentions.map((mention) => `@${mention.name}`)
-  if (!names.length) return [{ text: props.message.content, mention: false }]
-  const pattern = new RegExp(
-    `(${names.map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`,
+  const pieces = names.length
+    ? props.message.content.split(
+        new RegExp(
+          `(${names.map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`,
+        ),
+      )
+    : [props.message.content]
+  return pieces.filter(Boolean).flatMap<Part>((text) =>
+    names.includes(text)
+      ? [{ kind: 'mention', text }]
+      : text
+          .split(URL_PATTERN)
+          .filter(Boolean)
+          .map((piece) => (URL_PATTERN.test(piece) ? link(piece) : { kind: 'text', text: piece })),
   )
-  return props.message.content
-    .split(pattern)
-    .filter(Boolean)
-    .map((text) => ({ text, mention: names.includes(text) }))
 })
 </script>
 
@@ -54,46 +81,71 @@ const parts = computed(() => {
     </p>
   </article>
 
-  <article v-else-if="own" class="flex justify-end gap-[10px] py-[6px]">
-    <div class="flex max-w-[min(560px,85%)] flex-col items-end gap-[6px]">
-      <p class="text-[11.5px] leading-normal text-fg-muted">
+  <article v-else class="flex gap-[10px] py-[6px]" :class="own ? 'justify-end' : ''">
+    <ChatAvatar v-if="!own" :name="message.author_name" :size="36" />
+    <div
+      :class="
+        own
+          ? 'flex max-w-[min(560px,85%)] flex-col items-end gap-[6px]'
+          : 'flex min-w-0 flex-1 flex-col gap-[6px]'
+      "
+    >
+      <p v-if="own" class="text-[11.5px] leading-normal text-fg-muted">
         Você · {{ formatTime(message.created_at) }}
       </p>
-      <p
-        class="rounded-[12px] rounded-tr-[4px] bg-(--text-primary) px-[12px] py-[8px] text-[13.5px] leading-[20px] text-white dark:bg-[#2e2c28]"
-      >
-        <template v-for="(part, index) in parts" :key="index">
-          <span v-if="part.mention" class="font-semibold underline">{{ part.text }}</span>
-          <template v-else>{{ part.text }}</template>
-        </template>
-      </p>
-      <ChatAttachmentCard v-for="file in message.attachments" :key="file.id" :file="file" />
-      <ChatReactions
-        :reactions="message.reactions"
-        :me="me"
-        align="end"
-        @react="$emit('react', $event)"
-      />
-    </div>
-    <ChatAvatar :name="message.author_name" variant="self" :size="36" />
-  </article>
-
-  <article v-else class="flex gap-[10px] py-[6px]">
-    <ChatAvatar :name="message.author_name" :size="36" />
-    <div class="flex min-w-0 flex-1 flex-col gap-[6px]">
-      <p class="flex items-baseline gap-[8px] leading-normal">
+      <p v-else class="flex items-baseline gap-[8px] leading-normal">
         <span class="text-[13.5px] font-semibold">{{ message.author_name }}</span>
         <span class="text-[11.5px] text-fg-muted">{{ formatTime(message.created_at) }}</span>
       </p>
-      <p class="max-w-[640px] text-[13.5px] leading-[21px] text-fg">
+      <!-- só áudio ou só arquivo: sem balão vazio -->
+      <p
+        v-if="message.content"
+        :class="
+          own
+            ? 'rounded-[12px] rounded-tr-[4px] bg-(--text-primary) px-[12px] py-[8px] text-[13.5px] leading-[20px] break-words text-white dark:bg-[#2e2c28]'
+            : 'max-w-[640px] text-[13.5px] leading-[21px] break-words text-fg'
+        "
+      >
         <template v-for="(part, index) in parts" :key="index">
-          <span v-if="part.mention" class="font-medium text-(--chat-mention)">{{ part.text }}</span>
+          <span
+            v-if="part.kind === 'mention'"
+            :class="own ? 'font-semibold underline' : 'font-medium text-(--chat-mention)'"
+            >{{ part.text }}</span
+          >
+          <RouterLink
+            v-else-if="part.kind === 'link' && part.to?.startsWith('/chat/sala/')"
+            :to="part.to"
+            class="mx-[2px] inline-flex items-center gap-[4px] rounded-[8px] bg-accent px-[10px] py-[3px] align-middle text-[12.5px] font-semibold text-accent-fg no-underline hover:brightness-105"
+          >
+            <span class="material-symbols-outlined text-[16px]!" aria-hidden="true">videocam</span>
+            {{ part.text }}
+          </RouterLink>
+          <RouterLink
+            v-else-if="part.kind === 'link' && part.to"
+            :to="part.to"
+            class="underline underline-offset-2"
+            >{{ part.text }}</RouterLink
+          >
+          <a
+            v-else-if="part.kind === 'link'"
+            :href="part.href"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="underline underline-offset-2"
+            >{{ part.text }}</a
+          >
           <template v-else>{{ part.text }}</template>
         </template>
       </p>
       <ChatTaskCard v-if="message.task" :task="message.task" />
       <ChatAttachmentCard v-for="file in message.attachments" :key="file.id" :file="file" />
-      <ChatReactions :reactions="message.reactions" :me="me" @react="$emit('react', $event)" />
+      <ChatReactions
+        :reactions="message.reactions"
+        :me="me"
+        :align="own ? 'end' : 'start'"
+        @react="$emit('react', $event)"
+      />
     </div>
+    <ChatAvatar v-if="own" :name="message.author_name" variant="self" :size="36" />
   </article>
 </template>
