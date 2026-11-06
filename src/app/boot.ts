@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import type { Router } from 'vue-router'
+import { serverWaking } from './plugins/serverWake.ts'
 
 /** Longest the opening screen may cover the app, even if the first route never settles. */
 const SPLASH_CAP_MS = 10_000
@@ -17,7 +18,12 @@ function dismissSplash(): void {
 
 /** Hides the opening screen as soon as the first route resolves, successfully or not. */
 export function installBootSplash(router: Router): void {
-  const timer = window.setTimeout(dismissSplash, SPLASH_CAP_MS)
+  // while the server is waking up the splash stays (with the notice on top), not a blank page
+  const cap = (): void => {
+    if (serverWaking.value) timer = window.setTimeout(cap, 1_000)
+    else dismissSplash()
+  }
+  let timer = window.setTimeout(cap, SPLASH_CAP_MS)
   const stop = router.afterEach((_to, _from, failure) => {
     stop()
     window.clearTimeout(timer)
