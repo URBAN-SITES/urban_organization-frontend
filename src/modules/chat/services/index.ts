@@ -116,7 +116,7 @@ export async function startMeet(channelId: UUID): Promise<ChatMessage> {
   try {
     return (await api.post<ChatMessage>(`/chat/channels/${channelId}/meet/`)).data
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Não foi possível iniciar o Meet.'))
+    throw new Error(getErrorMessage(error, 'Não foi possível iniciar a reunião.'))
   }
 }
 

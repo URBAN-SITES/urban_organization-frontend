@@ -18,7 +18,17 @@ const details = computed(() => {
 </script>
 
 <template>
+  <figure
+    v-if="file.mime_type.startsWith('audio/')"
+    class="m-0 flex w-fit max-w-full flex-col gap-[4px]"
+  >
+    <audio :src="file.url" controls preload="metadata" class="h-[40px] w-[280px] max-w-full">
+      <a :href="file.url" target="_blank" rel="noopener noreferrer">Baixar o áudio</a>
+    </audio>
+    <figcaption class="sr-only">Mensagem de voz</figcaption>
+  </figure>
   <a
+    v-else
     :href="file.url"
     target="_blank"
     rel="noopener noreferrer"
