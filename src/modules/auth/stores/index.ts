@@ -14,6 +14,7 @@ import {
 } from '../services'
 import type { LoginCredentials, UpdateUserRequest, User, UserSession } from '../types'
 import { useNotificationsStore } from '@/modules/notifications'
+import { whileServerWakes } from '@/app/plugins/serverWake'
 
 // Dados em memória entre as etapas de registro e de redefinição de senha.
 // Nada é persistido: ao recarregar a página o fluxo recomeça.
@@ -77,7 +78,8 @@ export const useAuthStore = defineStore('auth', () => {
   // Os cookies são HttpOnly: só o backend sabe se há sessão.
   async function loadUser(): Promise<User | null> {
     try {
-      user.value = await fetchMe()
+      // depois de um tempo parado o servidor demora a acordar: espera em vez de falhar
+      user.value = await whileServerWakes(fetchMe)
     } catch (error) {
       if (!isAxiosError(error) || error.response?.status !== 401) throw error
       clearSession()
