@@ -50,6 +50,8 @@ const api = {
   createTeamsChannel: async (_org: string, _p: unknown) => channel('t1', 'teams') as unknown,
   listOnlineMembers: async (_org: string) => ['u1'],
   startMeet: async (_id: string) => message('meet', 'c1', 'me') as unknown,
+  toggleReaction: async (id: string, emoji: string) =>
+    ({ ...message(id, 'c1'), reactions: [{ emoji, user_ids: ['me'] }] }) as unknown,
 }
 Object.assign(globalThis, { chatTestApi: api })
 
@@ -319,4 +321,13 @@ test('events from another organization are ignored', async () => {
     chat.channels.some((c) => c.id === 'other-org-channel'),
     false,
   )
+})
+
+test('react replaces the message with the reactions from the server', async () => {
+  const chat = useChatStore()
+  await chat.load('org')
+  await chat.select('c1')
+  await chat.react('a', '👍')
+  const reacted = chat.messages.c1?.find((m) => m.id === 'a')
+  assert.deepEqual(reacted?.reactions, [{ emoji: '👍', user_ids: ['me'] }])
 })
