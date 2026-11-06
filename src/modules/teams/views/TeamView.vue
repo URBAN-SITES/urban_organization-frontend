@@ -240,13 +240,15 @@ const openSector = (sectorId: string) => router.push({ name: 'SectorBoard', para
             >
           </span>
         </span>
-        <span class="flex items-center justify-between text-[12px] text-fg-muted">
+        <span class="flex items-center justify-between gap-[8px] text-[12px] text-fg-muted">
           <span v-if="sector.is_private" class="inline-flex items-center gap-[4px]">
             <span class="material-symbols-outlined text-[14px]!" aria-hidden="true">lock</span>
             Privado
           </span>
           <span v-else>Aberto à organização</span>
-          <span class="font-mono">{{ openBySector[sector.name] ?? 0 }} abertas</span>
+          <span class="shrink-0 font-mono whitespace-nowrap"
+            >{{ openBySector[sector.name] ?? 0 }} abertas</span
+          >
         </span>
       </button>
       <button

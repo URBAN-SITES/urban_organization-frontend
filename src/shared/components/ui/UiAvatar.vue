@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { initials as initialsOf } from '../../utils/people'
 import { computed, ref, watch } from 'vue'
 
 /** Foto do usuário com iniciais como alternativa (imagem ausente ou quebrada). */
@@ -17,12 +18,7 @@ watch(
   () => (failed.value = false),
 )
 
-const initials = computed(() => {
-  const parts = name.trim().split(/\s+/).filter(Boolean)
-  const letters =
-    parts.length > 1 ? parts[0]![0]! + parts[parts.length - 1]![0]! : (parts[0] ?? '?').slice(0, 2)
-  return letters.toUpperCase()
-})
+const initials = computed(() => initialsOf(name))
 
 const SIZES = {
   xs: 'size-5 text-[9px]',

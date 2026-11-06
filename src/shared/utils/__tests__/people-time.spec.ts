@@ -8,6 +8,9 @@ test('avatar uses the first and last name and keeps the colour stable', () => {
   assert.equal(avatar('Maria da Silva Souza').initials, 'MS')
   assert.equal(avatar('Marina').initials, 'M')
   assert.equal(avatar('').initials, '?')
+  // pontuação não vira inicial ("Urban Studio (demonstração)" mostrava "U(")
+  assert.equal(avatar('Urban Studio (demonstração)').initials, 'UD')
+  assert.equal(avatar('(Ana)').initials, 'A')
   assert.equal(avatar('Beatriz Costa').color, avatar('Beatriz Costa').color)
 })
 
