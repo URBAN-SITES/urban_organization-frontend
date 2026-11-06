@@ -50,14 +50,9 @@ const hooks = registerHooks({
         }
       if (specifier === '../services')
         return { url: new URL('../services/index.ts', context.parentURL).href, shortCircuit: true }
-      if (specifier === './payment' || specifier === './charge')
+      if (specifier === './charge')
         return {
           url: new URL(`${specifier}.ts`, context.parentURL).href,
-          shortCircuit: true,
-        }
-      if (specifier === './mercadoPago')
-        return {
-          url: `data:text/javascript,${encodeURIComponent('export const tokenizeCard = async () => ({});')}`,
           shortCircuit: true,
         }
     }

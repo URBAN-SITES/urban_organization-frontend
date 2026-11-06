@@ -11,7 +11,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="grid w-full gap-1 rounded-card border border-border bg-surface-1 px-5 py-4">
+  <div class="grid w-full gap-1 uo-card px-5 py-4">
     <p class="text-13 text-fg-muted">{{ title }}</p>
     <p class="text-24 leading-tight font-semibold text-fg tabular-nums">
       <AnimatedNumber :value="data" />

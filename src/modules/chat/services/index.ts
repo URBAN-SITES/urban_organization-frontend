@@ -1,6 +1,10 @@
 import { api, getErrorMessage } from '@/app/plugins/axios'
 import type { Page, UUID } from '@/shared/types'
 import type {
+  Call,
+  CallKind,
+  CallMediaFlags,
+  CallSignalData,
   ChatChannel,
   ChatMessage,
   CreateTeamsChannelRequest,
@@ -114,4 +118,62 @@ export async function startMeet(channelId: UUID): Promise<ChatMessage> {
   } catch (error) {
     throw new Error(getErrorMessage(error, 'Não foi possível iniciar o Meet.'))
   }
+}
+
+/** Adds my emoji to a message, or removes it when I already used it. */
+export async function toggleReaction(messageId: UUID, emoji: string): Promise<ChatMessage> {
+  try {
+    return (await api.post<ChatMessage>(`/chat/messages/${messageId}/reactions/`, { emoji })).data
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Não foi possível reagir à mensagem.'))
+  }
+}
+
+export async function startCall(channelId: UUID, kind: CallKind): Promise<Call> {
+  try {
+    return (await api.post<Call>('/calls/', { channel_id: channelId, kind })).data
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Não foi possível iniciar a ligação.'))
+  }
+}
+
+export async function listIceServers(): Promise<RTCIceServer[]> {
+  try {
+    return (await api.get<{ ice_servers: RTCIceServer[] }>('/calls/ice-servers/')).data.ice_servers
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Não foi possível preparar a ligação.'))
+  }
+}
+
+async function callAction(callId: UUID, action: string, body?: object): Promise<Call> {
+  return (await api.post<Call>(`/calls/${callId}/${action}/`, body)).data
+}
+
+export async function joinCall(callId: UUID): Promise<Call> {
+  try {
+    return await callAction(callId, 'join')
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'A ligação já terminou.'))
+  }
+}
+
+export async function declineCall(callId: UUID): Promise<void> {
+  await callAction(callId, 'decline').catch(() => undefined) // already over: nothing to undo
+}
+
+export async function leaveCall(callId: UUID): Promise<void> {
+  await callAction(callId, 'leave').catch(() => undefined)
+}
+
+export async function setCallMedia(callId: UUID, flags: CallMediaFlags): Promise<void> {
+  await callAction(callId, 'media', flags).catch(() => undefined) // cosmetic for the others
+}
+
+/** HTTP fallback when the socket is closed. */
+export async function sendCallSignal(
+  callId: UUID,
+  toUserId: UUID,
+  data: CallSignalData,
+): Promise<void> {
+  await api.post(`/calls/${callId}/signal/`, { to_user_id: toUserId, data })
 }

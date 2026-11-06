@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { api } from '@/app/plugins/axios'
 import type { Page } from '@/shared/types'
 import type {
@@ -15,7 +16,39 @@ import type {
   CreateSectorRequest,
   CreateStatusRequest,
   CreateTaskRequest,
+  Burndown,
+  Epic,
+  AutomationRule,
+  ImportResult,
+  ImportSource,
+  IntakeRequest,
+  PublicBoard,
+  WriteAutomationRequest,
+  ManualTimeRequest,
+  RunningTimer,
+  TaskTime,
+  TimeEntry,
+  Workload,
+  PageSummary,
+  ProjectPage,
+  WriteEpicRequest,
+  BulkRequest,
+  CustomField,
+  FieldValue,
+  SaveViewRequest,
+  SavedView,
+  TaskFieldValue,
+  TaskTemplate,
+  WriteCustomFieldRequest,
+  WriteTemplateRequest,
+  CreateCycleRequest,
+  Cycle,
+  FollowState,
+  TrashedTask,
   Dashboard,
+  RelationKind,
+  TaskRelations,
+  UpdateCycleRequest,
   MoveTaskRequest,
   ResourceLink,
   Sector,
@@ -303,4 +336,323 @@ export async function deleteLink(linkId: string): Promise<void> {
 // ── Dashboard ──────────────────────────────────────────────────────────────
 export async function getDashboard(organizationId: string): Promise<Dashboard> {
   return (await api.get<Dashboard>(`/organizations/${enc(organizationId)}/dashboard/`)).data
+}
+
+// ── Ciclos (sprints) ───────────────────────────────────────────────────────
+export async function listCycles(sectorId: string, page = 1): Promise<Page<Cycle>> {
+  return (await api.get<Page<Cycle>>(`/sectors/${enc(sectorId)}/cycles/`, { params: { page } }))
+    .data
+}
+
+export async function createCycle(sectorId: string, payload: CreateCycleRequest): Promise<Cycle> {
+  return (await api.post<Cycle>(`/sectors/${enc(sectorId)}/cycles/`, payload)).data
+}
+
+export async function updateCycle(id: string, payload: UpdateCycleRequest): Promise<Cycle> {
+  return (await api.patch<Cycle>(`/cycles/${enc(id)}/`, payload)).data
+}
+
+export async function deleteCycle(id: string): Promise<void> {
+  await api.delete(`/cycles/${enc(id)}/`)
+}
+
+// ── Relações entre tarefas (bloqueios) ─────────────────────────────────────
+export async function getTaskRelations(taskId: string): Promise<TaskRelations> {
+  return (await api.get<TaskRelations>(`/tasks/${enc(taskId)}/relations/`)).data
+}
+
+export async function addTaskRelation(
+  taskId: string,
+  kind: RelationKind,
+  otherId: string,
+): Promise<TaskRelations> {
+  return (
+    await api.post<TaskRelations>(`/tasks/${enc(taskId)}/relations/`, { kind, task: otherId })
+  ).data
+}
+
+export async function removeTaskRelation(taskId: string, otherId: string): Promise<void> {
+  await api.delete(`/tasks/${enc(taskId)}/relations/${enc(otherId)}/`)
+}
+
+// ── Lixeira, arquivo, seguir e burndown ────────────────────────────────────
+export async function listTrash(sectorId: string, page = 1): Promise<Page<TrashedTask>> {
+  return (
+    await api.get<Page<TrashedTask>>(`/sectors/${enc(sectorId)}/trash/`, { params: { page } })
+  ).data
+}
+
+export async function restoreTask(id: string): Promise<Task> {
+  return (await api.post<Task>(`/tasks/${enc(id)}/restore/`)).data
+}
+
+export async function setTaskArchived(id: string, archived: boolean): Promise<Task> {
+  const url = `/tasks/${enc(id)}/archive/`
+  return (archived ? await api.put<Task>(url) : await api.delete<Task>(url)).data
+}
+
+export async function getFollow(taskId: string): Promise<FollowState> {
+  return (await api.get<FollowState>(`/tasks/${enc(taskId)}/follow/`)).data
+}
+
+export async function setFollow(taskId: string, following: boolean): Promise<FollowState> {
+  const url = `/tasks/${enc(taskId)}/follow/`
+  return (following ? await api.put<FollowState>(url) : await api.delete<FollowState>(url)).data
+}
+
+export async function getBurndown(cycleId: string): Promise<Burndown> {
+  return (await api.get<Burndown>(`/cycles/${enc(cycleId)}/burndown/`)).data
+}
+
+// ── Visões salvas, campos personalizados, modelos e edição em massa ─────────
+export async function listSavedViews(sectorId: string): Promise<SavedView[]> {
+  return (await api.get<SavedView[]>(`/sectors/${enc(sectorId)}/views/`)).data
+}
+
+export async function createSavedView(
+  sectorId: string,
+  payload: SaveViewRequest,
+): Promise<SavedView> {
+  return (await api.post<SavedView>(`/sectors/${enc(sectorId)}/views/`, payload)).data
+}
+
+export async function deleteSavedView(id: string): Promise<void> {
+  await api.delete(`/views/${enc(id)}/`)
+}
+
+export async function listCustomFields(sectorId: string): Promise<CustomField[]> {
+  return (await api.get<CustomField[]>(`/sectors/${enc(sectorId)}/fields/`)).data
+}
+
+export async function createCustomField(
+  sectorId: string,
+  payload: WriteCustomFieldRequest,
+): Promise<CustomField> {
+  return (await api.post<CustomField>(`/sectors/${enc(sectorId)}/fields/`, payload)).data
+}
+
+export async function updateCustomField(
+  id: string,
+  payload: Partial<WriteCustomFieldRequest>,
+): Promise<CustomField> {
+  return (await api.patch<CustomField>(`/fields/${enc(id)}/`, payload)).data
+}
+
+export async function deleteCustomField(id: string): Promise<void> {
+  await api.delete(`/fields/${enc(id)}/`)
+}
+
+export async function listTaskFieldValues(taskId: string): Promise<TaskFieldValue[]> {
+  return (await api.get<TaskFieldValue[]>(`/tasks/${enc(taskId)}/fields/`)).data
+}
+
+export async function setTaskFieldValue(
+  taskId: string,
+  fieldId: string,
+  value: FieldValue,
+): Promise<TaskFieldValue> {
+  return (await api.put<TaskFieldValue>(`/tasks/${enc(taskId)}/fields/${enc(fieldId)}/`, { value }))
+    .data
+}
+
+export async function listTemplates(sectorId: string): Promise<TaskTemplate[]> {
+  return (await api.get<TaskTemplate[]>(`/sectors/${enc(sectorId)}/templates/`)).data
+}
+
+export async function createTemplate(
+  sectorId: string,
+  payload: WriteTemplateRequest,
+): Promise<TaskTemplate> {
+  return (await api.post<TaskTemplate>(`/sectors/${enc(sectorId)}/templates/`, payload)).data
+}
+
+export async function deleteTemplate(id: string): Promise<void> {
+  await api.delete(`/templates/${enc(id)}/`)
+}
+
+export async function bulkEditTasks(sectorId: string, payload: BulkRequest): Promise<number> {
+  return (await api.post<{ updated: number }>(`/sectors/${enc(sectorId)}/tasks/bulk/`, payload))
+    .data.updated
+}
+
+// ── Épicos, páginas e pedidos ────────────────────────────────────────────────
+export async function listEpics(sectorId: string): Promise<Epic[]> {
+  return (await api.get<Epic[]>(`/sectors/${enc(sectorId)}/epics/`)).data
+}
+
+export async function createEpic(sectorId: string, payload: WriteEpicRequest): Promise<Epic> {
+  return (await api.post<Epic>(`/sectors/${enc(sectorId)}/epics/`, payload)).data
+}
+
+export async function updateEpic(id: string, payload: Partial<WriteEpicRequest>): Promise<Epic> {
+  return (await api.patch<Epic>(`/epics/${enc(id)}/`, payload)).data
+}
+
+export async function deleteEpic(id: string): Promise<void> {
+  await api.delete(`/epics/${enc(id)}/`)
+}
+
+export async function listPages(sectorId: string): Promise<PageSummary[]> {
+  return (await api.get<PageSummary[]>(`/sectors/${enc(sectorId)}/pages/`)).data
+}
+
+export async function getPage(id: string): Promise<ProjectPage> {
+  return (await api.get<ProjectPage>(`/pages/${enc(id)}/`)).data
+}
+
+export async function createPage(
+  sectorId: string,
+  payload: Pick<ProjectPage, 'title'> & Partial<Pick<ProjectPage, 'content'>>,
+): Promise<ProjectPage> {
+  return (await api.post<ProjectPage>(`/sectors/${enc(sectorId)}/pages/`, payload)).data
+}
+
+export async function updatePage(
+  id: string,
+  payload: Partial<Pick<ProjectPage, 'title' | 'content' | 'is_pinned'>>,
+): Promise<ProjectPage> {
+  return (await api.patch<ProjectPage>(`/pages/${enc(id)}/`, payload)).data
+}
+
+export async function deletePage(id: string): Promise<void> {
+  await api.delete(`/pages/${enc(id)}/`)
+}
+
+export async function listIntake(sectorId: string): Promise<IntakeRequest[]> {
+  return (await api.get<IntakeRequest[]>(`/sectors/${enc(sectorId)}/intake/`)).data
+}
+
+export async function createIntake(
+  sectorId: string,
+  payload: { title: string; description?: string },
+): Promise<IntakeRequest> {
+  return (await api.post<IntakeRequest>(`/sectors/${enc(sectorId)}/intake/`, payload)).data
+}
+
+export async function acceptIntake(
+  id: string,
+  payload: { status?: string; priority?: Task['priority']; assignee?: string | null },
+): Promise<IntakeRequest> {
+  return (await api.post<IntakeRequest>(`/intake/${enc(id)}/accept/`, payload)).data
+}
+
+export async function declineIntake(id: string, note: string): Promise<IntakeRequest> {
+  return (await api.post<IntakeRequest>(`/intake/${enc(id)}/decline/`, { note })).data
+}
+
+export async function getMyTimer(): Promise<RunningTimer | null> {
+  return (await api.get<{ timer: RunningTimer | null }>('/me/timer/')).data.timer
+}
+
+export async function stopMyTimer(): Promise<TimeEntry | null> {
+  return (await api.delete<{ stopped: TimeEntry | null }>('/me/timer/')).data.stopped
+}
+
+export async function startTimer(taskId: string): Promise<RunningTimer> {
+  return (await api.post<RunningTimer>(`/tasks/${enc(taskId)}/timer/`)).data
+}
+
+export async function getTaskTime(taskId: string): Promise<TaskTime> {
+  return (await api.get<TaskTime>(`/tasks/${enc(taskId)}/time/`)).data
+}
+
+export async function addTaskTime(taskId: string, payload: ManualTimeRequest): Promise<TimeEntry> {
+  return (await api.post<TimeEntry>(`/tasks/${enc(taskId)}/time/`, payload)).data
+}
+
+export async function deleteTimeEntry(id: string): Promise<void> {
+  await api.delete(`/time/${enc(id)}/`)
+}
+
+export async function getWorkload(sectorId: string): Promise<Workload> {
+  return (await api.get<Workload>(`/sectors/${enc(sectorId)}/workload/`)).data
+}
+
+/** Baixa um arquivo da API e devolve o blob; erros JSON que chegam como blob viram objeto. */
+async function download(url: string, params?: Record<string, unknown>): Promise<Blob> {
+  try {
+    return (await api.get<Blob>(url, { params, responseType: 'blob', timeout: 60_000 })).data
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.data instanceof Blob) {
+      try {
+        error.response.data = JSON.parse(await error.response.data.text()) as unknown
+      } catch {
+        // corpo que não é JSON: fica a mensagem padrão de quem chamou
+      }
+    }
+    throw error
+  }
+}
+
+export async function exportTasksXlsx(sectorId: string): Promise<Blob> {
+  return download(`/sectors/${enc(sectorId)}/tasks/export/`)
+}
+
+/** Painéis do início escondidos pela pessoa (fica nas preferências da conta). */
+export async function getHiddenWidgets(): Promise<string[]> {
+  return (
+    (await api.get<{ hidden_widgets?: string[] }>('/users/me/settings/')).data.hidden_widgets ?? []
+  )
+}
+
+export async function setHiddenWidgets(hidden: string[]): Promise<string[]> {
+  const response = await api.patch<{ hidden_widgets?: string[] }>('/users/me/settings/', {
+    hidden_widgets: hidden,
+  })
+  return response.data.hidden_widgets ?? []
+}
+
+export async function listAutomations(sectorId: string): Promise<AutomationRule[]> {
+  return (await api.get<AutomationRule[]>(`/sectors/${enc(sectorId)}/automations/`)).data
+}
+
+export async function createAutomation(
+  sectorId: string,
+  payload: WriteAutomationRequest,
+): Promise<AutomationRule> {
+  return (await api.post<AutomationRule>(`/sectors/${enc(sectorId)}/automations/`, payload)).data
+}
+
+export async function updateAutomation(
+  id: string,
+  payload: Partial<WriteAutomationRequest>,
+): Promise<AutomationRule> {
+  return (await api.patch<AutomationRule>(`/automations/${enc(id)}/`, payload)).data
+}
+
+export async function deleteAutomation(id: string): Promise<void> {
+  await api.delete(`/automations/${enc(id)}/`)
+}
+
+/** Lê o arquivo exportado de outra ferramenta; com dryRun só mostra o que aconteceria. */
+export async function importTasks(
+  sectorId: string,
+  source: ImportSource,
+  file: File,
+  dryRun: boolean,
+): Promise<ImportResult> {
+  const body = new FormData()
+  body.append('source', source)
+  body.append('file', file)
+  body.append('dry_run', dryRun ? 'true' : 'false')
+  return (
+    await api.post<ImportResult>(`/sectors/${enc(sectorId)}/import/`, body, { timeout: 120_000 })
+  ).data
+}
+
+export async function getPublicLink(sectorId: string): Promise<string | null> {
+  return (await api.get<{ token: string | null }>(`/sectors/${enc(sectorId)}/public-link/`)).data
+    .token
+}
+
+export async function enablePublicLink(sectorId: string): Promise<string> {
+  return (await api.post<{ token: string }>(`/sectors/${enc(sectorId)}/public-link/`)).data.token
+}
+
+export async function disablePublicLink(sectorId: string): Promise<void> {
+  await api.delete(`/sectors/${enc(sectorId)}/public-link/`)
+}
+
+export async function getPublicBoard(token: string): Promise<PublicBoard> {
+  return (await api.get<PublicBoard>(`/public/projects/${enc(token)}/`)).data
 }

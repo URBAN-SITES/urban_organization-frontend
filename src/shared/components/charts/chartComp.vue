@@ -38,9 +38,7 @@ const chartOptions = {
 </script>
 
 <template>
-  <div
-    class="group relative grid min-w-0 w-full gap-2 overflow-hidden rounded-card border border-border bg-surface-1 px-[18px] py-[16px] hover:border-border-strong"
-  >
+  <div class="group relative grid min-w-0 w-full gap-2 overflow-hidden uo-card px-[18px] py-[16px]">
     <h3 class="text-[15px] font-semibold">{{ title }}</h3>
     <p v-if="headline" class="flex items-baseline gap-2">
       <span class="text-[28px] leading-none font-semibold tracking-[-0.02em]">{{ headline }}</span>

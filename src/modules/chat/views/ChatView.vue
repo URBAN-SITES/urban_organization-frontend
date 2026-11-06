@@ -19,6 +19,7 @@ import {
   ChatTyping,
 } from '../components'
 import { useChatSocket } from '../composables/useChatSocket'
+import { useCallStore } from '../stores/call'
 import { useChatStore } from '../stores/chat'
 import type { ChatChannel, ChatMessage, DemoMessage } from '../types'
 import { formatDayLabel } from '../utils'
@@ -27,6 +28,7 @@ const router = useRouter()
 const auth = useAuthStore()
 const organizations = useOrganizationsStore()
 const chat = useChatStore()
+const calls = useCallStore()
 const draft = ref('')
 const scroller = useTemplateRef<HTMLElement>('scroller')
 
@@ -179,6 +181,16 @@ async function startMeet() {
   }
 }
 
+// chamadas WebRTC são para conversas pequenas; acima disso, use o Meet (limite do backend)
+const CALL_MAX_PEOPLE = 6
+const canCall = computed(
+  () =>
+    !!active.value.id &&
+    active.value.member_count > 1 &&
+    active.value.member_count <= CALL_MAX_PEOPLE &&
+    calls.phase === 'idle',
+)
+
 let lastTyping = 0
 watch(draft, (value) => {
   if (!value || !chat.activeId || Date.now() - lastTyping < 2000) return
@@ -230,7 +242,7 @@ watch(() => [chat.activeId, items.value.length], scrollToEnd, { immediate: true 
     />
 
     <div
-      class="flex min-h-0 flex-1 flex-col px-[20px] py-[12px] sm:px-[32px] sm:py-[20px] lg:px-[40px] lg:py-[28px]"
+      class="uo-backdrop flex min-h-0 flex-1 flex-col px-[20px] py-[12px] sm:px-[32px] sm:py-[20px] lg:px-[40px] lg:py-[28px]"
     >
       <UiErrorState
         v-if="failure"
@@ -281,6 +293,24 @@ watch(() => [chat.activeId, items.value.length], scrollToEnd, { immediate: true 
             </h1>
             <p class="truncate text-[12px] text-fg-muted">{{ subtitle }}</p>
           </div>
+          <template v-if="canCall">
+            <button
+              v-for="option in [
+                { kind: 'audio', icon: 'call', label: 'Ligação de voz' },
+                { kind: 'video', icon: 'videocam', label: 'Chamada de vídeo' },
+              ] as const"
+              :key="option.kind"
+              type="button"
+              class="grid size-[34px] shrink-0 cursor-pointer place-items-center rounded-[10px] border border-border transition-all duration-200 hover:-translate-y-0.5 hover:border-border-strong hover:bg-surface-2 hover:text-fg active:translate-y-0 dark:hover:bg-surface-2"
+              :aria-label="option.label"
+              :title="option.label"
+              @click="calls.start(active.id, option.kind)"
+            >
+              <span class="material-symbols-outlined text-[18px]!" aria-hidden="true">{{
+                option.icon
+              }}</span>
+            </button>
+          </template>
           <BaseButton
             variant="primary"
             label="Iniciar Meet"
@@ -328,6 +358,8 @@ watch(() => [chat.activeId, items.value.length], scrollToEnd, { immediate: true 
               :key="item.id"
               :message="item"
               :own="item.author_id === me"
+              :me="me"
+              @react="chat.react(item.id, $event)"
             />
           </template>
           <p v-if="!groups.length" class="py-[40px] text-center text-[13px] text-fg-muted">

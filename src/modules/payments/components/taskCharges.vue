@@ -73,7 +73,7 @@ const field = 'h-9 rounded-lg border border-border bg-transparent px-2 text-[13p
       @click="creating = !creating"
     >
       <span
-        class="material-symbols-outlined grid size-8 place-items-center rounded-lg bg-[#ff67001f] text-[18px]! text-[#e8590c]"
+        class="material-symbols-outlined grid size-8 place-items-center rounded-lg bg-accent-soft text-[18px]! text-accent"
         aria-hidden="true"
         >credit_card</span
       >
@@ -117,7 +117,7 @@ const field = 'h-9 rounded-lg border border-border bg-transparent px-2 text-[13p
         class="flex items-center gap-3 rounded-xl border border-border p-3.5"
       >
         <span
-          class="material-symbols-outlined grid size-8 shrink-0 place-items-center rounded-lg bg-[#ff67001f] text-[18px]! text-[#e8590c]"
+          class="material-symbols-outlined grid size-8 shrink-0 place-items-center rounded-lg bg-accent-soft text-[18px]! text-accent"
           aria-hidden="true"
           >credit_card</span
         >

@@ -6,11 +6,12 @@ import AppSidebar from './components/AppSidebar.vue'
 import CommandPalette from './components/CommandPalette.vue'
 import MobileNav from './components/MobileNav.vue'
 import { ShellKey } from '@/shared/composables/shell'
-import { useChatAlerts } from '@/modules/chat'
+import { CallOverlay, useChatAlerts } from '@/modules/chat'
 import { useInvitationsStore } from '@/modules/invitations'
 import { useAuthStore } from '@/modules/auth'
 import { useNotificationsStore } from '@/modules/notifications'
 import { useOrganizationsStore } from '@/modules/organizations'
+import { QuickTaskDialog, RunningTimer, ShortcutsDialog } from '@/modules/module'
 
 const notifications = useNotificationsStore()
 const organizations = useOrganizationsStore()
@@ -79,5 +80,11 @@ provide(ShellKey, {
     </div>
     <MobileNav />
     <CommandPalette v-if="auth.user" v-model:open="paletteOpen" @sign-out="signOut" />
+    <template v-if="auth.user">
+      <QuickTaskDialog />
+      <ShortcutsDialog />
+      <RunningTimer />
+      <CallOverlay />
+    </template>
   </div>
 </template>

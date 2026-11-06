@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { fetchAllPages } from '@/shared/utils'
 import {
+  bulkEditTasks,
   createSector,
   createStatus,
   createTask,
@@ -14,11 +15,14 @@ import {
   listStatuses,
   listTasks,
   moveTask,
+  restoreTask,
+  setTaskArchived,
   updateSector,
   updateStatus,
   updateTask,
 } from '../services'
 import type {
+  BulkRequest,
   CreateSectorRequest,
   CreateStatusRequest,
   CreateTaskRequest,
@@ -138,7 +142,24 @@ export const useKanbanStore = defineStore('kanban', () => {
 
   async function removeTask(id: string): Promise<void> {
     await deleteTask(id)
-    tasks.value = tasks.value.filter((t) => t.id !== id)
+    tasks.value = tasks.value.filter((t) => t.id !== id && t.parent_id !== id)
+  }
+
+  // volta da lixeira (com as subtarefas): recarrega a lista do projeto
+  async function restore(id: string): Promise<void> {
+    const sector = requireSector()
+    await restoreTask(id)
+    await refreshTasks(sector)
+  }
+
+  // arquivada sai do quadro; desarquivar volta a mostrar
+  async function archive(id: string, archived: boolean): Promise<void> {
+    const sector = requireSector()
+    const updated = await setTaskArchived(id, archived)
+    if (sectorId.value !== sector) return
+    tasks.value = archived
+      ? tasks.value.filter((t) => t.id !== id)
+      : [...tasks.value.filter((t) => t.id !== id), updated]
   }
 
   // Atualização otimista; em erro volta ao estado anterior e relança.
@@ -168,11 +189,28 @@ export const useKanbanStore = defineStore('kanban', () => {
     tasks.value = tasks.value.map((task) => ordered.get(task.id) ?? task)
     try {
       const moved = await moveTask(id, { status: statusId, position: targetPosition })
+      // concluir ou reabrir libera ou volta a bloquear as tarefas que esperam por esta
+      if (!!current.completed_at !== !!moved.completed_at) void refreshTasks(sector)
       return sectorId.value === sector ? replace(moved) : moved
     } catch (error) {
       if (sectorId.value === sector) tasks.value = previous
       throw error
     }
+  }
+
+  // várias de uma vez: o servidor aplica as mesmas regras e a lista volta inteira
+  async function bulk(payload: Omit<BulkRequest, 'task_ids'>, ids: string[]): Promise<number> {
+    const sector = requireSector()
+    const count = await bulkEditTasks(sector, { ...payload, task_ids: ids })
+    await refreshTasks(sector)
+    return count
+  }
+
+  async function refreshTasks(sector: string): Promise<void> {
+    const rows = await fetchAllPages((page) =>
+      listTasks(sector, { page, ordering: 'position' }),
+    ).catch(() => null)
+    if (rows && sectorId.value === sector) tasks.value = rows
   }
 
   function replace(task: Task): Task {
@@ -197,6 +235,9 @@ export const useKanbanStore = defineStore('kanban', () => {
     addTask,
     editTask,
     removeTask,
+    restore,
+    archive,
+    bulk,
     reload,
     move,
   }

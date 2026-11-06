@@ -28,6 +28,7 @@ export interface UserSettings {
   push_enabled: boolean
   email_product: boolean
   email_weekly_digest: boolean
+  email_daily_digest: boolean
   email_security: boolean
   email_assigned: boolean
   email_mentions: boolean
@@ -39,11 +40,14 @@ export interface UserSettings {
   week_start: WeekStart
   compact_cards: boolean
   show_completed: boolean
+  /** painéis do início que a pessoa escondeu */
+  hidden_widgets: string[]
 }
 
 export interface NotificationSettings {
   email_product: boolean
   email_weekly_digest: boolean
+  email_daily_digest: boolean
   email_security: boolean
   email_assigned: boolean
   email_mentions: boolean
@@ -68,7 +72,6 @@ export interface ActiveSession {
 }
 
 export interface PreferenceSettings {
-  theme: UserSettings['theme']
   date_format: UserSettings['date_format']
   week_start: UserSettings['week_start']
   compact_cards: boolean

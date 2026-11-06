@@ -41,10 +41,10 @@ useModalLayer(open, panel, cancel, {
 <template>
   <Teleport to="body">
     <Transition name="ui-fade">
-      <div v-if="open" class="fixed inset-0 z-50 bg-overlay" aria-hidden="true" @click="cancel" />
+      <div v-if="open" class="fixed inset-0 z-60 bg-overlay" aria-hidden="true" @click="cancel" />
     </Transition>
     <Transition name="ui-modal">
-      <div v-if="open" class="pointer-events-none fixed inset-0 z-50 grid place-items-center p-4">
+      <div v-if="open" class="pointer-events-none fixed inset-0 z-60 grid place-items-center p-4">
         <section
           ref="panel"
           role="alertdialog"

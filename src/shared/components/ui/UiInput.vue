@@ -46,13 +46,17 @@ const controlAttrs = computed(() =>
     :required="required"
   >
     <template #default="{ describedby, invalid }">
-      <div class="relative">
+      <div data-ui="input" class="group relative">
+        <!-- o ícone acompanha o campo: laranja no foco, claro quando preenchido, vermelho no erro -->
         <UiIcon
           v-if="icon"
           :icon="icon"
           :class="[
-            'pointer-events-none absolute top-1/2 -translate-y-1/2 text-fg-muted',
+            'pointer-events-none absolute top-1/2 -translate-y-1/2 transition-colors duration-(--dur-base) ease-out',
             size === 'lg' ? 'left-3.5' : 'left-2.5',
+            invalid
+              ? 'text-danger'
+              : 'text-fg-muted group-focus-within:text-accent group-has-[input:not(:placeholder-shown)]:text-fg',
           ]"
         />
         <input
@@ -81,7 +85,9 @@ const controlAttrs = computed(() =>
           class="absolute top-1/2 right-1 grid size-8 -translate-y-1/2 cursor-pointer place-items-center rounded-control text-fg-muted transition-colors duration-(--dur-fast) ease-out hover:text-fg focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-not-allowed"
           @click="revealed = !revealed"
         >
-          <UiIcon :icon="revealed ? EyeOff : Eye" />
+          <Transition name="ui-icon-swap" mode="out-in">
+            <UiIcon :key="String(revealed)" :icon="revealed ? EyeOff : Eye" />
+          </Transition>
         </button>
       </div>
     </template>

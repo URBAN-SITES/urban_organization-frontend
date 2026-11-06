@@ -4,7 +4,7 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { UiButton, UiInput } from '@/shared/components'
-import { AuthHeading, PasswordStrength } from '../components'
+import { AuthAlert, AuthHeading, PasswordStrength } from '../components'
 import { useAuthNavigation } from '../composables'
 import { confirmPasswordReset } from '../services'
 import { useAuthFlowStore, useAuthStore } from '../stores'
@@ -87,13 +87,7 @@ async function handleSubmit() {
         placeholder="Repita a senha"
       />
 
-      <p
-        v-if="formError"
-        role="alert"
-        class="rounded-control bg-danger-soft px-3 py-2.5 text-13 text-danger"
-      >
-        {{ formError }}
-      </p>
+      <AuthAlert :message="formError" />
 
       <UiButton
         type="submit"
@@ -102,7 +96,7 @@ async function handleSubmit() {
         block
         :loading="isSubmitting"
         loading-text="Salvando..."
-        class="mt-2"
+        class="mt-1"
       >
         Redefinir senha
       </UiButton>

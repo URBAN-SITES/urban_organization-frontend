@@ -125,6 +125,8 @@ function message(
     task: null,
     mentions: [],
     attachments: [],
+    reactions: [],
+    call: null,
     created_at: created,
     edited_at: null,
     deleted_at: null,

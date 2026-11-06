@@ -2,45 +2,42 @@
 @import 'tailwindcss';
 @import './tokens.css';
 @import './ui-motion.css';
+@import './surfaces.css';
+@import './interactions.css';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
  * Variáveis antigas (pré-Fase 1), mantidas para as telas ainda não migradas.
- * Apontam para a paleta nova; use os tokens de tokens.css em código novo.
+ * Apontam para os tokens do tema único (escuro); use os de tokens.css em código novo.
  */
 @theme {
   --font-geist: 'Geist, sans-serif';
 
   --auth-background: var(--ds-surface-1);
-  --background: #fafaf9;
+  --background: var(--ds-bg);
   --background-inverse: #0b0b0c;
 
-  --surface: #ffffff;
+  --surface: var(--ds-surface-1);
   --surface-inverse: #121214;
 
-  --bg-subtle: #f4f4f3;
-  --bg-muted: #ebebe9;
+  --bg-subtle: var(--ds-surface-2);
+  --bg-muted: var(--ds-surface-3);
   --accent-orange: var(--ds-accent);
   --bg-orange: var(--ds-accent);
 
-  --text-primary: #18181b;
-  --text-secondary: #4b4b52;
-  /* #a3a3a3 não passava AA no tema claro; troca com o tema em .dark abaixo */
-  --text-muted: #6b6b73;
+  --text-primary: var(--ds-fg);
+  --text-secondary: #d4d4d8;
+  --text-muted: var(--ds-fg-muted);
   --text-inverse: #ededef;
   --text-inverse-muted: #8b8b93;
 
   --sucess: var(--ds-success);
   --destructive: var(--ds-danger);
 
-  --border-default: #e5e5e3;
-  --border-strong: #18181b;
+  --border-default: var(--ds-border);
+  --border-strong: var(--ds-border-strong);
   --border-inverse: #26262b;
-}
-
-.dark {
-  --text-muted: #8b8b93;
 }
 
 @layer base {

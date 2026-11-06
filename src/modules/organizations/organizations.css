@@ -379,6 +379,7 @@
   margin: 24px 0;
 }
 .workspace-link-button {
+  position: relative;
   display: inline-block;
   border: 1px solid var(--workspace-ink);
   border-radius: 8px;

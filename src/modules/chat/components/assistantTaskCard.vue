@@ -44,10 +44,10 @@ const justPosted = ref<string | null>(null)
 const draft = ref({ title: '', description: '', due: '', item: '', comment: '' })
 
 const PRIORITY: Record<TaskPriority, { label: string; bars: number; color: string }> = {
-  low: { label: 'Baixa', bars: 1, color: 'text-[#f97316] dark:text-[#fb923c]' },
-  medium: { label: 'Média', bars: 2, color: 'text-[#d97706] dark:text-[#f5b14c]' },
-  high: { label: 'Alta', bars: 3, color: 'text-[#dc2626] dark:text-[#ff7b7b]' },
-  urgent: { label: 'Urgente', bars: 3, color: 'text-[#dc2626] dark:text-[#ff7b7b]' },
+  low: { label: 'Baixa', bars: 1, color: 'text-fg-muted' },
+  medium: { label: 'Média', bars: 2, color: 'text-warning' },
+  high: { label: 'Alta', bars: 3, color: 'text-danger' },
+  urgent: { label: 'Urgente', bars: 3, color: 'text-danger' },
 }
 const due = computed(() =>
   current.value.due_date

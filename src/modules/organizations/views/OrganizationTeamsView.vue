@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useAuthStore } from '@/modules/auth'
-import { Plus } from '@lucide/vue'
-import { BaseButton, UiButton, UiSpinner } from '@/shared/components'
+import { Plus, Search, UsersRound } from '@lucide/vue'
+import { BaseButton, UiButton, UiEmptyState, UiInput, UiSpinner } from '@/shared/components'
 import { getErrorMessage } from '@/app/plugins/axios'
 import {
   listTeams,
@@ -209,7 +209,15 @@ onBeforeUnmount(() => {
       {{ error }} <button :disabled="saving" @click="initialize">Tentar novamente</button>
     </div>
     <template v-if="organization">
-      <label class="workspace-form">Buscar time<input v-model="search" type="search" /></label>
+      <UiInput
+        v-if="teams.length"
+        v-model="search"
+        type="search"
+        :icon="Search"
+        placeholder="Buscar time pelo nome"
+        aria-label="Buscar time"
+        class="max-w-sm"
+      />
       <div class="organization-grid">
         <button
           v-for="team in visibleTeams"
@@ -224,7 +232,21 @@ onBeforeUnmount(() => {
           <span>Gerenciar integrantes</span>
         </button>
       </div>
-      <p v-if="!busy && !visibleTeams.length" class="workspace-empty">Nenhum time encontrado.</p>
+      <UiEmptyState
+        v-if="!busy && !loading && !teams.length && !creating"
+        :icon="UsersRound"
+        title="Nenhum time ainda"
+        description="Times agrupam pessoas da organização e liberam o acesso a projetos de uma vez."
+      >
+        <template v-if="canAdmin" #action>
+          <UiButton variant="secondary" :icon="Plus" :disabled="saving" @click="newTeam">
+            Criar o primeiro time
+          </UiButton>
+        </template>
+      </UiEmptyState>
+      <p v-else-if="!busy && teams.length && !visibleTeams.length" class="workspace-empty">
+        Nenhum time com esse nome.
+      </p>
       <section v-if="creating || selected" class="workspace-card admin-stack">
         <h2>{{ creating ? 'Criar time' : selected?.name }}</h2>
         <form v-if="creating || canManage" class="workspace-form" @submit.prevent="saveTeam">

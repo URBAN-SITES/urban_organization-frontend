@@ -50,7 +50,7 @@ export function showDesktopAlert(options: {
   const alert = new Notification(options.title, {
     body: options.body,
     tag: options.tag, // a mesma conversa substitui o aviso anterior em vez de empilhar
-    icon: '/icons/hackathon-192.png',
+    icon: '/icons/urban-192.png',
   })
   alert.onclick = () => {
     window.focus()

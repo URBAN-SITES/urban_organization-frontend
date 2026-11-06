@@ -61,9 +61,20 @@ function day(value: string | null): string {
   return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '')
 }
 
+const IMPORT_SOURCE: Record<string, string> = {
+  trello: 'Trello',
+  jira: 'Jira',
+  asana: 'Asana',
+  plane: 'Plane',
+  csv: 'planilha CSV',
+}
+
 /** Frases do histórico de uma tarefa, sem o nome de quem fez (vem antes, na tela). */
 export function historyLines(entry: Pick<TaskActivity, 'action' | 'changes'>): string[] {
-  if (entry.action === 'created') return ['criou a tarefa']
+  if (entry.action === 'created') {
+    const source = Array.isArray(entry.changes.imported) ? entry.changes.imported[1] : null
+    return [source ? `importou a tarefa (${IMPORT_SOURCE[source] ?? source})` : 'criou a tarefa']
+  }
   if (entry.action === 'deleted') return ['excluiu a tarefa']
   if (entry.action === 'commented') {
     const comment = typeof entry.changes.comment === 'string' ? entry.changes.comment : ''
@@ -83,6 +94,17 @@ export function historyLines(entry: Pick<TaskActivity, 'action' | 'changes'>): s
     else if (field === 'status') lines.push(`moveu de ${from ?? '—'} para ${to ?? '—'}`)
     else if (field === 'labels')
       lines.push(to ? `mudou as etiquetas para ${to}` : 'removeu as etiquetas')
+    else if (field === 'start_date')
+      lines.push(to ? `mudou o início para ${day(to)}` : 'removeu o início')
+    else if (field === 'cycle') lines.push(to ? `colocou no ciclo ${to}` : 'tirou do ciclo')
+    else if (field === 'epic') lines.push(to ? `colocou no épico ${to}` : 'tirou do épico')
+    else if (field === 'estimate')
+      lines.push(to === null ? 'removeu a estimativa' : `estimou em ${to} pontos`)
+    else if (field === 'repeats') lines.push('repetiu a tarefa')
+    else if (field === 'restored') lines.push('restaurou da lixeira')
+    else if (field === 'archived') lines.push('arquivou a tarefa')
   }
+  const rule = Array.isArray(entry.changes.automation) ? entry.changes.automation[1] : null
+  if (rule && lines.length) lines[lines.length - 1] += ` pela automação “${rule}”`
   return lines.length ? lines : ['atualizou a tarefa']
 }

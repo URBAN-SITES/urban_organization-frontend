@@ -59,6 +59,7 @@ test('notification settings preserve false values without inventing event mappin
       timezone: 'America/Sao_Paulo',
       email_product: false,
       email_weekly_digest: true,
+      email_daily_digest: false,
       email_security: false,
       email_assigned: true,
       email_mentions: false,
@@ -75,6 +76,7 @@ test('notification settings preserve false values without inventing event mappin
     {
       email_product: false,
       email_weekly_digest: true,
+      email_daily_digest: false,
       email_security: false,
       email_assigned: true,
       email_mentions: false,

@@ -50,3 +50,39 @@ test('describes history entries in plain Portuguese', () => {
     'comentou: “ok”',
   ])
 })
+
+test('histórico descreve ciclo, épico, início e estimativa', () => {
+  assert.deepEqual(
+    historyLines({
+      action: 'updated',
+      changes: {
+        epic: [null, 'Checkout'],
+        cycle: ['Sprint 1', null],
+        start_date: [null, '2026-03-02'],
+        estimate: [null, '5'],
+      },
+    }),
+    [
+      'colocou no épico Checkout',
+      'tirou do ciclo',
+      'mudou o início para 02 de mar',
+      'estimou em 5 pontos',
+    ],
+  )
+})
+
+test('historyLines names imports, archives and the automation that acted', () => {
+  assert.deepEqual(historyLines({ action: 'created', changes: { imported: [null, 'trello'] } }), [
+    'importou a tarefa (Trello)',
+  ])
+  assert.deepEqual(
+    historyLines({
+      action: 'updated',
+      changes: { assignee: [null, 'Ana'], automation: [null, 'Triagem'] },
+    }),
+    ['atribuiu a Ana pela automação “Triagem”'],
+  )
+  assert.deepEqual(historyLines({ action: 'updated', changes: { archived: [null, 'sim'] } }), [
+    'arquivou a tarefa',
+  ])
+})

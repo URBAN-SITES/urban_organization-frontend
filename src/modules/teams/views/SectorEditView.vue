@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { SlidersHorizontal } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
@@ -7,6 +8,8 @@ import { BaseButton, PageLayout, UiSpinner } from '@/shared/components'
 import { avatar } from '@/shared/utils/people'
 import { categoryColors } from '@/shared/utils/chartColors'
 import {
+  ProjectAutomations,
+  ProjectFieldsSettings,
   getSector,
   useKanbanStore,
   useSectorAccessStore,
@@ -40,7 +43,15 @@ const sector = ref<(Sector & { my_role: SectorRole }) | null>(null)
 const missing = ref(false)
 const loading = ref(false)
 const saving = ref(false)
-const form = ref({ name: '', description: '', color: COLORS[0]!, isPrivate: true, wip: '' })
+const form = ref({
+  name: '',
+  description: '',
+  color: COLORS[0]!,
+  isPrivate: true,
+  wip: '',
+  identifier: '',
+  archiveDays: '',
+})
 const newColumn = ref('')
 const adding = ref(false)
 const candidate = ref('')
@@ -68,6 +79,8 @@ async function load() {
       color: loaded.color || COLORS[0]!,
       isPrivate: loaded.is_private,
       wip: '',
+      identifier: loaded.identifier ?? '',
+      archiveDays: loaded.auto_archive_days ? String(loaded.auto_archive_days) : '',
     }
     await Promise.all([
       access.load(props.id),
@@ -95,6 +108,8 @@ async function save() {
       description: form.value.description,
       color: form.value.color,
       is_private: form.value.isPrivate,
+      identifier: form.value.identifier.trim().toUpperCase(),
+      auto_archive_days: form.value.archiveDays.trim() ? Number(form.value.archiveDays) : null,
     })
     const wip = form.value.wip.trim() ? Number(form.value.wip) : null
     if (inProgress.value && wip !== inProgress.value.wip_limit) {
@@ -172,6 +187,8 @@ const field =
 
 <template>
   <PageLayout
+    :icon="SlidersHorizontal"
+    tone="#3b82f6"
     :crumbs="['Equipe e setores', sector?.name ?? 'Setor', 'Editar']"
     title="Editar setor"
     :description="missing ? 'Setor não encontrado' : `${sector?.name ?? ''} · ${description}`"
@@ -215,10 +232,7 @@ const field =
       </p>
 
       <div class="grid items-start gap-[16px] xl:grid-cols-[minmax(0,1fr)_400px]">
-        <form
-          class="grid gap-[16px] rounded-card border border-border bg-surface-1 p-[18px]"
-          @submit.prevent="save"
-        >
+        <form class="grid gap-[16px] uo-card p-[18px]" @submit.prevent="save">
           <h2 class="text-16 font-semibold text-fg">Configurações do setor</h2>
 
           <label class="grid gap-[6px] text-[13px] font-medium">
@@ -318,16 +332,44 @@ const field =
                 <option :value="false">Toda a organização</option>
               </select>
             </label>
+            <label class="grid gap-[6px] text-[13px] font-medium">
+              Código das tarefas
+              <input
+                v-model="form.identifier"
+                maxlength="6"
+                pattern="[A-Za-z0-9]{1,6}"
+                placeholder="Ex.: DEV"
+                :disabled="!canEdit"
+                :class="[field, 'font-normal font-mono uppercase']"
+              />
+              <span class="text-[12px] font-normal text-fg-muted">
+                As tarefas aparecem como {{ (form.identifier || 'DEV').toUpperCase() }}-12.
+              </span>
+            </label>
+            <label class="grid gap-[6px] text-[13px] font-medium">
+              Arquivar concluídas após
+              <input
+                v-model="form.archiveDays"
+                type="number"
+                min="1"
+                max="365"
+                inputmode="numeric"
+                placeholder="Nunca"
+                :disabled="!canEdit"
+                :class="[field, 'font-normal']"
+              />
+              <span class="text-[12px] font-normal text-fg-muted">dias depois de concluídas.</span>
+            </label>
           </div>
         </form>
 
-        <aside class="grid gap-[4px] rounded-card border border-border bg-surface-1 p-[18px]">
+        <aside class="grid gap-[4px] uo-card p-[18px]">
           <div class="flex items-center justify-between pb-[8px]">
             <h2 class="text-16 font-semibold text-fg">Membros · {{ access.members.length }}</h2>
             <button
               v-if="canEdit"
               type="button"
-              class="cursor-pointer text-[13px] font-medium text-accent hover:underline"
+              class="cursor-pointer text-[13px] font-medium text-accent ui-link"
               @click="adding = !adding"
             >
               Adicionar
@@ -402,6 +444,9 @@ const field =
           </ul>
         </aside>
       </div>
+
+      <ProjectFieldsSettings :sector-id="sector.id" :can-manage="canEdit" />
+      <ProjectAutomations :sector-id="sector.id" :can-manage="canEdit" />
 
       <div
         v-if="canEdit"

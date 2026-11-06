@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, useTemplateRef, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { BaseButton, TopbarComp } from '@/shared/components'
 import { useAuthStore } from '@/modules/auth'
@@ -32,8 +31,6 @@ import { formatSize, formatTime } from '../utils'
 const auth = useAuthStore()
 const ai = useAiStore()
 const organizations = useOrganizationsStore()
-const route = useRoute()
-const router = useRouter()
 const search = ref('')
 const draft = ref('')
 const files = ref<File[]>([])
@@ -70,21 +67,10 @@ watch(
   { immediate: true, flush: 'sync' },
 )
 
-onMounted(async () => {
-  try {
-    const user = await auth.loadUser()
-    if (!user) {
-      await router.replace({ name: 'Login', query: { redirect: route.fullPath } })
-    } else if (!(user.has_assistant_access ?? user.is_subscriber)) {
-      await router.replace({ name: 'Plans' })
-    } else if (!organizations.organizations.length) {
-      // Only context for the assistant; it still works (and asks) without it.
-      await organizations.load().catch(() => undefined)
-    }
-  } catch {
-    toast.error('Não foi possível verificar seu acesso à IA. Tente novamente.')
-    await router.replace({ name: 'Login', query: { redirect: route.fullPath } })
-  }
+// o login já foi conferido pelo guard da rota; a organização só dá contexto ao assistente
+// (ele funciona e pergunta mesmo sem ela)
+onMounted(() => {
+  if (!organizations.organizations.length) void organizations.load().catch(() => undefined)
 })
 
 watch(
@@ -144,22 +130,22 @@ async function analyze() {
 
 <template>
   <div class="flex h-[calc(100dvh-3.75rem)] md:h-dvh w-full min-w-0 flex-col bg-bg">
-    <TopbarComp v-model:search="search" :crumbs="['Inceptum AI', historyTitle]" />
+    <TopbarComp v-model:search="search" :crumbs="['Urban AI', historyTitle]" />
 
     <div
-      class="flex min-h-0 flex-1 flex-col px-[20px] py-[12px] sm:px-[32px] sm:py-[20px] lg:px-[40px] lg:py-[28px]"
+      class="uo-backdrop flex min-h-0 flex-1 flex-col px-[20px] py-[12px] sm:px-[32px] sm:py-[20px] lg:px-[40px] lg:py-[28px]"
     >
       <ChatPanelLayout tinted>
         <template #aside>
           <div class="flex items-center gap-[10px] px-[18px] pt-[18px]">
-            <ChatAvatar name="Inceptum AI" variant="ai" :size="30" />
+            <ChatAvatar name="Urban AI" variant="ai" :size="30" />
             <h2 class="text-16 font-semibold text-fg">
               <AiBrandName />
             </h2>
           </div>
           <p class="px-[18px] pt-[12px] text-[12.5px] leading-[19px] text-fg-muted">
-            Consulte, crie e organize suas tarefas por mensagem. A Inceptum AI usa os setores aos
-            quais você tem acesso.
+            Consulte, crie e organize suas tarefas por mensagem. A Urban AI usa os setores aos quais
+            você tem acesso.
           </p>
           <div
             class="mx-[16px] mt-[16px] rounded-[12px] border border-border bg-surface-1 p-[12px] text-[12px] leading-[19px]"
@@ -195,7 +181,7 @@ async function analyze() {
         </template>
 
         <template #header>
-          <ChatAvatar name="Inceptum AI" variant="ai" :size="32" />
+          <ChatAvatar name="Urban AI" variant="ai" :size="32" />
           <div class="flex min-w-0 flex-1 flex-col leading-normal">
             <h1 class="text-16 font-semibold text-fg">
               <AiBrandName />
@@ -237,7 +223,7 @@ async function analyze() {
             v-if="!ai.messages.length"
             class="flex flex-col items-center gap-[10px] py-[60px] text-center"
           >
-            <ChatAvatar name="Inceptum AI" variant="ai" :size="44" />
+            <ChatAvatar name="Urban AI" variant="ai" :size="44" />
             <p class="leading-normal"><AiBrandName class="text-[24px]" /></p>
             <p class="text-[15px] font-semibold">Como posso ajudar?</p>
             <p class="max-w-[420px] text-[13px] leading-[20px] text-fg-muted">
@@ -272,7 +258,7 @@ async function analyze() {
             </article>
 
             <article v-else class="flex gap-[10px]">
-              <ChatAvatar name="Inceptum AI" variant="ai" :size="36" />
+              <ChatAvatar name="Urban AI" variant="ai" :size="36" />
               <div class="flex min-w-0 flex-1 flex-col gap-[10px]">
                 <p class="flex items-baseline gap-[8px] leading-normal">
                   <AiBrandName class="text-[13.5px]" />
