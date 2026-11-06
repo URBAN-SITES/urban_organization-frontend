@@ -16,6 +16,8 @@ export interface OrganizationFile {
   origin: FileOrigin
   task_title: string | null
   sector_name: string | null
+  /** projeto do arquivo, também quando ele está numa tarefa do projeto */
+  sector_id: string | null
   owner_name: string
   created_at: string
 }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Building2, Check, ChevronsUpDown, Mail, Plus } from '@lucide/vue'
-import { useResizeObserver, useStorage } from '@vueuse/core'
+import { ArrowLeft, Building2, Check, ChevronsUpDown, Mail, Plus } from '@lucide/vue'
+import { useResizeObserver } from '@vueuse/core'
 import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/modules/auth'
@@ -9,7 +9,13 @@ import { useInvitationsStore } from '@/modules/invitations'
 import { useSectorsStore } from '@/modules/module'
 import { useOrganizationsStore } from '@/modules/organizations'
 import { UiMenu, type MenuItem } from '@/shared/components'
-import { isNavActive, sidebarGroups, type NavItem } from '../navigation'
+import {
+  isNavActive,
+  projectGroups,
+  projectInPath,
+  sidebarGroups,
+  type NavItem,
+} from '../navigation'
 import SidebarFavorites from './SidebarFavorites.vue'
 import SidebarLink from './SidebarLink.vue'
 
@@ -32,26 +38,17 @@ const orgLabel = (name: string, personal: boolean) => (personal ? 'Espaço pesso
 const initial = (name: string) => name.trim().charAt(0).toUpperCase() || '?'
 const view = computed(() => (typeof route.query.view === 'string' ? route.query.view : ''))
 
-// projeto em contexto para Tarefas, Kanban e Reuniões: o aberto, o último aberto, um fixado
-const lastProject = useStorage<string | null>('urban:sidebar-last-project', null)
-const openProject = computed(() => {
-  const match = /^\/setores\/([^/]+)$/.exec(route.path)
-  return match ? match[1]! : null
-})
-watch(openProject, (id) => id && (lastProject.value = id), { immediate: true })
-const contextProject = computed(() => {
-  const ids = sectors.sectors.map((sector) => sector.id)
-  if (openProject.value) return openProject.value
-  if (lastProject.value && ids.includes(lastProject.value)) return lastProject.value
-  return sectors.sectors.find((sector) => sector.is_favorite)?.id ?? ids[0] ?? null
-})
-
+// dentro de um projeto (/setores/:id), a barra mostra as telas dele; fora, as da organização
+const openProject = computed(() => projectInPath(route.path))
+const project = computed(() => sectors.sectors.find((sector) => sector.id === openProject.value))
+const projectsPath = computed(() =>
+  current.value ? `/organizacoes/${current.value.id}/projetos` : '/organizacoes',
+)
+const guest = computed(() => current.value?.current_role === 'guest')
 const groups = computed(() =>
-  sidebarGroups({
-    projectsPath: current.value ? `/organizacoes/${current.value.id}/projetos` : '/organizacoes',
-    projectId: contextProject.value,
-    guest: current.value?.current_role === 'guest',
-  }),
+  openProject.value
+    ? projectGroups(openProject.value, { guest: guest.value })
+    : sidebarGroups({ projectsPath: projectsPath.value, projectId: null, guest: guest.value }),
 )
 
 const active = (item: NavItem) => isNavActive(item, route.path, view.value)
@@ -152,6 +149,28 @@ function chooseOrganization(id: string) {
         :style="{ transform: `translateY(${indicator.top}px)`, height: `${indicator.height}px` }"
         aria-hidden="true"
       />
+      <template v-if="openProject">
+        <ul class="grid gap-0.5 pb-1">
+          <li>
+            <SidebarLink
+              :to="projectsPath"
+              label="Todos os projetos"
+              :icon="ArrowLeft"
+              :active="false"
+              :collapsed="collapsed"
+              :size="size"
+            />
+          </li>
+        </ul>
+        <p class="sb-project" :title="project?.name">
+          <span
+            class="sb-project-dot"
+            :style="{ background: project?.color || 'var(--ds-accent)' }"
+            aria-hidden="true"
+          />
+          <span class="sidebar-label truncate">{{ project?.name ?? 'Projeto' }}</span>
+        </p>
+      </template>
       <section v-for="group in groups" :key="group.id" class="sb-group">
         <h2 class="sb-group-title">
           <span class="sidebar-label">{{ group.label }}</span>
@@ -171,7 +190,7 @@ function chooseOrganization(id: string) {
         </ul>
       </section>
 
-      <SidebarFavorites :collapsed="collapsed" :size="size" />
+      <SidebarFavorites v-if="!openProject" :collapsed="collapsed" :size="size" />
     </nav>
   </div>
 </template>

@@ -630,3 +630,23 @@
     animation: none;
   }
 }
+
+/* nome do projeto aberto, logo abaixo de "Todos os projetos" */
+.sb-project {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 6px 12px 2px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.sb-project-dot {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  margin-left: 4px;
+  border-radius: 3px;
+}
