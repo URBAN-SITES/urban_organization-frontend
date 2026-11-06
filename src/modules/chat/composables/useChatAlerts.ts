@@ -4,7 +4,10 @@ import { toast } from 'vue-sonner'
 import { useAuthStore } from '@/modules/auth'
 import { useOrganizationsStore } from '@/modules/organizations'
 import { showDesktopAlert, userAway } from '@/modules/notifications'
+import { useCallStore } from '../stores/call'
 import { useChatStore } from '../stores/chat'
+import type { ChatEvent } from '../stores/chat'
+import type { CallEvent } from '../types'
 import { useChatSocket } from './useChatSocket'
 
 /**
@@ -15,6 +18,7 @@ export function useChatAlerts(): void {
   const auth = useAuthStore()
   const organizations = useOrganizationsStore()
   const chat = useChatStore()
+  const calls = useCallStore()
   const route = useRoute()
   const router = useRouter()
 
@@ -26,9 +30,12 @@ export function useChatAlerts(): void {
       socket?.close()
       socket = id
         ? useChatSocket((event) => {
-            if (auth.user) void chat.handleEvent(event, auth.user.id)
+            if (!auth.user) return
+            if (event.type.startsWith('call.')) void calls.handleEvent(event as CallEvent)
+            else void chat.handleEvent(event as ChatEvent, auth.user.id)
           })
         : undefined
+      if (!id) calls.cleanup()
     },
     { immediate: true },
   )
