@@ -5,6 +5,14 @@ import { formatSize } from '../utils'
 
 const props = defineProps<{ file: DemoAttachment }>()
 
+// o Chrome grava webm sem a duração: pular para o fim uma vez faz o navegador calculá-la
+function fixDuration(event: Event) {
+  const audio = event.target as HTMLAudioElement
+  if (audio.duration !== Infinity) return
+  audio.addEventListener('timeupdate', () => (audio.currentTime = 0), { once: true })
+  audio.currentTime = 1e101
+}
+
 const details = computed(() => {
   const type = props.file.mime_type.split('/').pop()?.toUpperCase() ?? 'ARQUIVO'
   return [
@@ -22,7 +30,13 @@ const details = computed(() => {
     v-if="file.mime_type.startsWith('audio/')"
     class="m-0 flex w-fit max-w-full flex-col gap-[4px]"
   >
-    <audio :src="file.url" controls preload="metadata" class="h-[40px] w-[280px] max-w-full">
+    <audio
+      :src="file.url"
+      controls
+      preload="metadata"
+      @loadedmetadata="fixDuration"
+      class="h-[40px] w-[280px] max-w-full"
+    >
       <a :href="file.url" target="_blank" rel="noopener noreferrer">Baixar o áudio</a>
     </audio>
     <figcaption class="sr-only">Mensagem de voz</figcaption>
