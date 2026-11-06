@@ -2,6 +2,7 @@ import { onUnmounted, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { realtimeUrl } from '@/app/plugins/realtime'
 import { useNotificationsStore } from '../stores'
+import { notificationTitle } from '../utils'
 import { desktopAlertsOn, showDesktopAlert, userAway } from './desktopAlerts'
 
 export function useNotificationSession(userId: () => string | undefined): void {
@@ -20,7 +21,8 @@ export function useNotificationSession(userId: () => string | undefined): void {
       let closed = false
       let delay = 1000
 
-      function showToast(title: string, body: string, notificationId?: string): void {
+      function showToast(raw: string, body: string, notificationId?: string): void {
+        const title = notificationTitle(raw) // o backend manda alguns títulos em inglês
         if (userAway() && desktopAlertsOn()) {
           showDesktopAlert({
             title,
