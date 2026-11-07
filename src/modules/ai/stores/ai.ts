@@ -13,6 +13,9 @@ export const useAiStore = defineStore('ai', () => {
   const ownerId = ref<UUID | null>(null)
   // Draft cards by `<message id>:<action index>`; the draft itself lives in the receipt.
   const drafts = ref<Record<string, AiDraftState>>({})
+  /** 'all' (todos os projetos) ou o id do projeto aberto: cada um tem suas conversas */
+  const scope = ref('all')
+  const scoped = computed(() => conversations.value.filter((item) => item.scope === scope.value))
   const active = computed(() => conversations.value.find((item) => item.id === activeId.value))
   const messages = computed(() => active.value?.messages ?? [])
   const isBusy = computed(() => isAsking.value || isAnalyzing.value)
@@ -39,9 +42,18 @@ export const useAiStore = defineStore('ai', () => {
     ownerId.value = id
   }
 
+  /** Troca de página (geral ↔ projeto) e volta para a última conversa daquele lugar. */
+  function setScope(next: string): void {
+    if (scope.value === next && active.value?.scope === next) return
+    scope.value = next
+    activeId.value = scoped.value[0]?.id ?? null
+    error.value = ''
+  }
+
   function newConversation(): void {
     const item: AiConversation = {
       id: crypto.randomUUID(),
+      scope: scope.value,
       server_id: null,
       title: 'Nova conversa',
       messages: [],
@@ -144,7 +156,11 @@ export const useAiStore = defineStore('ai', () => {
     }
   }
 
-  async function ask(prompt: string, organizationId?: UUID | null): Promise<boolean> {
+  async function ask(
+    prompt: string,
+    organizationId?: UUID | null,
+    sectorId?: UUID | null,
+  ): Promise<boolean> {
     const text = prompt.trim()
     if (!text || isBusy.value) return false
     const target = conversation()
@@ -157,6 +173,7 @@ export const useAiStore = defineStore('ai', () => {
     if (target.server_id) payload.conversation_id = target.server_id
     // The backend validates membership; the context only helps resolve targets.
     if (organizationId) payload.context = { organization_id: organizationId }
+    if (sectorId) payload.context = { ...payload.context, sector_id: sectorId }
     return execute(target, payload)
   }
 
@@ -253,6 +270,8 @@ export const useAiStore = defineStore('ai', () => {
 
   return {
     conversations,
+    scope,
+    scoped,
     activeId,
     active,
     messages,
@@ -262,6 +281,7 @@ export const useAiStore = defineStore('ai', () => {
     drafts,
     error,
     setOwner,
+    setScope,
     newConversation,
     select,
     ask,

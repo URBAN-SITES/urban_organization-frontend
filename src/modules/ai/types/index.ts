@@ -39,7 +39,7 @@ export interface AiAskRequest {
   conversation_id?: UUID
   request_id: UUID
   confirmation_token?: UUID
-  context?: { organization_id?: UUID }
+  context?: { organization_id?: UUID; sector_id?: UUID }
 }
 
 export interface AiReport {
@@ -70,6 +70,8 @@ export interface AiPendingRequest {
 /** Client-session history; the backend has no conversation-list endpoint. */
 export interface AiConversation {
   id: UUID
+  /** 'all' para todos os projetos ou o id do projeto */
+  scope: string
   server_id: UUID | null
   title: string
   messages: AiMessage[]
