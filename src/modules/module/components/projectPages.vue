@@ -1,10 +1,32 @@
 <script setup lang="ts">
 import { useDebounceFn } from '@vueuse/core'
-import { ArrowLeft, Check, Eye, FileText, Pencil, Pin, PinOff, Plus, Trash2 } from '@lucide/vue'
-import { computed, ref, watch } from 'vue'
+import {
+  ArrowLeft,
+  Bold,
+  Check,
+  CheckSquare,
+  Code,
+  Download,
+  Eye,
+  FileText,
+  Heading2,
+  Italic,
+  Link,
+  List,
+  ListOrdered,
+  Pencil,
+  Pin,
+  PinOff,
+  Plus,
+  Quote,
+  Search,
+  Table,
+  Trash2,
+} from '@lucide/vue'
+import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { getErrorMessage } from '@/app/plugins/axios'
-import { UiButton, UiEmptyState, UiIconButton, UiSpinner } from '@/shared/components'
+import { UiButton, UiEmptyState, UiIconButton, UiInput, UiSpinner } from '@/shared/components'
 import { useConfirm } from '@/shared/composables/confirm'
 import { createPage, deletePage, getPage, listPages, updatePage } from '../services'
 import type { PageSummary, ProjectPage } from '../types'
@@ -22,6 +44,43 @@ const mode = ref<'read' | 'edit'>('read')
 const state = ref<'idle' | 'saving' | 'saved'>('idle')
 const title = ref('')
 const content = ref('')
+const search = ref('')
+const choosing = ref(false)
+const editor = useTemplateRef<HTMLTextAreaElement>('editor')
+
+/** Modelos para começar um documento já organizado. */
+const today = () => new Date().toLocaleDateString('pt-BR')
+const TEMPLATES = [
+  { key: 'blank', label: 'Em branco', title: 'Página sem título', body: () => '' },
+  {
+    key: 'minutes',
+    label: 'Ata de reunião',
+    title: 'Ata de reunião',
+    body: () =>
+      `**Data:** ${today()}\n**Participantes:** \n\n## Pauta\n- \n\n## Decisões\n- \n\n## Próximos passos\n- [ ] \n`,
+  },
+  {
+    key: 'plan',
+    label: 'Plano de projeto',
+    title: 'Plano de projeto',
+    body: () =>
+      '## 🎯 Objetivo\n\n\n## 🧩 Escopo\n- [ ] \n\n## 🗓️ Cronograma\n| Etapa | Responsável | Prazo |\n|---|---|---|\n|  |  |  |\n\n## ⚠️ Riscos\n- \n',
+  },
+  {
+    key: 'spec',
+    label: 'Especificação',
+    title: 'Especificação',
+    body: () =>
+      '## Contexto\n\n\n## Requisitos\n1. \n\n## Critérios de aceite\n- [ ] \n\n## Fora do escopo\n- \n',
+  },
+  {
+    key: 'retro',
+    label: 'Retrospectiva',
+    title: 'Retrospectiva',
+    body: () =>
+      `**Período:** ${today()}\n\n## ✅ O que funcionou\n- \n\n## ⚠️ O que melhorar\n- \n\n## 🔁 Ações\n- [ ] \n`,
+  },
+]
 
 watch(
   () => props.sectorId,
@@ -58,13 +117,16 @@ async function open(id: string) {
   }
 }
 
-async function create() {
+async function create(template = TEMPLATES[0]!) {
+  choosing.value = false
   try {
-    const page = await createPage(props.sectorId, { title: 'Página sem título' })
+    await flush()
+    const body = template.body()
+    const page = await createPage(props.sectorId, { title: template.title, content: body })
     pages.value = [toSummary(page), ...pages.value]
     current.value = page
     title.value = page.title
-    content.value = ''
+    content.value = page.content
     mode.value = 'edit'
   } catch (cause) {
     toast.error(getErrorMessage(cause, 'Não foi possível criar a página.'))
@@ -87,9 +149,19 @@ const toSummary = (page: ProjectPage): PageSummary => ({
   updated_at: page.updated_at,
 })
 const sorted = computed(() =>
-  [...pages.value].sort(
-    (a, b) => Number(b.is_pinned) - Number(a.is_pinned) || b.updated_at.localeCompare(a.updated_at),
-  ),
+  [...pages.value]
+    .filter((page) => {
+      const query = search.value.trim().toLocaleLowerCase('pt-BR')
+      return (
+        !query ||
+        page.title.toLocaleLowerCase('pt-BR').includes(query) ||
+        page.excerpt.toLocaleLowerCase('pt-BR').includes(query)
+      )
+    })
+    .sort(
+      (a, b) =>
+        Number(b.is_pinned) - Number(a.is_pinned) || b.updated_at.localeCompare(a.updated_at),
+    ),
 )
 
 // salva sozinho um instante depois de parar de digitar
@@ -165,6 +237,74 @@ const when = (iso: string) =>
     minute: '2-digit',
   })
 
+/** Barra de formatação: envolve a seleção ou insere o trecho no cursor. */
+type Format = {
+  label: string
+  icon: typeof Bold
+  wrap?: [string, string]
+  line?: string
+  block?: string
+}
+const FORMATS: Format[] = [
+  { label: 'Negrito', icon: Bold, wrap: ['**', '**'] },
+  { label: 'Itálico', icon: Italic, wrap: ['_', '_'] },
+  { label: 'Título', icon: Heading2, line: '## ' },
+  { label: 'Lista', icon: List, line: '- ' },
+  { label: 'Lista numerada', icon: ListOrdered, line: '1. ' },
+  { label: 'Checklist', icon: CheckSquare, line: '- [ ] ' },
+  { label: 'Citação', icon: Quote, line: '> ' },
+  { label: 'Código', icon: Code, wrap: ['`', '`'] },
+  { label: 'Link', icon: Link, wrap: ['[', '](https://)'] },
+  {
+    label: 'Tabela',
+    icon: Table,
+    block: '\n| Coluna | Coluna |\n|---|---|\n|  |  |\n',
+  },
+]
+async function format(item: Format) {
+  const area = editor.value
+  if (!area) return
+  const { selectionStart: start, selectionEnd: end, value } = area
+  const picked = value.slice(start, end)
+  let next: string
+  let caret: number
+  if (item.wrap) {
+    next = value.slice(0, start) + item.wrap[0] + picked + item.wrap[1] + value.slice(end)
+    caret = start + item.wrap[0].length + picked.length
+  } else if (item.line) {
+    // prefixa cada linha selecionada (ou a linha do cursor)
+    const lineStart = value.lastIndexOf('\n', start - 1) + 1
+    const chunk = value.slice(lineStart, end)
+    const prefixed = chunk
+      .split('\n')
+      .map((line) => item.line + line)
+      .join('\n')
+    next = value.slice(0, lineStart) + prefixed + value.slice(end)
+    caret = lineStart + prefixed.length
+  } else {
+    next = value.slice(0, end) + item.block + value.slice(end)
+    caret = end + item.block!.length
+  }
+  content.value = next
+  await nextTick()
+  area.focus()
+  area.setSelectionRange(caret, caret)
+}
+
+const words = computed(() => content.value.trim().split(/\s+/).filter(Boolean).length)
+
+function exportMarkdown() {
+  const page = current.value
+  if (!page) return
+  const blob = new Blob([`# ${title.value}\n\n${content.value}`], { type: 'text/markdown' })
+  const url = URL.createObjectURL(blob)
+  Object.assign(document.createElement('a'), {
+    href: url,
+    download: `${(title.value || 'documento').replace(/[\\/:*?"<>|]/g, '-')}.md`,
+  }).click()
+  URL.revokeObjectURL(url)
+}
+
 function onKeydown(event: KeyboardEvent) {
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
     event.preventDefault()
@@ -180,10 +320,40 @@ function onKeydown(event: KeyboardEvent) {
         <h2 class="text-13 font-semibold text-fg">
           Páginas <span class="font-mono font-normal text-fg-muted">{{ pages.length }}</span>
         </h2>
-        <UiButton v-if="canEdit" size="sm" variant="ghost" :icon="Plus" @click="create">
+        <UiButton
+          v-if="canEdit"
+          size="sm"
+          variant="ghost"
+          :icon="Plus"
+          :aria-expanded="choosing"
+          @click="choosing = !choosing"
+        >
           Nova
         </UiButton>
       </div>
+      <ul
+        v-if="choosing"
+        class="mb-2 grid gap-1 rounded-control border border-border p-1"
+        aria-label="Modelos"
+      >
+        <li v-for="template in TEMPLATES" :key="template.key">
+          <button
+            type="button"
+            class="w-full cursor-pointer rounded-control px-2 py-1.5 text-left text-13 hover:bg-surface-2"
+            @click="create(template)"
+          >
+            {{ template.label }}
+          </button>
+        </li>
+      </ul>
+      <UiInput
+        v-if="pages.length > 3"
+        v-model="search"
+        :icon="Search"
+        placeholder="Buscar página"
+        aria-label="Buscar página"
+        class="mb-2"
+      />
       <p v-if="loading" class="flex items-center gap-2 px-1 text-13 text-fg-muted">
         <UiSpinner :size="14" /> Carregando…
       </p>
@@ -264,8 +434,21 @@ function onKeydown(event: KeyboardEvent) {
               :label="current.is_pinned ? 'Desafixar página' : 'Fixar no topo'"
               @click="togglePin"
             />
+            <UiIconButton
+              :icon="Download"
+              size="sm"
+              label="Baixar em Markdown (.md)"
+              @click="exportMarkdown"
+            />
             <UiIconButton :icon="Trash2" size="sm" label="Excluir página" @click="remove" />
           </div>
+          <UiIconButton
+            v-else
+            :icon="Download"
+            size="sm"
+            label="Baixar em Markdown (.md)"
+            @click="exportMarkdown"
+          />
         </div>
 
         <label for="page-title" class="sr-only">Título da página</label>
@@ -279,9 +462,23 @@ function onKeydown(event: KeyboardEvent) {
         />
 
         <template v-if="mode === 'edit' && canEdit">
+          <div class="pg-toolbar" role="toolbar" aria-label="Formatação">
+            <button
+              v-for="item in FORMATS"
+              :key="item.label"
+              type="button"
+              :title="item.label"
+              :aria-label="item.label"
+              @mousedown.prevent
+              @click="format(item)"
+            >
+              <component :is="item.icon" :size="15" aria-hidden="true" />
+            </button>
+          </div>
           <label for="page-content" class="sr-only">Conteúdo em Markdown</label>
           <textarea
             id="page-content"
+            ref="editor"
             v-model="content"
             class="pg-editor"
             spellcheck="true"
@@ -289,8 +486,8 @@ function onKeydown(event: KeyboardEvent) {
             @blur="flush"
           />
           <p class="text-12 text-fg-muted">
-            Markdown: # título · - lista · - [ ] caixa · **negrito** · _itálico_ · `código` ·
-            [texto](https://link) · Ctrl+S salva na hora.
+            {{ words }} {{ words === 1 ? 'palavra' : 'palavras' }} · Markdown · salva sozinho
+            (Ctrl+S salva na hora)
           </p>
         </template>
         <!-- eslint-disable-next-line vue/no-v-html -- renderMarkdown escapa todo o texto antes -->
@@ -391,6 +588,35 @@ function onKeydown(event: KeyboardEvent) {
   font-size: var(--text-14);
   line-height: 1.7;
   color: var(--ds-fg);
+}
+
+.pg-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  border: 1px solid var(--ds-border);
+  border-radius: 10px;
+  padding: 4px;
+  background: var(--ds-surface-2);
+}
+
+.pg-toolbar button {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  place-items: center;
+  border-radius: 7px;
+  color: var(--ds-fg-muted);
+}
+
+.pg-toolbar button:hover {
+  background: var(--ds-surface-1);
+  color: var(--ds-fg);
+}
+
+.pg-toolbar button:focus-visible {
+  outline: 2px solid var(--ds-accent);
 }
 
 .pg-mode button {

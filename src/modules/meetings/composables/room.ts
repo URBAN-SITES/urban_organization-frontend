@@ -6,7 +6,9 @@ import {
   type RemoteTrack,
   Room,
   RoomEvent,
+  ScreenSharePresets,
   Track,
+  VideoPresets,
   type TrackPublication,
 } from 'livekit-client'
 import { computed, markRaw, onBeforeUnmount, ref, shallowRef } from 'vue'
@@ -115,7 +117,11 @@ export function useMeetingRoom() {
     try {
       if (kind === 'mic') await me.setMicrophoneEnabled(enabled)
       else if (kind === 'camera') await me.setCameraEnabled(enabled)
-      else await me.setScreenShareEnabled(enabled, { audio: false })
+      else
+        await me.setScreenShareEnabled(enabled, {
+          audio: false,
+          resolution: ScreenSharePresets.h1080fps15.resolution,
+        })
     } catch (error) {
       const message = mediaProblem(
         error,
@@ -144,7 +150,19 @@ export function useMeetingRoom() {
           noiseSuppression: true,
           autoGainControl: true,
         },
-        videoCaptureDefaults: { deviceId: devices.videoinput || undefined },
+        // 720p a 30 fps: a câmera padrão do navegador costuma vir em 640x480
+        videoCaptureDefaults: {
+          deviceId: devices.videoinput || undefined,
+          resolution: VideoPresets.h720.resolution,
+        },
+        publishDefaults: {
+          videoEncoding: { maxBitrate: 2_500_000, maxFramerate: 30 },
+          // quem tem conexão fraca recebe uma camada menor sem travar os outros
+          videoSimulcastLayers: [VideoPresets.h180, VideoPresets.h360],
+          screenShareEncoding: ScreenSharePresets.h1080fps15.encoding,
+          dtx: true,
+          red: true,
+        },
         audioOutput: { deviceId: devices.audiooutput || undefined },
       }),
     )

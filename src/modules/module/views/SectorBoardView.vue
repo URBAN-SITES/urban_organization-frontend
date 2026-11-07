@@ -792,7 +792,11 @@ function clearFilters() {
         >
           <div class="grid gap-8">
             <ProjectPages :sector-id="sector.id" :can-edit="canEdit" />
-            <ProjectFiles :organization-id="sector.organization_id" :sector-id="sector.id" />
+            <ProjectFiles
+              :organization-id="sector.organization_id"
+              :sector-id="sector.id"
+              :can-edit="canEdit"
+            />
           </div>
         </div>
 
