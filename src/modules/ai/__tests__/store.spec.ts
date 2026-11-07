@@ -29,6 +29,9 @@ const api = {
   createTaskFromDraft: async (_payload: unknown): Promise<Record<string, unknown>> => ({}),
   analyzeAiFiles: async (_files: File[]): Promise<Blob> =>
     new Blob(['%PDF-test'], { type: 'application/pdf' }),
+  listAiThreads: async (_sector?: string | null): Promise<unknown[]> => [],
+  getAiThread: async (_id: string): Promise<unknown> => ({ messages: [] }),
+  deleteAiThread: async (_id: string): Promise<void> => undefined,
 }
 Object.assign(globalThis, { aiStoreTestApi: api })
 const hooks = registerHooks({
@@ -37,7 +40,10 @@ const hooks = registerHooks({
       const source = `export const AiRequestError = globalThis.aiStoreTestApi.AiRequestError;
         export const askAi = (...args) => globalThis.aiStoreTestApi.askAi(...args);
         export const analyzeAiFiles = (...args) => globalThis.aiStoreTestApi.analyzeAiFiles(...args);
-        export const createTaskFromDraft = (...args) => globalThis.aiStoreTestApi.createTaskFromDraft(...args);`
+        export const createTaskFromDraft = (...args) => globalThis.aiStoreTestApi.createTaskFromDraft(...args);
+        export const listAiThreads = (...args) => globalThis.aiStoreTestApi.listAiThreads(...args);
+        export const getAiThread = (...args) => globalThis.aiStoreTestApi.getAiThread(...args);
+        export const deleteAiThread = (...args) => globalThis.aiStoreTestApi.deleteAiThread(...args);`
       return { url: `data:text/javascript,${encodeURIComponent(source)}`, shortCircuit: true }
     }
     return nextResolve(specifier, context)
@@ -332,4 +338,42 @@ test('a failed confirmation can be retried and a discarded draft stays discarded
   assert.equal(await ai.confirmDraft('m:1', payload), true)
   ai.discardDraft('m:9')
   assert.equal(ai.drafts['m:9']?.status, 'discarded')
+})
+
+test('saved conversations are listed per place and load their messages on open', async () => {
+  const ai = useAiStore()
+  api.listAiThreads = async (sector) =>
+    sector === 'p1'
+      ? [{ id: 't1', title: 'Plano', updated_at: '2026-11-07T10:00:00Z', message_count: 2 }]
+      : []
+  api.getAiThread = async () => ({
+    id: 't1',
+    title: 'Plano',
+    sector_id: 'p1',
+    updated_at: '2026-11-07T10:00:00Z',
+    messages: [
+      { role: 'user', content: 'Monte um plano', created_at: '2026-11-07T10:00:00Z' },
+      { role: 'assistant', content: '## Plano', created_at: '2026-11-07T10:00:00Z' },
+    ],
+  })
+  ai.setScope('p1')
+  await ai.loadThreads()
+  assert.deepEqual(
+    ai.scoped.map((item) => [item.title, item.loaded]),
+    [['Plano', false]],
+  )
+  ai.setScope('all')
+  assert.equal(ai.scoped.length, 0)
+  ai.setScope('p1')
+  await ai.open('t1')
+  assert.deepEqual(
+    ai.messages.map((m) => [m.role, m.content]),
+    [
+      ['user', 'Monte um plano'],
+      ['assistant', '## Plano'],
+    ],
+  )
+  // continuing it sends the saved conversation id so the server keeps the context
+  await ai.ask('E os riscos?')
+  assert.equal(calls.at(-1)?.thread_id, 't1')
 })

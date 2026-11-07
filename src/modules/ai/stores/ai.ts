@@ -1,7 +1,15 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { UUID } from '@/shared/types'
-import { AiRequestError, analyzeAiFiles, askAi, createTaskFromDraft } from '../services'
+import {
+  AiRequestError,
+  analyzeAiFiles,
+  askAi,
+  createTaskFromDraft,
+  deleteAiThread,
+  getAiThread,
+  listAiThreads,
+} from '../services'
 import type { AiAskRequest, AiConversation, AiDraftState, AiMessage, AiTaskConfirm } from '../types'
 
 export const useAiStore = defineStore('ai', () => {
@@ -46,8 +54,72 @@ export const useAiStore = defineStore('ai', () => {
   function setScope(next: string): void {
     if (scope.value === next && active.value?.scope === next) return
     scope.value = next
-    activeId.value = scoped.value[0]?.id ?? null
+    activeId.value = scoped.value[0]?.loaded === false ? null : (scoped.value[0]?.id ?? null)
     error.value = ''
+  }
+
+  /** Conversas salvas deste lugar entram no histórico; as mensagens vêm ao abrir. */
+  async function loadThreads(): Promise<void> {
+    if (!ownerId.value) return
+    const current = generation
+    const place = scope.value
+    try {
+      const rows = await listAiThreads(place === 'all' ? null : place)
+      if (generation !== current) return
+      for (const row of rows) {
+        if (conversations.value.some((item) => item.id === row.id)) continue
+        conversations.value.push({
+          id: row.id,
+          scope: place,
+          loaded: false,
+          updated_at: row.updated_at,
+          server_id: null,
+          title: row.title,
+          messages: [],
+          confirmation_token: null,
+          pending: null,
+          expired: false,
+        })
+      }
+    } catch {
+      // sem histórico salvo a conversa nova continua funcionando
+    }
+  }
+
+  async function open(id: UUID): Promise<void> {
+    const target = conversations.value.find((item) => item.id === id)
+    if (!target) return
+    activeId.value = id
+    error.value = ''
+    if (target.loaded !== false) return
+    const current = generation
+    try {
+      const detail = await getAiThread(id)
+      if (generation !== current) return
+      target.messages = detail.messages.map((message) => ({
+        id: crypto.randomUUID(),
+        role: message.role,
+        content: message.content,
+        created_at: message.created_at,
+        actions: message.actions ?? [],
+        choices: message.choices ?? [],
+        status: 'sent',
+      }))
+      target.loaded = true
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Não foi possível abrir a conversa.'
+    }
+  }
+
+  async function remove(id: UUID): Promise<void> {
+    try {
+      await deleteAiThread(id)
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Não foi possível apagar a conversa.'
+      return
+    }
+    conversations.value = conversations.value.filter((item) => item.id !== id)
+    if (activeId.value === id) activeId.value = null
   }
 
   function newConversation(): void {
@@ -169,7 +241,11 @@ export const useAiStore = defineStore('ai', () => {
       error.value = 'Tente enviar novamente a mensagem pendente antes de continuar.'
       return false
     }
-    const payload: AiAskRequest = { prompt: text, request_id: crypto.randomUUID() }
+    const payload: AiAskRequest = {
+      prompt: text,
+      request_id: crypto.randomUUID(),
+      thread_id: target.id,
+    }
     if (target.server_id) payload.conversation_id = target.server_id
     // The backend validates membership; the context only helps resolve targets.
     if (organizationId) payload.context = { organization_id: organizationId }
@@ -282,6 +358,9 @@ export const useAiStore = defineStore('ai', () => {
     error,
     setOwner,
     setScope,
+    loadThreads,
+    open,
+    remove,
     newConversation,
     select,
     ask,

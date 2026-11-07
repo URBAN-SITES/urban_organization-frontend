@@ -40,6 +40,8 @@ export interface AiAskRequest {
   request_id: UUID
   confirmation_token?: UUID
   context?: { organization_id?: UUID; sector_id?: UUID }
+  /** conversa salva no servidor (o id local da conversa) */
+  thread_id?: UUID
 }
 
 export interface AiReport {
@@ -67,11 +69,14 @@ export interface AiPendingRequest {
   message_id: UUID
 }
 
-/** Client-session history; the backend has no conversation-list endpoint. */
+/** Conversation on screen; saved ones come from `GET /ai/threads/` and load on open. */
 export interface AiConversation {
   id: UUID
   /** 'all' para todos os projetos ou o id do projeto */
   scope: string
+  /** false until the messages of a saved conversation are fetched */
+  loaded?: boolean
+  updated_at?: ISODateTime
   server_id: UUID | null
   title: string
   messages: AiMessage[]
@@ -128,4 +133,25 @@ export interface AiDraftState {
   status: 'creating' | 'created' | 'discarded' | 'failed'
   error?: string
   task?: AiTask
+}
+
+export interface AiThreadSummary {
+  id: UUID
+  title: string
+  updated_at: ISODateTime
+  message_count: number
+}
+
+export interface AiThreadDetail {
+  id: UUID
+  title: string
+  sector_id: UUID | null
+  updated_at: ISODateTime
+  messages: {
+    role: 'user' | 'assistant'
+    content: string
+    created_at: ISODateTime
+    actions?: AiAction[]
+    choices?: string[]
+  }[]
 }
