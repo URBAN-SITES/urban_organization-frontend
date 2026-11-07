@@ -1,6 +1,14 @@
 import axios from 'axios'
 import { api, getErrorMessage } from '@/app/plugins/axios'
-import type { AiAnswer, AiAskRequest, AiPerson, AiTask, AiTaskConfirm } from '../types'
+import type {
+  AiAnswer,
+  AiAskRequest,
+  AiPerson,
+  AiTask,
+  AiTaskConfirm,
+  AiThreadDetail,
+  AiThreadSummary,
+} from '../types'
 import { aiErrorDetails } from '../utils'
 
 // Limite do AIAskSerializer no backend.
@@ -41,6 +49,35 @@ export async function askAi(payload: AiAskRequest): Promise<AiAnswer> {
     ).data
   } catch (error) {
     throw requestError(error, 'Não foi possível consultar a IA.')
+  }
+}
+
+/** Conversas salvas: as gerais (sem projeto) ou as de um projeto. */
+export async function listAiThreads(sectorId?: string | null): Promise<AiThreadSummary[]> {
+  try {
+    return (
+      await api.get<AiThreadSummary[]>('/ai/threads/', {
+        params: sectorId ? { sector: sectorId } : {},
+      })
+    ).data
+  } catch (error) {
+    throw requestError(error, 'Não foi possível carregar o histórico.')
+  }
+}
+
+export async function getAiThread(id: string): Promise<AiThreadDetail> {
+  try {
+    return (await api.get<AiThreadDetail>(`/ai/threads/${id}/`)).data
+  } catch (error) {
+    throw requestError(error, 'Não foi possível abrir a conversa.')
+  }
+}
+
+export async function deleteAiThread(id: string): Promise<void> {
+  try {
+    await api.delete(`/ai/threads/${id}/`)
+  } catch (error) {
+    throw requestError(error, 'Não foi possível apagar a conversa.')
   }
 }
 

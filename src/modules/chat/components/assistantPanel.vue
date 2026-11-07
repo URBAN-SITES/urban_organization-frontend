@@ -13,11 +13,13 @@ import {
   Sparkles,
   SquarePen,
   TrendingUp,
+  Trash2,
   TriangleAlert,
 } from '@lucide/vue'
 import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { BaseButton } from '@/shared/components'
+import { useConfirm } from '@/shared/composables/confirm'
 import { useAuthStore } from '@/modules/auth'
 import {
   aiActionDeleted,
@@ -74,7 +76,10 @@ watch(
 )
 watch(
   () => props.sectorId || 'all',
-  (scope) => ai.setScope(scope),
+  (scope) => {
+    ai.setScope(scope)
+    void ai.loadThreads()
+  },
   { immediate: true },
 )
 watch(
@@ -149,7 +154,7 @@ function newConversation() {
   clearFiles()
 }
 function openHistory(id: string) {
-  ai.select(id)
+  void ai.open(id)
   draft.value = ''
   clearFiles()
 }
@@ -162,6 +167,19 @@ async function retry() {
 async function analyze() {
   if (await ai.analyze([...files.value])) clearFiles()
 }
+
+const confirm = useConfirm()
+async function removeHistory(id: string, title: string) {
+  const ok = await confirm({
+    title: 'Apagar esta conversa?',
+    description: `"${title}" sai do histórico. Tarefas e mudanças feitas pela IA continuam.`,
+    confirmLabel: 'Apagar',
+  })
+  if (ok) await ai.remove(id)
+}
+
+const day = (iso?: string) =>
+  iso ? new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) : 'agora'
 
 const copied = ref('')
 async function copyAnswer(id: string, text: string) {
@@ -570,32 +588,44 @@ async function copyAnswer(id: string, text: string) {
           Histórico recente <History :size="14" aria-hidden="true" />
         </h3>
         <p v-if="!ai.scoped.length" class="px-2 py-2 text-12 text-fg-muted">
-          As conversas desta visita aparecem aqui.
+          Suas conversas ficam salvas aqui.
         </p>
         <nav aria-label="Conversas anteriores" class="flex flex-col gap-0.5">
-          <button
+          <div
             v-for="item in ai.scoped"
             :key="item.id"
-            type="button"
-            :disabled="ai.isBusy"
-            :aria-current="item.id === ai.activeId ? 'true' : undefined"
             :class="[
-              'flex cursor-pointer items-start gap-2 rounded-control px-2 py-2 text-left text-13 transition-colors disabled:cursor-wait',
+              'group flex items-start rounded-control transition-colors',
               item.id === ai.activeId
                 ? 'border border-accent/60 bg-accent/[0.08]'
                 : 'border border-transparent hover:bg-surface-2',
             ]"
-            @click="openHistory(item.id)"
           >
-            <MessageSquare :size="14" class="mt-0.5 shrink-0 text-fg-muted" aria-hidden="true" />
-            <span class="min-w-0 flex-1">
-              <span class="block truncate">{{ item.title }}</span>
-              <span class="text-11 text-fg-muted">
-                {{ item.messages.length }}
-                {{ item.messages.length === 1 ? 'mensagem' : 'mensagens' }}
+            <button
+              type="button"
+              :disabled="ai.isBusy"
+              :aria-current="item.id === ai.activeId ? 'true' : undefined"
+              class="flex min-w-0 flex-1 cursor-pointer items-start gap-2 px-2 py-2 text-left text-13 disabled:cursor-wait"
+              @click="openHistory(item.id)"
+            >
+              <MessageSquare :size="14" class="mt-0.5 shrink-0 text-fg-muted" aria-hidden="true" />
+              <span class="min-w-0 flex-1">
+                <span class="block truncate">{{ item.title }}</span>
+                <span class="text-11 text-fg-muted">
+                  {{ day(item.messages.at(-1)?.created_at ?? item.updated_at) }}
+                </span>
               </span>
-            </span>
-          </button>
+            </button>
+            <button
+              type="button"
+              :disabled="ai.isBusy"
+              :aria-label="`Apagar a conversa ${item.title}`"
+              class="m-1 grid size-7 shrink-0 cursor-pointer place-items-center rounded-control text-fg-muted opacity-0 transition hover:bg-surface-3 hover:text-danger focus-visible:opacity-100 group-hover:opacity-100"
+              @click="removeHistory(item.id, item.title)"
+            >
+              <Trash2 :size="13" aria-hidden="true" />
+            </button>
+          </div>
         </nav>
         <button
           type="button"
