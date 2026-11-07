@@ -336,7 +336,33 @@ async function copyAnswer(id: string, text: string) {
                   >
                     Exclusão pendente: nada foi apagado ainda. Confirme abaixo.
                   </p>
-                  <template v-else-if="action.writes || aiActionTasks(action).length">
+                  <!-- consultas: a resposta já resume; os cartões ficam recolhidos -->
+                  <details
+                    v-else-if="!action.writes && aiActionTasks(action).length"
+                    class="group rounded-card border border-border px-3 py-2"
+                  >
+                    <summary
+                      class="flex cursor-pointer list-none items-center gap-1.5 text-12 text-fg-muted hover:text-fg"
+                    >
+                      <ListChecks :size="13" aria-hidden="true" />
+                      Ver {{ aiActionTasks(action).length }}
+                      {{
+                        aiActionTasks(action).length === 1
+                          ? 'tarefa consultada'
+                          : 'tarefas consultadas'
+                      }}
+                    </summary>
+                    <div class="mt-2 flex flex-col gap-2">
+                      <AssistantTaskCard
+                        v-for="task in aiActionTasks(action).slice(0, 20)"
+                        :key="task.id"
+                        :task="task"
+                        :disabled="ai.isBusy || !!ai.active?.pending || !!ai.active?.expired"
+                        @delete="taskDelete"
+                      />
+                    </div>
+                  </details>
+                  <template v-else-if="action.writes">
                     <p class="inline-flex items-center gap-1 text-12 font-medium text-success">
                       <Check :size="13" aria-hidden="true" /> {{ aiActionLabel(action) }}
                     </p>
