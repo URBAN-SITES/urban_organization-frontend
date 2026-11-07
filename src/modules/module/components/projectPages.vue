@@ -124,9 +124,10 @@ async function create(template = TEMPLATES[0]!) {
     const body = template.body()
     const page = await createPage(props.sectorId, { title: template.title, content: body })
     pages.value = [toSummary(page), ...pages.value]
-    current.value = page
+    // o servidor apara o fim do texto; o editor fica com o modelo inteiro ("- [ ] " pronto)
+    current.value = { ...page, content: body }
     title.value = page.title
-    content.value = page.content
+    content.value = body
     mode.value = 'edit'
   } catch (cause) {
     toast.error(getErrorMessage(cause, 'Não foi possível criar a página.'))
