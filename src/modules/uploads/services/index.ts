@@ -31,3 +31,23 @@ export async function attachToOrganization(
     throw new Error(getErrorMessage(error, 'Não foi possível anexar o arquivo.'))
   }
 }
+
+/** Registra um arquivo enviado (ou um link) direto no projeto. */
+export async function attachToSector(
+  sectorId: string,
+  payload: { title: string; url: string },
+): Promise<void> {
+  try {
+    await api.post(`/sectors/${encodeURIComponent(sectorId)}/links/`, payload)
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Não foi possível adicionar ao projeto.'))
+  }
+}
+
+export async function removeFile(linkId: string): Promise<void> {
+  try {
+    await api.delete(`/links/${encodeURIComponent(linkId)}/`)
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Não foi possível remover o arquivo.'))
+  }
+}
