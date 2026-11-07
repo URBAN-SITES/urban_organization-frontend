@@ -160,6 +160,7 @@ export function projectGroups(projectId: string, options: { guest?: boolean } = 
       id: 'project-team',
       label: 'Projeto',
       items: [
+        tab('ai', 'Assistente IA', Sparkles, 'ia chat gemini'),
         tab('pages', 'Documentos', FileText, 'paginas arquivos anexos'),
         tab('meetings', 'Reuniões', Video, 'chamada gravacao'),
         tab('intake', 'Pedidos', Inbox, 'solicitacoes'),
