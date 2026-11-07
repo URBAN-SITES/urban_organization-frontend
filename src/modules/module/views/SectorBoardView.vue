@@ -50,6 +50,7 @@ import {
   Video,
   X,
   type LucideIcon,
+  Sparkles,
 } from '@lucide/vue'
 import { useEventListener } from '@vueuse/core'
 import { computed, nextTick, ref, watch } from 'vue'
@@ -58,6 +59,7 @@ import { toast } from 'vue-sonner'
 import { getErrorMessage } from '@/app/plugins/axios'
 import { useAuthStore } from '@/modules/auth'
 import { ProjectGitHub } from '@/modules/github'
+import { AssistantPanel } from '@/modules/chat'
 import { ProjectMeetings } from '@/modules/meetings'
 import {
   TopbarComp,
@@ -107,9 +109,10 @@ import {
 } from '../utils/board'
 import { isPlainShortcut, modalIsOpen } from '../utils/shortcuts'
 
-type View = 'board' | 'list' | 'table' | 'timeline' | 'pages' | 'intake' | 'meetings' | 'github'
+type View =
+  'board' | 'list' | 'table' | 'timeline' | 'pages' | 'intake' | 'meetings' | 'github' | 'ai'
 // abas que não mostram tarefas (sem filtros)
-const TASKLESS: View[] = ['pages', 'intake', 'meetings', 'github']
+const TASKLESS: View[] = ['pages', 'intake', 'meetings', 'github', 'ai']
 
 const props = defineProps<{ sectorId: string }>()
 const router = useRouter()
@@ -145,6 +148,7 @@ const VIEWS = [
   { value: 'intake', label: 'Pedidos' },
   { value: 'meetings', label: 'Reuniões' },
   { value: 'github', label: 'GitHub' },
+  { value: 'ai', label: 'Assistente' },
 ]
 const VIEW_ICONS: Record<View, LucideIcon> = {
   board: SquareKanban,
@@ -155,6 +159,7 @@ const VIEW_ICONS: Record<View, LucideIcon> = {
   intake: Inbox,
   meetings: Video,
   github: GitBranch,
+  ai: Sparkles,
 }
 const filtersOpen = ref(false)
 const binOpen = ref(false)
@@ -811,6 +816,17 @@ function clearFilters() {
             :sector-id="sector.id"
             :can-manage="canManage"
             @imported="load(sector.id)"
+          />
+        </div>
+
+        <div
+          v-else-if="view === 'ai' && sector"
+          class="ui-rise -mx-4 flex min-h-[560px] flex-1 flex-col px-4 pb-4 sm:-mx-8 sm:px-8"
+        >
+          <AssistantPanel
+            :organization-id="sector.organization_id"
+            :sector-id="sector.id"
+            :sector-name="sector.name"
           />
         </div>
 
