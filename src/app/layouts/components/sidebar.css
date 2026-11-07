@@ -99,6 +99,8 @@
   display: block;
   height: 64px;
   width: 96px;
+  /* não encolhe junto com a barra: espremida, a logo ia para a esquerda ao fechar */
+  flex-shrink: 0;
   border-radius: 8px;
 }
 
@@ -120,6 +122,9 @@
 /* proporção original da logo (258x173): 94px de largura, ~63px de altura */
 .sb-brand-full {
   width: 94px;
+  max-width: none;
+  /* encolhe na direção do centro da barra compacta, onde a coroa aparece */
+  transform-origin: 16px 50%;
 }
 
 .sb-brand .sb-brand-mark {
@@ -134,7 +139,7 @@
 
 [data-collapsed] .sb-brand-full {
   opacity: 0;
-  transform: scale(0.92);
+  transform: scale(0.34);
 }
 
 [data-collapsed] .sb-brand-mark {
