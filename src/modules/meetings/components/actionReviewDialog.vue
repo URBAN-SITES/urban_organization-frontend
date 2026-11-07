@@ -25,7 +25,21 @@ const props = defineProps<{
   recordingId: UUID
   actions: SummaryAction[]
   people: MeetingPerson[]
+  /** só esta ação (botão "Criar tarefa" da ação); sem ele, todas as pendentes */
+  only?: number | null
+  meetingTitle?: string
 }>()
+
+/** A descrição leva a origem: o trecho falado e de qual reunião veio. */
+function describe(action: SummaryAction): string {
+  const origin = [
+    `> “${action.source.quote}” (${clock(action.source.start)})`,
+    props.meetingTitle ? `Ação definida na reunião **${props.meetingTitle}**.` : '',
+  ]
+    .filter(Boolean)
+    .join('\n\n')
+  return [action.description?.trim(), origin].filter(Boolean).join('\n\n')
+}
 const emit = defineEmits<{ created: [] }>()
 
 interface Draft extends ActionTaskInput {
@@ -40,13 +54,13 @@ watch(open, (value) => {
   if (!value) return
   drafts.value = props.actions
     .map((action, index) => ({ action, index }))
-    .filter(({ action }) => !action.created)
+    .filter(({ action, index }) => !action.created && (props.only == null || index === props.only))
     .map(({ action, index }) => ({
       index,
       action,
       selected: true,
       title: action.title,
-      description: action.description,
+      description: describe(action),
       assignee: action.assignee_id,
       due_date: action.due_date,
     }))
@@ -87,7 +101,7 @@ async function save() {
 <template>
   <UiDialog
     v-model:open="open"
-    title="Criar tarefas a partir da reunião"
+    :title="only == null ? 'Criar tarefas a partir da reunião' : 'Criar tarefa a partir da reunião'"
     description="Revise cada ação. As tarefas só são criadas quando você confirmar."
     size="lg"
     :dismissible="!saving"
@@ -108,7 +122,7 @@ async function save() {
         />
         <template v-if="draft.selected">
           <UiInput v-model="draft.title" label="Título" required />
-          <UiTextarea v-model="draft.description" label="Descrição" :rows="2" />
+          <UiTextarea v-model="draft.description" label="Descrição" :rows="4" />
           <div class="grid gap-3 sm:grid-cols-2">
             <div class="grid gap-1">
               <UiSelect

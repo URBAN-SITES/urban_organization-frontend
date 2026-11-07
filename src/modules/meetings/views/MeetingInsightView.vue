@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import { ArrowLeft, FileDown, FileText, ListChecks, Printer, Sparkles, Video } from '@lucide/vue'
+import {
+  ArrowLeft,
+  FileDown,
+  FileText,
+  ListChecks,
+  Plus,
+  Printer,
+  Sparkles,
+  Video,
+} from '@lucide/vue'
 import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
 import { RouterLink } from 'vue-router'
 import { toast } from 'vue-sonner'
@@ -41,6 +50,12 @@ const notConfigured = ref(false)
 const starting = ref(false)
 const tab = ref('summary')
 const reviewing = ref(false)
+// índice da ação aberta pelo botão "Criar tarefa"; null revisa todas
+const reviewOnly = ref<number | null>(null)
+function review(index: number | null) {
+  reviewOnly.value = index
+  reviewing.value = true
+}
 const current = ref(0)
 const video = useTemplateRef<HTMLVideoElement>('video')
 let timer: ReturnType<typeof setTimeout> | undefined
@@ -274,7 +289,7 @@ function pdf() {
             v-if="insight.summary?.actions.length"
             size="sm"
             :icon="ListChecks"
-            @click="reviewing = true"
+            @click="review(null)"
           >
             {{
               pendingActions
@@ -316,7 +331,20 @@ function pdf() {
                       <div class="flex flex-wrap items-center gap-2">
                         <span class="font-medium text-fg">{{ action.title }}</span>
                         <UiBadge v-if="action.created" tone="success">Tarefa criada</UiBadge>
+                        <UiButton
+                          v-else
+                          size="sm"
+                          variant="primary"
+                          :icon="Plus"
+                          class="ml-auto"
+                          @click="review(index)"
+                        >
+                          Criar tarefa
+                        </UiButton>
                       </div>
+                      <p v-if="action.description" class="text-13 text-fg">
+                        {{ action.description }}
+                      </p>
                       <p class="text-13 text-fg-muted">
                         {{ action.assignee_name ?? 'Sem responsável identificado' }} ·
                         {{
@@ -361,6 +389,8 @@ function pdf() {
           :recording-id="recordingId"
           :actions="insight.summary.actions"
           :people="meeting.participants"
+          :only="reviewOnly"
+          :meeting-title="meeting.title"
           @created="loadInsight"
         />
       </template>
